@@ -1,5 +1,5 @@
 ![Highlander](/public/assets/img/highlander_logo.png)
-<!-- [![Build Status](https://travis-ci.org/iamromanh/highlander.svg?branch=master)](https://travis-ci.org/iamromanh/highlander) -->
+[![Build Status](https://travis-ci.org/iamromanh/highlander-react-redux.svg?branch=master)](https://travis-ci.org/iamromanh/highlander-react-redux)
 
 ## Live Demo
 Link: Coming soon!
