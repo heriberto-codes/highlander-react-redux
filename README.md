@@ -57,8 +57,8 @@ http://dbpatterns.com/documents/58c5ff7f1514b438af1a805e/
 #### `coaches_teams`
 coach_id | team_id
 :-----:|:-----:
-1  | 3
-2  | 1
+1 | 3
+2 | 1
 1 | 1
 
 #### `teams`
@@ -98,7 +98,6 @@ id | description
 4 | Earned Runs
 5 | Innings Pitched
 6 | Strikeouts
-
 
 ---
 
