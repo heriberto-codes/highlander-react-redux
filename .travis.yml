@@ -7,3 +7,4 @@ deploy:
   app: stark-garden-73877
   on:
     repo: iamromanh/highlander-react-redux
+    branch: master
