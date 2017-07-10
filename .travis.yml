@@ -7,3 +7,4 @@ deploy:
   app: quiet-fjord-90423
   on:
     repo: iamromanh/highlander-react-redux
+    branch: master
