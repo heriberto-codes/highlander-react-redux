@@ -5,7 +5,7 @@ const saltRounds = 10;
 require('./Team');
 require('./Player');
 
-const Coach = Bookshelf.Model.extend({
+const CoachSchema = Bookshelf.Model.extend({
   tableName: 'coaches',
   teams: function() {
     return this.belongsToMany('Team', 'coaches_teams');
@@ -22,4 +22,4 @@ const Coach = Bookshelf.Model.extend({
 });
 
 
-module.exports = Bookshelf.model('Coach', Coach);
+module.exports = Bookshelf.model('Coach', CoachSchema);

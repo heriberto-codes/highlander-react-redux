@@ -2,7 +2,7 @@ const Bookshelf = require('../config/bookshelf.config');
 
 require('./Stat_Catalog');
 
-const Stat = Bookshelf.Model.extend({
+const StatSchema = Bookshelf.Model.extend({
   tableName: 'stats',
   player: function() {
     return this.belongsTo('Player')
@@ -12,4 +12,4 @@ const Stat = Bookshelf.Model.extend({
   }
 })
 
-module.exports = Bookshelf.model('Stat', Stat);
+module.exports = Bookshelf.model('Stat', StatSchema);
