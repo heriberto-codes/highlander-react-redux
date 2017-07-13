@@ -1,4 +1,4 @@
-"use strict";
+// "use strict";
 const app = require('express');
 const router = app.Router();
 
@@ -19,18 +19,20 @@ router.get('/', function(req, res) {
   })
 })
 
-router.get('/:id', function(req,res) {
+router.get('/:player_id', function(req, res) {
+  console.log('req.params.player_id goes here =====>', req.params.player_id)
   Player
-  .where({id: req.params.id})
+  .where({player_id: parseInt(req.params.player_id)})
   .fetch({withRelated: ['teams']})
   .then(function(players) {
+    console.log('players', players)
     res.json(players);
   })
 })
 
 router.get('/:id/stats', function(req, res) {
   Player
-  .where({id: req.params.id})
+  .where({player_id: req.params.id})
   .fetch({withRelated: ['stats','stats.catalog']})
   .then(function(stats) {
     res.json(stats);
