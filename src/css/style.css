@@ -1,0 +1,269 @@
+/* ======================================
+  Global Style
+========================================= */
+a {
+  color: #FFA500;
+}
+
+.hero-bg-image {
+  border-bottom: 1px solid orange;
+}
+
+
+a.nav-item.nav-color.is-tab.is-active {
+  border-bottom: 1px solid orange;
+  color: orange;
+  padding-bottom: calc(0.75rem - 3px);
+}
+
+/* ======================================
+  Home Page Hero
+========================================= */
+h1.title-hero {
+  font-size: 2em;
+  line-height: 48px;
+  color: #fff;
+}
+
+.hero-body.bg-img {
+  background-image: linear-gradient(
+      rgba(0, 0, 0, 0.5),
+      rgba(0, 0, 0, 0.5)
+    ),
+    url('../public/assets/img/New_HR_Softball.jpg');
+  background-position: center center;
+  background-repeat:  no-repeat;
+  background-size: cover;
+}
+
+.container-hero {
+  padding-top: 30px;
+  padding-bottom: 30px;
+}
+
+/* ======================================
+  Player & Coach Card on Homepage
+========================================= */
+i.fa.fa-user-circle-o.coach-card-icon,
+i.fa.fa-user-circle.coach-card-icon{
+    font-size: 100px;
+};
+
+div.card-content.level.coach-card {
+  margin-bottom: 0;
+}
+
+div.card-content {
+  background-color: #E6E6E6;
+}
+
+p.title.level-item {
+  padding-top: 35px;
+}
+
+section.section.afterHeroSection {
+  border-bottom: 1px solid #FFA500;
+  background-color: #F7F8FA;
+}
+
+.tabs.is-toggle li.is-active a {
+  background-color: #FFA500;
+  border-color: #FFA500;
+}
+
+/* ======================================
+  Average Widget Display on Homepage
+========================================= */
+p.averagePlayerName {
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+.bg-image-average-promo {
+  background-image: linear-gradient(
+      rgba(0, 0, 0, 0.5),
+      rgba(0, 0, 0, 0.5)
+    ),
+    url('../public/assets/img/rachel-barkdoll-179739.jpg');
+  background-position: top center;
+  background-repeat:  no-repeat;
+  background-size: cover;
+}
+
+div.panel-block.panel-heading.panel-heading-center {
+  padding-left: 35px;
+}
+
+#averageText {
+  color: white;
+  background: rgba(0, 0, 0, 0.25)
+}
+
+#averageH1Text {
+  color: white;
+  background: rgba(0, 0, 0, 0.25)
+}
+
+.the-shit {
+  margin-right: 0.3em;
+}
+
+/* ======================================
+  Login & Registration Page
+========================================= */
+.login-form-heading {
+  text-align: center;
+  font-size: 2em;
+  padding-bottom: 15px;
+}
+
+.login-bg-image {
+  background-image: url('../public/assets/img/Sports.png');
+}
+
+.loginCookies {
+  color: #FFA500;
+}
+
+/* ======================================
+  Global Dashboard
+========================================= */
+.dashboard-title {
+ border-bottom: 1px solid #e7e7e7;
+}
+
+nav.level.dashboard-title {
+  padding-bottom: 10px;
+}
+
+a.button.is-primary.dasboard {
+  text-decoration: none;
+  margin-top: 15px;
+}
+
+.icon-dasboard-placement {
+  padding-right: 10px;
+}
+
+/* ======================================
+  Coach Dashboard
+========================================= */
+.dashboard-bg-image {
+  background-image: url('../public/assets/img/Sports.png');
+}
+
+span.title.is-bold.profile-title {
+  color: #4a4a4a;
+}
+
+.profile-metadata {
+  color: #4a4a4a;
+}
+
+footer.card-footer.panel-heading.dashboard-roster-footer {
+  padding: 0;
+}
+
+h1.title.coach-title.coach-heading-dashboard {
+  color: #4a4a4a;
+  margin-bottom: 2px;
+}
+
+/* ======================================
+  Teams Dashboard
+========================================= */
+#theTeamBg {
+  background-color: #FFFFFF;
+}
+
+.dashboard-team-list-footer {
+  padding: 0;
+}
+
+/* ======================================
+  Add-Team Dashboard
+========================================= */
+.add-team-notification,
+.add-team-error-notification,
+.add-stat-error-notification,
+.add-stat-notification {
+  display: none;
+}
+
+/* ======================================
+  Edit-Team Dashboard
+========================================= */
+.modal-text-color {
+  color: #4a4a4a;
+}
+
+/* ======================================
+  Team-List Dashboard
+========================================= */
+.blockElement {
+  display: block !important;
+  position: relative;
+}
+
+/* ======================================
+  Footer
+========================================= */
+.heribertoFooterName {
+  color: #FFA500;
+}
+
+.heribertoGithubIcon {
+  color: #363636;
+}
+
+.heribertoHeart {
+  color: #FA5544;
+}
+
+.is-hidden {
+  display: true;
+}
+
+/* ======================================
+  MediaQuery Styles
+========================================= */
+@media screen and (max-width: 1300px) {
+  .card-list {
+    width: 20%;
+    float: left;
+  }
+}
+
+@media screen and (min-width: 1024px) {
+  .card-list {
+    width: 25%;
+    float: left;
+  }
+}
+
+@media screen and (max-width: 1020px) {
+  .card-list {
+    width: 33.3%;
+    float: left;
+    display: block;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .card-list {
+    width: 50%;
+    float: left;
+    display: block;
+  }
+  .nav-toggle {
+  }
+}
+
+@media screen and (max-width: 620px) {
+  .card-list {
+    width: 100%;
+    display: block;
+    float: left;
+    min-height: 120px;
+  }
+}

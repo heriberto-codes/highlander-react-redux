@@ -1,0 +1,62 @@
+/* ======================================
+  Navbar
+========================================= */
+.nav {
+  height: 4.5em;
+}
+
+a {
+  color: #FFA500;
+}
+
+a.nav-item.nav-color.is-tab.is-active {
+  border-bottom: 1px solid orange;
+  color: orange;
+  padding-bottom: calc(0.75rem - 3px);
+}
+
+a.button-color.for-life {
+  background-color: #FFA500;
+  border-color: #FFA500;
+}
+
+a.nav-item.nav-color.is-tab.is-active {
+  border-bottom: 1px solid orange;
+  color: orange;
+  padding-bottom: calc(0.75rem - 3px);
+}
+
+.logo {
+  color: white;
+  font-weight: 300;
+  font-size: 25px;
+  font-family: 'Gloria Hallelujah', cursive;
+}
+
+.logo-nav {
+  background-color: #FFA500;
+  padding-top: 15px;
+  padding-bottom: 15px;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.nav.has-shadow {
+  background-color: #F5F5F5;
+  top:0;
+  right: 0;
+  left: 0;
+  z-index: 1030;
+}
+
+.toggle-hamburger-placement {
+  padding-top: 65px;
+}
+
+a.nav-item.is-tab.nav-color:hover {
+  border-bottom: 1px solid #FFA500;
+}
+
+.nav-icon {
+  margin-right: 0.3em;
+}
