@@ -9,7 +9,7 @@ const TeamSchema = Bookshelf.Model.extend({
     return this.belongsToMany('Coach', 'coaches_teams');
   },
   players: function() {
-    return this.belongsToMany('Player', 'teams_players');
+    return this.belongsToMany('Player', 'players_teams');
   }
 });
 module.exports = Bookshelf.model('Team', TeamSchema);

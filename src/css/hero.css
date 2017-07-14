@@ -1,0 +1,24 @@
+/* ======================================
+  Home Page Hero
+========================================= */
+h1.title-hero {
+  font-size: 2em;
+  line-height: 48px;
+  color: #fff;
+}
+
+.hero-body.bg-img {
+  background-image: linear-gradient(
+      rgba(0, 0, 0, 0.5),
+      rgba(0, 0, 0, 0.5)
+    ),
+    url('../public/assets/img/New_HR_Softball.jpg');
+  background-position: center center;
+  background-repeat:  no-repeat;
+  background-size: cover;
+}
+
+.container-hero {
+  padding-top: 30px;
+  padding-bottom: 30px;
+}

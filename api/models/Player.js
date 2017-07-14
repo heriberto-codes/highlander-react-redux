@@ -7,7 +7,7 @@ require('./Stat');
 const PlayerSchema = Bookshelf.Model.extend({
   tableName: 'players',
   teams: function() {
-    return this.belongsToMany('Team', 'teams_players');
+    return this.belongsToMany('Team', 'players_teams', 'player_id', 'team_id', 'player_id', 'team_id');
   },
   stats: function() {
     return this.hasMany('Stat');
