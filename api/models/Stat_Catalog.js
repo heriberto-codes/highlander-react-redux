@@ -4,7 +4,7 @@ require('./Player');
 
 const StatCatalogSchema = Bookshelf.Model.extend({
   tableName: 'stat_catalogs',
-  players: function() {
+  players: function() { 
     return this.belongsToMany('Player', 'stats');
   },
   stats: function() {

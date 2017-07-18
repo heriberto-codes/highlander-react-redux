@@ -20,7 +20,6 @@ router.get('/', function(req, res) {
 })
 
 router.get('/:player_id', function(req, res) {
-  console.log('req.params.player_id goes here =====>', req.params.player_id)
   Player
   .where({player_id: parseInt(req.params.player_id)})
   .fetch({withRelated: ['teams']})
