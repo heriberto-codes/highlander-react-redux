@@ -1,7 +1,7 @@
 exports.up = function(knex, Promise) {
   return Promise.all([
     knex.schema.createTable('coaches', function(table) {
-      table.increments('coach_id').primary();
+      table.increments('id').primary();
       table.string('email');
       table.string('password');
       table.string('first_name');
