@@ -20,7 +20,7 @@ router.get('/', function(req, res) {
 
 router.get('/:id', function(req, res) {
   Coach
-  .where({id: req.params.id})
+  .where({coach_id: req.params.id})
   .fetch({withRelated: ['teams', 'teams.players', 'teams.players.stats', 'teams.players.stats.catalog']})
   .then(function(coaches) {
     res.json(coaches);
@@ -61,7 +61,7 @@ router.put('/:id', function(req, res) {
   }
   // update query db via model with new params
   Coach
-  .where({id: req.params.id})
+  .where({coach_id: req.params.id})
   .fetch()
   .then(function(coach) {
     return coach.save({
