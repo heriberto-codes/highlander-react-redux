@@ -1,0 +1,62 @@
+/* ======================================
+  Footer
+========================================= */
+.heribertoFooterName {
+  color: #FFA500;
+}
+
+.heribertoGithubIcon {
+  color: #363636;
+}
+
+.heribertoHeart {
+  color: #FA5544;
+}
+
+.is-hidden {
+  display: true;
+}
+
+/* ======================================
+  MediaQuery Styles
+========================================= */
+@media screen and (max-width: 1300px) {
+  .card-list {
+    width: 20%;
+    float: left;
+  }
+}
+
+@media screen and (min-width: 1024px) {
+  .card-list {
+    width: 25%;
+    float: left;
+  }
+}
+
+@media screen and (max-width: 1020px) {
+  .card-list {
+    width: 33.3%;
+    float: left;
+    display: block;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .card-list {
+    width: 50%;
+    float: left;
+    display: block;
+  }
+  .nav-toggle {
+  }
+}
+
+@media screen and (max-width: 620px) {
+  .card-list {
+    width: 100%;
+    display: block;
+    float: left;
+    min-height: 120px;
+  }
+}
