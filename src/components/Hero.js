@@ -1,5 +1,7 @@
 import React from 'react';
 
+import 'bulma/css/bulma.css';
+import '../css/hero.css';
 
 export default function Hero(props) {
   return (
@@ -84,35 +86,31 @@ export default function Hero(props) {
                 Batting Average
               </p>
               <div className="panel-block panel-heading panel-heading-center">
-                <span>
+                <span className='battingAverageInline'>
                     <i className="fa fa-user-circle-o" aria-hidden="true"></i>
                       <p className="averagePlayerName">Randy Brown</p>
-                    <p>.428</p> -->
-                    Randy Brown .428
+                    <p>.428</p>
                 </span>
               </div>
               <div className="panel-block panel-heading panel-heading-center">
-                <span>
+                <span className='battingAverageInline'>
                     <i className="fa fa-user-circle-o" aria-hidden="true"></i>
                       <p className="averagePlayerName">Kris Big-Mac</p>
-                    <p>.407</p> -->
-                    Kris Big-Mac .407
+                    <p>.407</p>
                 </span>
               </div>
               <div className="panel-block panel-heading panel-heading-center">
-                <span>
+                <span className='battingAverageInline'>
                     <i className="fa fa-user-circle-o" aria-hidden="true"></i>
                       <p className="averagePlayerName">Eddie Roman</p>
-                    <p>.389</p> -->
-                    Eddie Roman .389
+                    <p>.389</p>
                 </span>
               </div>
               <div className="panel-block panel-heading panel-heading-center">
-                <span>
+                <span className='battingAverageInline'>
                     <i className="fa fa-user-circle-o" aria-hidden="true"></i>
                       <p className="averagePlayerName">Eddie Roman</p>
-                    <p>.389</p> -->
-                    Ricardo Roman .323
+                    <p>.389</p>
                 </span>
               </div>
             </nav>
