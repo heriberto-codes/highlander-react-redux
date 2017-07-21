@@ -1,22 +1,21 @@
 import React, { Component } from 'react';
 
-import Hero from '../components/Hero';
 import Nav from '../components/Nav';
+import LoginForm from '../components/LoginForm';
 import Footer from '../components/Footer';
 
-
-export default class Home extends Component {
-  constructor(props) {
+export default class Login extends Component {
+  constructor(props){
     super(props);
   }
 
-  render(){
+  render () {
     return (
-      <section id="home">
+      <div>
         <Nav />
-        <Hero />
+        <LoginForm />
         <Footer />
-      </section>
+      </div>
     )
   }
 }

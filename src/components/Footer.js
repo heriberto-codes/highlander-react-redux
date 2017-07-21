@@ -11,7 +11,7 @@ export default function Footer(props){
           <div className="content has-text-centered">
             <p>
               <strong>Highlander</strong> by <a className="heribertoFooterName" href="https://iamromanh.github.io/heribertoResumeSite/index.html#">
-              Heriberto Roman</a> made with <i className="fa fa-heart fa-2x heribertoHeart"></i>.
+              Heriberto Roman</a> made with <i className="fa fa-heart fa-2x heribertoHeart"></i>
             </p>
             <p>
               <a className="icon" href="https://github.com/iamromanh">

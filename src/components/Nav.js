@@ -7,10 +7,28 @@ export default function Nav(props) {
   let options = [];
   if(props.loggedIn){
     options.push(
-      <a className="nav-item is-tab nav-color" href="">
-        <i className="fa fa-user-o icon nav-icon" aria-hidden="true"></i>
-        Logout
-      </a>
+      <div className="nav-right nav-menu" id="nav-menu">
+        <a className="nav-item nav-color is-tab is-active">
+          <i className="fa fa-home icon the-shit" aria-hidden="true"></i>
+          Dashboard
+        </a>
+        <a className="nav-item nav-color is-tab">
+          <i className="fa fa-futbol-o icon the-shit" aria-hidden="true"></i>
+          Team
+        </a>
+        <a className="nav-item nav-color is-tab">
+          <i className="fa fa-users icon the-shit" aria-hidden="true"></i>
+          Roster
+        </a>
+        <a className="nav-item nav-color is-tab">
+          <i className="fa fa-list-ol icon the-shit" aria-hidden="true"></i>
+          Stats
+        </a>
+        <a className="nav-item is-tab nav-color logout-session">
+          <i className="fa fa-sign-out icon the-shit" aria-hidden="true"></i>
+          Log out
+        </a>
+      </div>
     );
   }else{
     options.push(
