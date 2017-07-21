@@ -3,8 +3,8 @@ module.exports = {
     client: 'postgresql',
     connection: {
       database: 'highlander-react-redux',
-      user: 'vampaynani',
-      password: '',
+      user: 'iamromanh',
+      password: 'BananaBanana99',
       charset: 'utf8'
     },
     migrations: {
