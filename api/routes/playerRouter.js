@@ -19,9 +19,9 @@ router.get('/', function(req, res) {
   })
 })
 
-router.get('/:player_id', function(req, res) {
+router.get('/:id', function(req, res) {
   Player
-  .where({player_id: parseInt(req.params.player_id)})
+  .where({id: parseInt(req.params.id)})
   .fetch({withRelated: ['teams']})
   .then(function(players) {
     console.log('players', players)
@@ -31,8 +31,8 @@ router.get('/:player_id', function(req, res) {
 
 router.get('/:id/stats', function(req, res) {
   Player
-  .where({player_id: req.params.id})
-  .fetch({withRelated: ['stats','stats.catalog']})
+  .where({id: req.params.id})
+  .fetch({withRelated: ['stats']})
   .then(function(stats) {
     res.json(stats);
   })
@@ -84,7 +84,7 @@ router.put('/:id', function(req, res) {
 
    Stat
    .where({
-     player_id: req.params.player_id,
+     id: req.params.player_id,
      stat_catalog_id: req.params.stat_catalog_id
    })
    .fetch()
