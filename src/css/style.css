@@ -30,7 +30,7 @@ h1.title-hero {
       rgba(0, 0, 0, 0.5),
       rgba(0, 0, 0, 0.5)
     ),
-    url('./assets/img/New_HR_Softball.jpg');
+    url('/assets/img/New_HR_Softball.jpg');
   background-position: center center;
   background-repeat:  no-repeat;
   background-size: cover;
@@ -85,7 +85,7 @@ p.averagePlayerName {
       rgba(0, 0, 0, 0.5),
       rgba(0, 0, 0, 0.5)
     ),
-    url('../public/assets/img/rachel-barkdoll-179739.jpg');
+    url('/assets/img/rachel-barkdoll-179739.jpg');
   background-position: top center;
   background-repeat:  no-repeat;
   background-size: cover;
@@ -119,7 +119,7 @@ div.panel-block.panel-heading.panel-heading-center {
 }
 
 .login-bg-image {
-  background-image: url('../public/assets/img/Sports.png');
+  background-image: url('/assets/img/Sports.png');
 }
 
 .loginCookies {
@@ -150,7 +150,7 @@ a.button.is-primary.dasboard {
   Coach Dashboard
 ========================================= */
 .dashboard-bg-image {
-  background-image: url('../public/assets/img/Sports.png');
+  background-image: url('/assets/img/Sports.png');
 }
 
 span.title.is-bold.profile-title {
