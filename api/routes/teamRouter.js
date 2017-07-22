@@ -20,6 +20,8 @@ router.get('/', function(req, res) {
   })
 })
 
+
+// PICK UP FROMN HERE THIS IS NOT WORKING
 router.get('/:id', function(req, res) {
   Team
   .where({id: req.params.id})

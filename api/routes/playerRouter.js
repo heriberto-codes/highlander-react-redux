@@ -6,7 +6,8 @@ const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
 
 const Player = require('../models/Player');
-const Stat = require('../models/Stat');
+const Stat_Catalog = require('../models/Stat_Catalog');
+const PlayerStat = require('../models/PlayerStat');
 
 router.use(bodyParser.urlencoded({extended: true}));
 router.use(jsonParser);
@@ -82,9 +83,9 @@ router.put('/:id', function(req, res) {
      }
    }
 
-   Stat
+   PlayerStat
    .where({
-     id: req.params.player_id,
+     player_id: req.params.player_id,
      stat_catalog_id: req.params.stat_catalog_id
    })
    .fetch()
@@ -141,7 +142,7 @@ router.put('/:id', function(req, res) {
      }
    }
 
-   Stat
+   PlayerStat
    .forge({
      player_id: parseInt(req.params.player_id),
      stat_catalog_id: parseInt(req.params.stat_catalog_id),
