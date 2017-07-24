@@ -21,7 +21,6 @@ router.get('/', function(req, res) {
 })
 
 
-// PICK UP FROMN HERE THIS IS NOT WORKING
 router.get('/:id', function(req, res) {
   Team
   .where({id: req.params.id})
@@ -64,7 +63,7 @@ router.put('/:id', function(req, res) {
 })
 
 router.post('/', function(req, res) {
-  const postParams = ['teamName', 'cityLocation', 'stateLocation'];
+  const postParams = ['name', 'city', 'state'];
   for (var i = 0; i < postParams.length; i++) {
     const confirmPostParams = postParams[i];
     if(!(confirmPostParams in req.body)) {
@@ -76,9 +75,9 @@ router.post('/', function(req, res) {
 
   Team
   .forge({
-    name: req.body.teamName,
-    city: req.body.cityLocation,
-    state: req.body.stateLocation,
+    name: req.body.name,
+    city: req.body.city,
+    state: req.body.state,
     game_date: new Date()
   })
   .save()
