@@ -13,7 +13,7 @@ export default class Home extends Component {
   render(){
     return (
       <section id="home">
-        <Nav />
+        <Nav loggedIn={false} />
         <Hero />
         <Footer />
       </section>

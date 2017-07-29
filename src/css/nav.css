@@ -53,7 +53,7 @@ a.nav-item.nav-color.is-tab.is-active {
   padding-top: 65px;
 }
 
-a.nav-item.is-tab.nav-color:hover {
+Link.nav-item.is-tab.nav-color:hover {
   border-bottom: 1px solid #FFA500;
 }
 
