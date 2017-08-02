@@ -39,8 +39,9 @@ router.post('/login', function(req, res){
     return Coach.validatePassword(coachData.get('password'), req.body.password);
   }).then(function(validPassword){
     if(validPassword){
-      console.log(coachData)
-      res.status(200).json(coachData)
+      console.log(coachData);
+      req.session.coachId = coachData.id;
+      res.status(200).json(coachData);
     } else {
       console.error('Wrong password')
       res.status(404).json('Wrong password');
