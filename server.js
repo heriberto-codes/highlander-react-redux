@@ -1,8 +1,23 @@
 "use strict";
 const express = require('express');
 const morgan = require('morgan');
+const session = require('express-session');
+const config = require('./config');
+const bodyParser = require('body-parser');
 
 const app = express();
+
+const sess = {
+  // store: config.SESSION_STORAGE_URL,
+  secret: config.SECRET,
+  name: 'SessionMgmt',
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    path: '/',
+    maxAge: 5 * 60 * 1000 //min * seconds * miliseconds
+  }
+};
 
 const playerRouter = require('./api/routes/playerRouter');
 const coachRouter = require('./api/routes/coachRouter');
@@ -10,13 +25,15 @@ const teamRouter = require('./api/routes/teamRouter');
 const statRouter = require('./api/routes/statRouter');
 
 app.use(morgan('common'));
+app.use(session(sess));
+app.use(bodyParser.json());
 app.use(express.static('public'));
 
 app.use('/players', playerRouter);
 app.use('/coaches', coachRouter);
 app.use('/teams', teamRouter);
 app.use('/stats', statRouter);
-// app.use('/stats', playerRouter);
+app.use('/sessions', coachRouter);
 
 let server;
 

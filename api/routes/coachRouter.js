@@ -11,11 +11,15 @@ router.use(bodyParser.urlencoded({extended: true}));
 router.use(jsonParser);
 
 router.get('/', function(req, res) {
-  Coach
-  .fetchAll()
-  .then(function(coaches) {
-    res.json(coaches);
-  })
+  if(req.session.coachId){ // If the session doesn't have an userId(accessToken, etc...) then you don't show the protected token
+    Coach
+    .fetchAll()
+    .then(function(coaches) {
+      res.json(coaches);
+    })
+  } else {
+    res.status(403).send('No session available');
+  }
 })
 
 router.get('/:id', function(req, res) {
@@ -39,8 +43,12 @@ router.post('/login', function(req, res){
     return Coach.validatePassword(coachData.get('password'), req.body.password);
   }).then(function(validPassword){
     if(validPassword){
-      console.log(coachData)
-      res.status(200).json(coachData)
+      console.log('This is the validPassword ====>', validPassword);
+      console.log('this is the req.session ====>', req.session);
+      debugger
+      req.session.coachId = coachData.id; // assign / tie the user id to the session
+      console.log('This is req.session.coachId ====>', req.session.coachId)
+      res.status(200).json(coachData);
     } else {
       console.error('Wrong password')
       res.status(404).json('Wrong password');
@@ -89,6 +97,8 @@ router.put('/:id', function(req, res) {
     }
   }
   // update query db via model with new params
+  // req.session.coachId make comparison with req.params.id and say if they match
+  // allow user to update the coach credentials
   Coach
   .where({id: req.params.id})
   .fetch()
@@ -105,6 +115,15 @@ router.put('/:id', function(req, res) {
   .catch(function(err) {
     return res.status(500).json(err)
   })
+})
+
+/*
+ * # Logout
+ * Delete the current active session
+ */
+router.delete('/', function(req, res) {
+  req.session.destroy(); //After this session is destroyes reauthenticate is needed
+  res.status(400).send();
 })
 
 

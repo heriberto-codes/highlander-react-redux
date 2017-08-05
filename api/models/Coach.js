@@ -21,5 +21,4 @@ const CoachSchema = Bookshelf.Model.extend({
   }
 });
 
-
 module.exports = Bookshelf.model('Coach', CoachSchema);
