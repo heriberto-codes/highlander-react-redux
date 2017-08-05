@@ -4,11 +4,30 @@ import 'bulma/css/bulma.css';
 import '../css/style.css';
 
 export default function StatsList(props) {
+  // let rows = props.stats.map(stat => (
+  //   <tr>
+  //     <th>{stat.user.position}</th>
+  //     <td>Lia Roman</td>
+  //     <td>7</td>
+  //     <td>5</td>
+  //     <td>3</td>
+  //     <td>18</td>
+  //     <td>20</td>
+  //     <td>89</td>
+  //   </tr>
+  // ));
+
+  let nullStatsWarning;
+  // if(props.stats.length <= 0){
+  //   nullStatsWarning = <div className="notification has-text-centered stats-module-dashboard-message">
+  //     You dont have Stats.
+  //   </div>
+  // }
   return (
     <div className='tile is-parent'>
       <div className='tile is-child box header'>
         <nav className="level dashboard-title">
-          <div classNameName="level-left">
+          <div className="level-left">
             <div className="level-item">
               <span className="icon icon-dasboard-placement">
                 <i className="fa fa-list-ol" aria-hidden="true"></i>
@@ -28,9 +47,7 @@ export default function StatsList(props) {
         </nav>
 
         <section>
-          <div className="notification has-text-centered stats-module-dashboard-message">
-            You dont have Stats.
-          </div>
+          {nullStatsWarning}
 
           <table className="table">
             <thead className="stat-header-details-container">
@@ -72,6 +89,7 @@ export default function StatsList(props) {
                 <td>20</td>
                 <td>89</td>
               </tr>
+
             </tbody>
           </table>
         </section>

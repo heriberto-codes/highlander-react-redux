@@ -13,11 +13,11 @@ export default function Nav(props) {
           <i className="fa fa-home icon the-shit" aria-hidden="true"></i>
           Dashboard
         </Link>
-
-        {/* <Link className="nav-item nav-color is-tab" to='/register'>
+        <Link className="nav-item nav-color is-tab" to='/register'>
           <i className="fa fa-futbol-o icon the-shit" aria-hidden="true"></i>
           Team
         </Link>
+        {/*
         <Link className="nav-item nav-color is-tab" to='/register'>
           <i className="fa fa-users icon the-shit" aria-hidden="true"></i>
           Roster
@@ -26,6 +26,7 @@ export default function Nav(props) {
           <i className="fa fa-list-ol icon the-shit" aria-hidden="true"></i>
           Stats
         </Link>
+        Below will be an anchor tag ethta will trigger an onclick ACTION CREATER
         <Link className="nav-item is-tab nav-color logout-session" to='/register'>
           <i className="fa fa-sign-out icon the-shit" aria-hidden="true"></i>
           Log out
@@ -46,12 +47,14 @@ export default function Nav(props) {
       </Link>
     )
   }
+  <Link className="button is-info is-medium is-inverted is-outlined" to='/login'>Log In</Link>
+
   return (
     <nav className="nav has-shadow">
       <div className="nav-left">
-        <a className="nav-item logo-nav" href="index.html">
+        <Link className="nav-item logo-nav" to='/'>
           <p className="logo">Highlander</p>
-        </a>
+        </Link>
       </div>
 
       <span id="nav-toggle" className="nav-toggle toggle-hamburger-placement">

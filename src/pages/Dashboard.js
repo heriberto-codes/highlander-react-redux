@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import axios from 'axios';
 
 import Nav from '../components/Nav';
 import DashboardNavigation from '../components/DashboardNavigation';
@@ -9,7 +10,21 @@ import StatsList from '../components/StatsList';
 export default class Dashboard extends Component {
   constructor(props){
     super(props);
+
+    this.state = {
+      stats:[]
+    };
   }
+
+componentDidMount() {
+    axios.get('/:id/stats')
+    .then(response =>  {
+      console.log(response, 'YO RESPONSE HERE')
+    })
+    .catch(error => {
+      console.log(error)
+    });
+}
 
   render() {
     return (

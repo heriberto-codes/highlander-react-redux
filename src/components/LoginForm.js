@@ -2,6 +2,12 @@ import React from 'react';
 
 import 'bulma/css/bulma.css';
 import '../css/style.css';
+// user login via action
+// creates session in the backend
+// any request session ID must be sent
+
+// So typically you would use onChange to grab the value of the form but that would mean
+// I would have to make this a smart component. The work around is to use REFS.
 
 export default function LoginForm(props){
   return (

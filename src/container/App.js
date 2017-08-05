@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Route} from 'react-router-dom';
 
 import Home from '../pages/Home';
 import Login from '../pages/Login';
@@ -23,13 +23,3 @@ class App extends Component {
 }
 
 export default App;
-
-{/*Next steps:
-
-Include routes on this page where we replace the <Home /> to use routes and redirects for the login and regaitrations page
-
-<Nav loggedIn={false}/>
-<Home />
-<Footer />
-
- */}
