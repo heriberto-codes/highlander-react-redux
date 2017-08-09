@@ -2,14 +2,23 @@ import React from 'react';
 
 import 'bulma/css/bulma.css';
 import '../css/style.css';
-// user login via action
-// creates session in the backend
-// any request session ID must be sent
-
-// So typically you would use onChange to grab the value of the form but that would mean
-// I would have to make this a smart component. The work around is to use REFS.
 
 export default function LoginForm(props){
+  let emailInput, passwordInput;
+
+
+  // where do I put the conditional to say
+  // if (isloggedin) {
+  //   < render the dashbaord component />
+  // }
+
+
+  // add mapstatetoprops
+
+  componentDidReceiveProps(){
+    if(this.props.shouldRedirect) router.to('dashboard');
+  }
+
   return (
     <div>
       <section className="hero is-small login-bg-image login-player">
@@ -28,7 +37,12 @@ export default function LoginForm(props){
                   <div className="card-content">
                     <div className="field">
                       <p className="control has-icon">
-                        <input className="input is-large" type="email" placeholder="Email" id="email" />
+                        <input
+                          className="input is-large"
+                          type="email"
+                          placeholder="Email"
+                          id="email"
+                          ref={ input => emailInput = input } />
                         <span className="icon is-medium">
                           <i className="fa fa-envelope"></i>
                         </span>
@@ -36,7 +50,12 @@ export default function LoginForm(props){
                     </div>
                     <div className="field">
                       <p className="control has-icon">
-                        <input className="input is-large required" type="password" placeholder="Password" id="password" />
+                        <input
+                        className="input is-large required"
+                        type="password"
+                        placeholder="Password"
+                        id="password"
+                        ref={ input => passwordInput = input } />
                         <span className="icon is-medium">
                           <i className="fa fa-lock"></i>
                         </span>
@@ -44,7 +63,9 @@ export default function LoginForm(props){
                     </div>
                     <div className="field">
                       <p className="control">
-                        <button className="button is-success is-medium login-button">
+                        <button
+                        className="button is-success is-medium login-button"
+                        onClick={e => props.onSubmit(emailInput.value, passwordInput.value)}>
                           Login
                         </button>
                       </p>
