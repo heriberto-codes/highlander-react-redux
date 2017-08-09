@@ -18,7 +18,10 @@
     "radium": "^0.19.4",
     "react": "^15.6.1",
     "react-dom": "^15.6.1",
+    "react-redux": "^5.0.6",
     "react-router-dom": "^4.1.2",
+    "redux": "^3.7.2",
+    "redux-thunk": "^2.2.0",
     "sqlite": "^2.8.0",
     "sqlite3": "^3.1.8"
   },
