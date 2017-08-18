@@ -7,7 +7,7 @@ const initialState = {
   shouldRedirect: false,
   errorMessage: null,
   email: '',
-  pwd: ''
+  id: null
 }
 
 export const loginReducer = (state = initialState, action) => {
@@ -15,15 +15,15 @@ export const loginReducer = (state = initialState, action) => {
     case 'LOGIN_REQUEST':
       return Object.assign({}, state, {
         isLoading: true,
-        email: action.email,
-        pwd: action.pwd
+        email: action.email
       });
       break;
     case 'LOGIN_SUCCESS':
       return Object.assign({}, state, {
         isLoading: false,
         isloggedIn: true,
-        shouldRedirect: true
+        shouldRedirect: true,
+        id: action.response.data.id
       });
       break;
       case 'LOGIN_FAIL':

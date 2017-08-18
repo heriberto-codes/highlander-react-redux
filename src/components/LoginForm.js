@@ -4,20 +4,7 @@ import 'bulma/css/bulma.css';
 import '../css/style.css';
 
 export default function LoginForm(props){
-  let emailInput, passwordInput;
-
-
-  // where do I put the conditional to say
-  // if (isloggedin) {
-  //   < render the dashbaord component />
-  // }
-
-
-  // add mapstatetoprops
-
-  componentDidReceiveProps(){
-    if(this.props.shouldRedirect) router.to('dashboard');
-  }
+  let email, pwd;
 
   return (
     <div>
@@ -42,7 +29,7 @@ export default function LoginForm(props){
                           type="email"
                           placeholder="Email"
                           id="email"
-                          ref={ input => emailInput = input } />
+                          ref={ input => email = input } />
                         <span className="icon is-medium">
                           <i className="fa fa-envelope"></i>
                         </span>
@@ -55,7 +42,7 @@ export default function LoginForm(props){
                         type="password"
                         placeholder="Password"
                         id="password"
-                        ref={ input => passwordInput = input } />
+                        ref={ input => pwd = input } />
                         <span className="icon is-medium">
                           <i className="fa fa-lock"></i>
                         </span>
@@ -64,8 +51,8 @@ export default function LoginForm(props){
                     <div className="field">
                       <p className="control">
                         <button
-                        className="button is-success is-medium login-button"
-                        onClick={e => props.onSubmit(emailInput.value, passwordInput.value)}>
+                          className="button is-success is-medium login-button"
+                          onClick={e => props.onSubmit(email.value, pwd.value)}>
                           Login
                         </button>
                       </p>

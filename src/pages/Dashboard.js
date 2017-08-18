@@ -1,5 +1,8 @@
 import React, { Component } from 'react';
 import axios from 'axios';
+import { connect } from 'react-redux';
+
+// import module action
 
 import Nav from '../components/Nav';
 import DashboardNavigation from '../components/DashboardNavigation';
@@ -7,7 +10,7 @@ import TeamsList from '../components/TeamsList';
 import RosterList from '../components/RosterList';
 import StatsList from '../components/StatsList';
 
-export default class Dashboard extends Component {
+class Dashboard extends Component {
   constructor(props){
     super(props);
 
@@ -16,15 +19,10 @@ export default class Dashboard extends Component {
     };
   }
 
-componentDidMount() {
-    axios.get('/:id/stats')
-    .then(response =>  {
-      console.log(response, 'YO RESPONSE HERE')
-    })
-    .catch(error => {
-      console.log(error)
-    });
-}
+  componentDidMount() {
+    const { id } = this.props;
+    this.props.dispatch(getProfile(id))
+  }
 
   render() {
     return (
@@ -44,3 +42,9 @@ componentDidMount() {
     )
   }
 }
+
+const mapStateToProps = state => ({
+  id: state.id
+})
+
+export default connect(mapStateToProps)(Dashboard)

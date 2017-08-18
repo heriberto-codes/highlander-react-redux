@@ -1,9 +1,10 @@
-"use strict";
 const express = require('express');
 const morgan = require('morgan');
 const session = require('express-session');
 const config = require('./config');
 const bodyParser = require('body-parser');
+const cors = require('cors');
+const { CLIENT_ORIGIN } = require('./config')
 
 const app = express();
 
@@ -24,10 +25,12 @@ const coachRouter = require('./api/routes/coachRouter');
 const teamRouter = require('./api/routes/teamRouter');
 const statRouter = require('./api/routes/statRouter');
 
+
 app.use(morgan('common'));
 app.use(session(sess));
 app.use(bodyParser.json());
 app.use(express.static('public'));
+app.use(cors());
 
 app.use('/players', playerRouter);
 app.use('/coaches', coachRouter);

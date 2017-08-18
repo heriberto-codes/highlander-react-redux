@@ -1,33 +1,48 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { Route, Redirect, Router } from 'react-router-dom';
 
 import { login, logout } from '../actions/loginAction';
-
+import { loginReducer } from '../reducers/loginReducer';
 
 import Nav from '../components/Nav';
 import LoginForm from '../components/LoginForm';
 import Footer from '../components/Footer';
+import Dashboard from '../pages/Dashboard';
 
-// Steps
-// grab credentials from the form
-// create and action to hanlde the onSubmit
-// send it to the reducer so create a reducer file
-// send data to the store to update the state no need for a stateful object.
-
-export default class Login extends Component {
+class Login extends Component {
+  componentWillReceiveProps(nextProps){
+    console.log(`This is the nextProps ===>`, nextProps);
+    if(nextProps.shouldRedirect) {
+      this.props.history.push('/dashboard');
+    }
+  }
 
   callLogin(email, pwd){
-    console.log(email, pwd)
     this.props.dispatch(login(email, pwd))
   }
 
   render () {
+    const {loggedIn, error} = this.props;
+    let message;
+    if(!loggedIn && error){
+      message = <p className="error">{error.message}</p>
+    }
     return (
       <div>
         <Nav />
+        {message}
         <LoginForm onSubmit={(email, pwd) => this.callLogin(email, pwd)} />
         <Footer />
       </div>
     )
   }
 }
+
+const mapStateToProps = state => ({
+  loggedIn: state.loginReducer.isloggedIn,
+  error: state.loginReducer.errorMessage,
+  shouldRedirect: state.loginReducer.shouldRedirect
+})
+
+export default connect(mapStateToProps)(Login)

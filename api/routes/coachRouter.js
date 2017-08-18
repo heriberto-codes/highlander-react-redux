@@ -7,7 +7,9 @@ const jsonParser = bodyParser.json();
 
 const Coach = require('../models/Coach');
 
-router.use(bodyParser.urlencoded({extended: true}));
+router.use(bodyParser.urlencoded({
+  extended: true
+}));
 router.use(jsonParser);
 
 router.get('/', function(req, res) {
@@ -33,6 +35,7 @@ router.get('/:id', function(req, res) {
 
 router.post('/login', function(req, res){
   let coachData;
+  console.log(req.body);
   Coach
   .where({
     email: req.body.email
@@ -40,14 +43,12 @@ router.post('/login', function(req, res){
   .fetch()
   .then(function(coach) {
     coachData = coach;
-    return Coach.validatePassword(coachData.get('password'), req.body.password);
+    console.log('This is the coachData password', coachData)
+    console.log('password ====>', req.body.pwd)
+    return Coach.validatePassword(coachData.get('password'), req.body.pwd);
   }).then(function(validPassword){
     if(validPassword){
-      console.log('This is the validPassword ====>', validPassword);
-      console.log('this is the req.session ====>', req.session);
-      debugger
       req.session.coachId = coachData.id; // assign / tie the user id to the session
-      console.log('This is req.session.coachId ====>', req.session.coachId)
       res.status(200).json(coachData);
     } else {
       console.error('Wrong password')
