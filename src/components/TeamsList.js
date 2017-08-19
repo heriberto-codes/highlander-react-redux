@@ -3,6 +3,10 @@ import React from 'react';
 import 'bulma/css/bulma.css';
 
 export default function TeamsList(props) {
+  console.log(props.teams);
+  // map through the teams with the key
+  // what ebver ever I return
+  // {{}}
   return (
     <div className='tile is-child box header'>
       <nav className="level dashboard-title">

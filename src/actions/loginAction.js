@@ -10,12 +10,8 @@ export const login = (email, pwd) => dispatch => {
   })
   axios.post(url, {email, pwd})
   .then(response => {
-    console.log('This is the URL', url)
-    console.log('This is the response from the axios get ===>', response.data)
-    console.log('This is the response from the axios get ===>', response.status)
     if(response.status === 200){
       dispatch(loginSuccess(response));
-      console.log('We have successfuly logged into the server ===>', response)
     }
   })
   .catch(err => {
@@ -41,19 +37,3 @@ export const logout = (email, pwd) => ({
   email,
   pwd
 })
-
-
-array.forEach(function(element) {
-  console.log(element);
-})
-
-
-
-
-
-
-var loggedIn = false;
-
-if (!loggenIn) {
-  redirectToLoginScreen();
-}

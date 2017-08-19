@@ -3,7 +3,11 @@ import React from 'react';
 import 'bulma/css/bulma.css';
 import '../css/style.css';
 
+import { coachReducer } from '../actions/coachAction';
+
 export default function DashboardNavigation(props) {
+
+
   return (
     <section className="hero is-primary dashboard-bg-image">
       <div className="hero-body hero-bg-image">
@@ -13,10 +17,10 @@ export default function DashboardNavigation(props) {
               <div className="column is-4 level-left">
                 <h1 className="title coach-title coach-heading-dashboard">Coach:</h1>
                 <p>
-                  <span className="title is-bold profile-title coach-fullname">Heriberto Roman</span>
+                  <span className="title is-bold profile-title coach-fullname">{props.name}</span>
                 </p>
                 <p>
-                  <span className="tagline profile-metadata coach-email">Romanh99@gmail.com</span>
+                  <span className="tagline profile-metadata coach-email">{props.email}</span>
                 </p>
               </div>
               <div className="level-right">

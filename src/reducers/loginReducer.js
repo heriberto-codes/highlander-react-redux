@@ -5,28 +5,24 @@ const initialState = {
   isLoading: false,
   isloggedIn: false,
   shouldRedirect: false,
-  errorMessage: null,
-  email: '',
-  id: null
+  errorMessage: null
 }
 
 export const loginReducer = (state = initialState, action) => {
   switch (action.type) {
-    case 'LOGIN_REQUEST':
+    case LOGIN_REQUEST:
       return Object.assign({}, state, {
-        isLoading: true,
-        email: action.email
+        isLoading: true
       });
       break;
-    case 'LOGIN_SUCCESS':
+    case LOGIN_SUCCESS:
       return Object.assign({}, state, {
         isLoading: false,
         isloggedIn: true,
-        shouldRedirect: true,
-        id: action.response.data.id
+        shouldRedirect: true
       });
       break;
-      case 'LOGIN_FAIL':
+      case LOGIN_FAIL:
         return Object.assign({}, state, {
           isLoading: false,
           isloggedIn: false,
@@ -34,7 +30,7 @@ export const loginReducer = (state = initialState, action) => {
           errorMessage: action.err
         });
         break;
-    case 'LOGOUT':
+    case LOGOUT:
       return Object.assign({}, state, {
         isLoggedin: false,
         email: '',

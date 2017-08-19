@@ -30,7 +30,7 @@ class Login extends Component {
     }
     return (
       <div>
-        <Nav />
+        <Nav isLoggedIn={loggedIn} />
         {message}
         <LoginForm onSubmit={(email, pwd) => this.callLogin(email, pwd)} />
         <Footer />
