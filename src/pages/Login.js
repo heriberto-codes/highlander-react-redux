@@ -42,7 +42,7 @@ class Login extends Component {
 const mapStateToProps = state => ({
   loggedIn: state.loginReducer.isloggedIn,
   error: state.loginReducer.errorMessage,
-  shouldRedirect: state.loginReducer.shouldRedirect
+  shouldRedirect: state.loginReducer.shouldRedirect,
 })
 
 export default connect(mapStateToProps)(Login)

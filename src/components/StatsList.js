@@ -82,12 +82,12 @@ export default function StatsList(props) {
               <tr>
                 <th>2nd base</th>
                 <td>Lia Roman</td>
-                <td>7</td>
-                <td>5</td>
-                <td>3</td>
-                <td>18</td>
-                <td>20</td>
-                <td>89</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
               </tr>
 
             </tbody>

@@ -30,7 +30,6 @@ export default function Nav(props) {
           Stats
         </Link>
 
-        // Below will be an anchor tag ethta will trigger an onclick ACTION CREATER
         <Link className="nav-item is-tab nav-color logout-session" to='/register'>
           <i className="fa fa-sign-out icon the-shit" aria-hidden="true"></i>
           Log out

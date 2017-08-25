@@ -27,7 +27,7 @@ router.get('/', function(req, res) {
 router.get('/:id', function(req, res) {
   Coach
   .where({id: req.params.id})
-  .fetch({withRelated: ['teams']})
+  .fetch({withRelated: ['teams', 'teams.players', 'teams.players.stats']})
   .then(function(coaches) {
     res.json(coaches);
   })

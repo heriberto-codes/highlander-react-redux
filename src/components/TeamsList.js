@@ -4,9 +4,21 @@ import 'bulma/css/bulma.css';
 
 export default function TeamsList(props) {
   console.log(props.teams);
-  // map through the teams with the key
-  // what ebver ever I return
-  // {{}}
+
+  const teams = props.teams;
+  console.log(teams);
+  const listOfTeams = teams.map((team, index) => {
+    return <li key={index}>
+      {team.name}
+    </li>
+  });
+
+  const teamsList = listOfTeams.length > 0 ? listOfTeams
+  : <div className="notification has-text-centered add-team-message">
+    You dont have any teams.
+  </div>;
+  console.log('List of teams go here', listOfTeams);
+
   return (
     <div className='tile is-child box header'>
       <nav className="level dashboard-title">
@@ -29,10 +41,7 @@ export default function TeamsList(props) {
           </div>
         </nav>
         <ul className="teams-list-container">
-
-          <div className="notification has-text-centered add-team-message">
-            You dont have any teams.
-          </div>
+          {teamsList}
         </ul>
     </div>
   )
