@@ -1,15 +1,15 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 import 'bulma/css/bulma.css';
+import '../css/style.css';
 
 export default function TeamsList(props) {
-  console.log(props.teams);
-
   const teams = props.teams;
-  console.log(teams);
-  const listOfTeams = teams.map((team, index) => {
-    return <li key={index}>
-      {team.name}
+
+  let listOfTeams = teams.map((team, index) => {
+    return <li className='panel-heading' key={index}>
+      <Link to={'/teamdetails/' + team.id}>{team.name}</Link>
     </li>
   });
 
@@ -17,7 +17,6 @@ export default function TeamsList(props) {
   : <div className="notification has-text-centered add-team-message">
     You dont have any teams.
   </div>;
-  console.log('List of teams go here', listOfTeams);
 
   return (
     <div className='tile is-child box header'>

@@ -12,7 +12,7 @@ import StatsList from '../components/StatsList';
 
 class Dashboard extends Component {
 
-  componentDidMount() {
+  componentDidMount(props) {
     const { id } = this.props;
     this.props.dispatch(getProfile(id))
   }
@@ -26,7 +26,7 @@ class Dashboard extends Component {
           <div className='tile is-ancestor'>
             <div className='tile is-4 is-vertical is-parent'>
               <TeamsList teams={this.props.teams} />
-              <RosterList teams={this.props.teams}/>
+              <RosterList players={this.props.players}/>
             </div>
               <StatsList />
           </div>
@@ -39,6 +39,7 @@ class Dashboard extends Component {
 const mapStateToProps = state => ({
   id: state.coachReducer.id,
   teams: state.coachReducer.teams,
+  players: state.coachReducer.players,
   isLoggedIn: state.loginReducer.isloggedIn,
   first_name: state.coachReducer.first_name,
   last_name: state.coachReducer.last_name,

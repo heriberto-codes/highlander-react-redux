@@ -9,7 +9,7 @@ export default function Nav(props) {
   let options = [];
   if(props.isLoggedIn){
     options.push(
-      <div className="nav-right nav-menu" id="nav-menu">
+      <div key={'nav-menu'} className="nav-right nav-menu" id="nav-menu">
         <Link className="nav-item nav-color is-tab is-active" to='/dashboard'>
           <i className="fa fa-home icon the-shit" aria-hidden="true"></i>
           Dashboard
@@ -38,13 +38,13 @@ export default function Nav(props) {
     );
   }else{
     options.push(
-      <Link className="nav-item is-tab nav-color" to='/register'>
+      <Link key={'register'} className="nav-item is-tab nav-color" to='/register'>
         <i className="fa fa-user-o icon nav-icon" aria-hidden="true"></i>
         Sign Up
       </Link>
     );
     options.push(
-      <Link className="nav-item is-tab nav-color" to='/login'>
+      <Link key={'login'} className="nav-item is-tab nav-color" to='/login'>
         <i className="fa fa-sign-out icon nav-icon" aria-hidden="true"></i>
         Log In
       </Link>

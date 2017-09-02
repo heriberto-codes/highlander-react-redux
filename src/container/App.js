@@ -5,6 +5,7 @@ import Home from '../pages/Home';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Dashboard from '../pages/Dashboard';
+import TeamDetails from '../pages/TeamDetails';
 
 class App extends Component {
   render() {
@@ -16,6 +17,7 @@ class App extends Component {
           <Route path='/register' component={Register} />
           <Route path='/dashboard' component={Dashboard} />
           <Route path='/dashboard/:id' component={Dashboard} />
+          <Route path='/teamdetails/:id' component={TeamDetails} />
         </div>
       </Router>
     );

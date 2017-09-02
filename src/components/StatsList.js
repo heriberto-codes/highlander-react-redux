@@ -80,8 +80,8 @@ export default function StatsList(props) {
             </thead>
             <tbody className="stat-details-container">
               <tr>
-                <th>2nd base</th>
-                <td>Lia Roman</td>
+                <th></th>
+                <td></td>
                 <td></td>
                 <td></td>
                 <td></td>

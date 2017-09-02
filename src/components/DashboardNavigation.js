@@ -1,7 +1,7 @@
 import React from 'react';
 
-import 'bulma/css/bulma.css';
-import '../css/style.css';
+  import 'bulma/css/bulma.css';
+  import '../css/style.css';
 
 export default function DashboardNavigation(props) {
   return (

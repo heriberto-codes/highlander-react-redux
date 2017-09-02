@@ -4,7 +4,6 @@ import Hero from '../components/Hero';
 import Nav from '../components/Nav';
 import Footer from '../components/Footer';
 
-
 export default class Home extends Component {
 
   render(){

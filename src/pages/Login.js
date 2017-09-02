@@ -12,7 +12,6 @@ import Dashboard from '../pages/Dashboard';
 
 class Login extends Component {
   componentWillReceiveProps(nextProps){
-    console.log(`This is the nextProps ===>`, nextProps);
     if(nextProps.shouldRedirect) {
       this.props.history.push('/dashboard');
     }

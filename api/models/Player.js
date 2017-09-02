@@ -9,7 +9,7 @@ const PlayerSchema = Bookshelf.Model.extend({
     return this.belongsToMany('Team');
   },
   stats: function() {
-    return this.belongsToMany('Stat_Catalog');
+    return this.belongsToMany('Stat_Catalog').withPivot(['how_many', 'game_date']);
   }
 });
 
