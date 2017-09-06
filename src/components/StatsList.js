@@ -4,18 +4,40 @@ import 'bulma/css/bulma.css';
 import '../css/style.css';
 
 export default function StatsList(props) {
-  // let rows = props.stats.map(stat => (
-  //   <tr>
-  //     <th>{stat.user.position}</th>
-  //     <td>Lia Roman</td>
-  //     <td>7</td>
-  //     <td>5</td>
-  //     <td>3</td>
-  //     <td>18</td>
-  //     <td>20</td>
-  //     <td>89</td>
-  //   </tr>
-  // ));
+  const stats = props.stats;
+
+  const mergeTeamStats = [];
+
+  // the fact that I am setting state for stats here seems dirty.
+  stats.map(player => {
+    const playerStats = {
+      first_name: player.first_name || 'No firstname',
+      last_name: player.last_name || 'No lastname',
+      position: player.position || 'No position',
+      'hits': 0,
+      'At_Bats': 0,
+      'Home_Runs': 0,
+      'Earned_Runs': 0,
+      'Innings_Pitched': 0,
+      'Strikeouts': 0
+    }
+    const newPlayerStat = player.stats.map(stat => {
+      console.log('stat', stat);
+      playerStats[stat.description] = stat.how_many;
+      return <tr>
+                  <th>{player.position}</th>
+                  <td>{player.first_name} {player.last_name}</td>
+                  <td>{playerStats.hits}</td>
+                  <td>{playerStats.At_Bats}</td>
+                  <td>{playerStats.Home_Runs}</td>
+                  <td>{playerStats.Earned_Runs}</td>
+                  <td>{playerStats.Innings_Pitched}</td>
+                  <td>{playerStats.Strikeouts}</td>
+               </tr>
+    })
+    mergeTeamStats.push(newPlayerStat);
+  })
+  console.log(mergeTeamStats)
 
   let nullStatsWarning;
   // if(props.stats.length <= 0){
@@ -79,17 +101,7 @@ export default function StatsList(props) {
               </tr>
             </thead>
             <tbody className="stat-details-container">
-              <tr>
-                <th></th>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-
+              {mergeTeamStats}
             </tbody>
           </table>
         </section>

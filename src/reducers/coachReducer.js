@@ -23,8 +23,26 @@ export const coachReducer = (state = initialState, action) => {
       action.response.data.teams.forEach(team => {
         players = players.concat(team.players);
       });
+      const generateStat = player => {
+        return {
+          first_name: player.first_name,
+          last_name: player.last_name,
+          position: player.position,
+          stats: player.stats.map(stat => {
+            return {
+            description: stat.description,
+            how_many: stat._pivot_how_many,
+            game_date: stat._pivot_game_date
+           }
+          }),
+        }
+      }
+      let stats = [];
+      players.forEach((player, index) => {
+        stats.push(generateStat(player))
+      })
       return Object.assign({}, state, {
-        stats: action.response.data.stats,
+        stats: stats,
         teams: action.response.data.teams,
         players: players,
         first_name: action.response.data.first_name,
