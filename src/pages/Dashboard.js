@@ -28,14 +28,13 @@ class Dashboard extends Component {
               <TeamsList teams={this.props.teams} />
               <RosterList players={this.props.players}/>
             </div>
-              <StatsList stats={this.props.stats}/>
+              <StatsList stats={this.props.stats} teams={this.props.teams}/>
           </div>
         </section>
       </div>
     )
   }
 }
-
 
 const mapStateToProps = state => ({
   id: state.coachReducer.id,
@@ -49,7 +48,6 @@ const mapStateToProps = state => ({
 })
 
 export default connect(mapStateToProps)(Dashboard)
-
 
 // ask wences if I can do someting like this is react?
 // const mapCoachReducerToProps = coachState => ({

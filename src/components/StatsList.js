@@ -5,39 +5,25 @@ import '../css/style.css';
 
 export default function StatsList(props) {
   const stats = props.stats;
-
-  const mergeTeamStats = [];
+  // const mergeTeamStats = [];
 
   // the fact that I am setting state for stats here seems dirty.
-  stats.map(player => {
-    const playerStats = {
-      first_name: player.first_name || 'No firstname',
-      last_name: player.last_name || 'No lastname',
-      position: player.position || 'No position',
-      'hits': 0,
-      'At_Bats': 0,
-      'Home_Runs': 0,
-      'Earned_Runs': 0,
-      'Innings_Pitched': 0,
-      'Strikeouts': 0
-    }
-    const newPlayerStat = player.stats.map(stat => {
-      console.log('stat', stat);
-      playerStats[stat.description] = stat.how_many;
-      return <tr>
-                  <th>{player.position}</th>
-                  <td>{player.first_name} {player.last_name}</td>
-                  <td>{playerStats.hits}</td>
-                  <td>{playerStats.At_Bats}</td>
-                  <td>{playerStats.Home_Runs}</td>
-                  <td>{playerStats.Earned_Runs}</td>
-                  <td>{playerStats.Innings_Pitched}</td>
-                  <td>{playerStats.Strikeouts}</td>
-               </tr>
+  let playerStats = stats.map(player => {
+    console.log(player)
+    return <tr>
+              <th>{player.position}</th>
+              <td>{player.first_name} {player.last_name}</td>
+              <td>{player.stats["Hits"]}</td>
+              <td>{player.stats["At Bats"]}</td>
+              <td>{player.stats["Home Runs"]}</td>
+              <td>{player.stats["Earned Runs"]}</td>
+              <td>{player.stats["Innings Pitched"]}</td>
+              <td>{player.stats["Strikeouts"]}</td>
+            </tr>
     })
-    mergeTeamStats.push(newPlayerStat);
-  })
-  console.log(mergeTeamStats)
+    // mergeTeamStats.push(newPlayerStat);
+  // })
+  // console.log(mergeTeamStats)
 
   let nullStatsWarning;
   // if(props.stats.length <= 0){
@@ -101,7 +87,7 @@ export default function StatsList(props) {
               </tr>
             </thead>
             <tbody className="stat-details-container">
-              {mergeTeamStats}
+              { playerStats }
             </tbody>
           </table>
         </section>

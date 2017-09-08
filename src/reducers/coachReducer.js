@@ -24,22 +24,32 @@ export const coachReducer = (state = initialState, action) => {
         players = players.concat(team.players);
       });
       const generateStat = player => {
+        let playerStats = {
+          "Hits": 0,
+          "At Bats": 0,
+          "Home Runs": 0,
+          "Earned Runs": 0,
+          "Innings Pitched": 0,
+          "Strikeouts": 0
+        };
+        player.stats.forEach(stat => {
+          playerStats[stat.description] = stat._pivot_how_many
+       });
+       console.log(playerStats);
         return {
           first_name: player.first_name,
           last_name: player.last_name,
           position: player.position,
-          stats: player.stats.map(stat => {
-            return {
-            description: stat.description,
-            how_many: stat._pivot_how_many,
-            game_date: stat._pivot_game_date
-           }
-          }),
+          stats: playerStats,
         }
       }
       let stats = [];
+      let playerIDs = {};
       players.forEach((player, index) => {
-        stats.push(generateStat(player))
+        if(!playerIDs[player.id]){
+          stats.push(generateStat(player));
+          playerIDs[player.id] = true;
+        }
       })
       return Object.assign({}, state, {
         stats: stats,
