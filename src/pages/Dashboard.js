@@ -2,8 +2,10 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 
 import { getProfile, profileSuccess, profileError } from '../actions/coachAction';
-import { coachReducer  } from '../reducers/coachReducer';
+
+import { coachReducer } from '../reducers/coachReducer';
 import { loginReducer } from '../reducers/loginReducer';
+
 import Nav from '../components/Nav';
 import DashboardNavigation from '../components/DashboardNavigation';
 import TeamsList from '../components/TeamsList';
@@ -12,23 +14,36 @@ import StatsList from '../components/StatsList';
 
 class Dashboard extends Component {
 
-  componentDidMount(props) {
+  componentDidMount() {
     const { id } = this.props;
+    console.log(id);
     this.props.dispatch(getProfile(id))
   }
 
   render() {
     return (
       <div>
-      <Nav isLoggedIn={this.props.isLoggedIn}/>
-      <DashboardNavigation email={this.props.email} firstName={this.props.first_name} lastName={this.props.last_name} />
+      <Nav
+        isLoggedIn={this.props.isLoggedIn}/>
+      <DashboardNavigation
+        email={this.props.email}
+        firstName={this.props.first_name}
+        lastName={this.props.last_name}
+      />
         <section className='section'>
           <div className='tile is-ancestor'>
             <div className='tile is-4 is-vertical is-parent'>
-              <TeamsList teams={this.props.teams} />
-              <RosterList players={this.props.players}/>
+              <TeamsList
+                teams={this.props.teams}
+              />
+              <RosterList
+                players={this.props.players}
+              />
             </div>
-              <StatsList stats={this.props.stats} teams={this.props.teams}/>
+              <StatsList
+                stats={this.props.stats}
+                teams={this.props.teams}
+              />
           </div>
         </section>
       </div>

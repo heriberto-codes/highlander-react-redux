@@ -9,7 +9,6 @@ export default function StatsList(props) {
 
   // the fact that I am setting state for stats here seems dirty.
   let playerStats = stats.map(player => {
-    console.log(player)
     return <tr>
               <th>{player.position}</th>
               <td>{player.first_name} {player.last_name}</td>

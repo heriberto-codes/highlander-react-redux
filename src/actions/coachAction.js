@@ -9,9 +9,7 @@ export const getProfile = id => dispatch => {
   })
   axios.get(`${url}${id}`)
   .then(response =>  {
-
     console.log('Response from coachAction', response);
-
     if(response.status === 200) {
       dispatch(profileSuccess(response))
     }

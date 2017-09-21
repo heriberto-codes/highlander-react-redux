@@ -8,7 +8,9 @@ const initialState = {
   first_name: '',
   last_name: '',
   email: '',
-  id: null
+  id: null,
+  city: '',
+  state: ''
 }
 
 export const coachReducer = (state = initialState, action) => {
@@ -23,6 +25,8 @@ export const coachReducer = (state = initialState, action) => {
       action.response.data.teams.forEach(team => {
         players = players.concat(team.players);
       });
+
+      // this is how we are generating the player stats
       const generateStat = player => {
         let playerStats = {
           "Hits": 0,
@@ -35,30 +39,46 @@ export const coachReducer = (state = initialState, action) => {
         player.stats.forEach(stat => {
           playerStats[stat.description] = stat._pivot_how_many
        });
-       console.log(playerStats);
         return {
           first_name: player.first_name,
           last_name: player.last_name,
           position: player.position,
-          stats: playerStats,
+          stats: playerStats
         }
       }
+
       let stats = [];
-      let playerIDs = {};
-      players.forEach((player, index) => {
-        if(!playerIDs[player.id]){
-          stats.push(generateStat(player));
-          playerIDs[player.id] = true;
-        }
+      let playerIds = [];
+
+      // sort by id
+      players.sort((player1, player2) => {
+        return player1.id - player2.id;
+      });
+
+      // filter the players
+      let filteredPlayerIds = players.filter((player, index) => {
+          if (index === 0) {
+            return player;
+          }
+          if (players[index - 1].id !== player.id) {
+            return player;
+          }
       })
+
+      // push the updated stats object for each player
+      filteredPlayerIds.forEach((player, index) => {
+        stats.push(generateStat(player));
+      })
+
       return Object.assign({}, state, {
         stats: stats,
         teams: action.response.data.teams,
-        players: players,
+        players: filteredPlayerIds,
         first_name: action.response.data.first_name,
         last_name: action.response.data.last_name,
         email: action.response.data.email,
-        id: action.response.data.id
+        id: action.response.data.id,
+        city: action.response.data.teams.city
       });
       break;
     default:
