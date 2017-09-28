@@ -14,6 +14,7 @@ class TeamDetails extends Component {
     this.props.dispatch(getTeamProfile(id));
   }
 
+
 // #Genreal notes
 // Nav bar should change its state to logged in presenting the user nav options
 // When the team page is loaded I want to pull the teams data into that page
@@ -42,6 +43,7 @@ class TeamDetails extends Component {
       <div>
         <Nav />
         <DashboardTeamNavigation
+          name={this.props.name}
           city={this.props.city}
           first_name={this.props.first_name}
           last_name={this.props.last_name}
@@ -53,10 +55,11 @@ class TeamDetails extends Component {
 }
 
 const mapStateToProps = state => ({
+  name: state.teamReducer.name,
   city: state.teamReducer.city,
-  first_name: state.teamReducer.first_name,
-  last_name: state.teamReducer.last_name,
-  email: state.teamReducer.email,
+  first_name: state.teamReducer.coach.first_name,
+  last_name: state.teamReducer.coach.last_name,
+  email: state.teamReducer.coach.email
 })
 
 export default connect(mapStateToProps)(TeamDetails)

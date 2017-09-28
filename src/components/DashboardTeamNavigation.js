@@ -6,12 +6,15 @@ import '../css/style.css';
 export default function DashboardTeamNavigation(props) {
   console.log('this is the props', props)
 
+  const name = props.name
   const location = props.city
   const firstName = props.first_name
   const lastName = props.last_name
   const email = props.email
 
   console.log('this is the location ===>', location)
+  console.log('this is the firstName ===>', firstName)
+
 
   return (
     <section className="hero is-primary dashboard-bg-image">
@@ -22,7 +25,7 @@ export default function DashboardTeamNavigation(props) {
               <div className="column is-4 level-left">
                 <h1 className="title coach-title coach-heading-dashboard">Team Details:</h1>
                   <p className="profile-metadata">
-                    <span className="title is-bold profile-title team-name">Team goes here</span>
+                    <span className="title is-bold profile-title team-name">{name}</span>
                   </p>
                   <p className="profile-metadata">
                     Location: {location}
