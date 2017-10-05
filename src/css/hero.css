@@ -1,6 +1,7 @@
 /* ======================================
   Home Page Hero
 ========================================= */
+
 h1.title-hero {
   font-size: 2em;
   line-height: 48px;
@@ -8,13 +9,9 @@ h1.title-hero {
 }
 
 .hero-body.bg-img {
-  background-image: linear-gradient(
-      rgba(0, 0, 0, 0.5),
-      rgba(0, 0, 0, 0.5)
-    ),
-    url('/assets/img/New_HR_Softball.jpg');
+  background-image: linear-gradient( rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/assets/img/New_HR_Softball.jpg');
   background-position: center center;
-  background-repeat:  no-repeat;
+  background-repeat: no-repeat;
   background-size: cover;
   /*background-color: red;*/
 }
@@ -27,11 +24,12 @@ h1.title-hero {
 /* ======================================
   Player & Coach Card on Homepage
 ========================================= */
-i.fa.fa-user-circle-o.coach-card-icon,
-i.fa.fa-user-circle.coach-card-icon{
-    font-size: 100px;
-};
 
+i.fa.fa-user-circle-o.coach-card-icon, i.fa.fa-user-circle.coach-card-icon {
+  font-size: 100px;
+}
+
+;
 div.card-content.level.coach-card {
   margin-bottom: 0;
 }
@@ -57,6 +55,7 @@ section.section.afterHeroSection {
 /* ======================================
   Average Widget Display on Homepage
 ========================================= */
+
 .battingAverageInline {
   display: inline-flex;
 }
@@ -67,13 +66,9 @@ p.averagePlayerName {
 }
 
 .bg-image-average-promo {
-  background-image: linear-gradient(
-      rgba(0, 0, 0, 0.5),
-      rgba(0, 0, 0, 0.5)
-    ),
-    url('/assets/img/rachel-barkdoll-179739.jpg');
+  background-image: linear-gradient( rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/assets/img/rachel-barkdoll-179739.jpg');
   background-position: top center;
-  background-repeat:  no-repeat;
+  background-repeat: no-repeat;
   background-size: cover;
 }
 
@@ -98,6 +93,7 @@ div.panel-block.panel-heading.panel-heading-center {
 /* ======================================
   MediaQuery Styles
 ========================================= */
+
 @media screen and (max-width: 1300px) {
   .card-list {
     width: 20%;
@@ -126,8 +122,7 @@ div.panel-block.panel-heading.panel-heading-center {
     float: left;
     display: block;
   }
-  .nav-toggle {
-  }
+  .nav-toggle {}
 }
 
 @media screen and (max-width: 620px) {

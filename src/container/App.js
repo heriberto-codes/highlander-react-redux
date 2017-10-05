@@ -8,20 +8,23 @@ import Dashboard from '../pages/Dashboard';
 import TeamDetails from '../pages/TeamDetails';
 
 class App extends Component {
-  render() {
-    return (
-      <Router>
-        <div className="App">
-          <Route exact path='/' component={Home} />
-          <Route path='/login' component={Login} />
-          <Route path='/register' component={Register} />
-          <Route path='/dashboard' component={Dashboard} />
-          <Route path='/dashboard/:id' component={Dashboard} />
-          <Route path='/teamdetails/:id' component={TeamDetails} />
-        </div>
-      </Router>
-    );
-  }
+	render() {
+		return (
+			<Router>
+				<div className="App">
+					<Route exact path='/' component={Home} />
+					<Route path='/login' component={Login} />
+					<Route path='/register' component={Register} />
+					<Route path='/dashboard' component={Dashboard} />
+					<Route path='/dashboard/:id' component={Dashboard} />
+					<Route path='/teamdetails/:id' component={TeamDetails} />
+				</div>
+			</Router>
+		);
+	}
 }
 
 export default App;
+
+// <Route path='/addnewplayer' component={} />
+// <Route path='/editteam' component={} />
