@@ -1,4 +1,4 @@
-import { GET_TEAM_PROFILE, GET_TEAM_PROFILE_SUCCESS, GET_TEAM_PROFILE_ERROR, CREATE_TEAM, HIDE_MODAL  } from '../actions/teamAction';
+import { GET_TEAM_PROFILE, GET_TEAM_PROFILE_SUCCESS, GET_TEAM_PROFILE_ERROR, CREATE_TEAM, HIDE_MODAL, ADD_PLAYER  } from '../actions/teamAction';
 
 // create intial state
 // think about what state is needed on this page
@@ -25,8 +25,16 @@ const players = (state = initialState.players, action) => {
 			email: player.email,
 			position: player.position
 		}));
-	}
+		break;
+	case ADD_PLAYER:
+		return [...state, {
+			first_name: action.response.data.first_name,
+			last_name: action.response.data.last_name,
+			email: action.response.data.email,
+			position: action.response.data.position
+		}]
 };
+}
 
 // this is the way to approach nested state to generate the data im looking for
 const coach = (state = initialState.coach, action) => {
@@ -65,6 +73,11 @@ export const teamReducer = (state = initialState, action) => {
 	case HIDE_MODAL:
 		return Object.assign({}, state, {
 			showModal: false
+		})
+	case ADD_PLAYER:
+		return Object.assign({}, state, {
+			showModal: false,
+			players: players(state.players, action),
 		})
 	default:
 		return state;

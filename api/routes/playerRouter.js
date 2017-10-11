@@ -41,35 +41,35 @@ router.get('/:id/stats', function(req, res) {
 
 // update player
 router.put('/:id', function(req, res) {
-  // check to see if the proper params is equal to what the user is inputting
-   const updateParams = ['email', 'first_name', 'last_name', 'position']
-   for(var i = 0; i < updateParams.length; i++) {
-     const confirmedParams = updateParams[i];
-     if(!(confirmedParams in req.body)) {
-       const errorMessage = `Sorry your missing ${confirmedParams} please try again`
-       console.error(errorMessage);
+	// check to see if the proper params is equal to what the user is inputting
+	const updateParams = ['email', 'first_name', 'last_name', 'position'];
+	for(var i = 0; i < updateParams.length; i++) {
+		const confirmedParams = updateParams[i];
+		if(!(confirmedParams in req.body)) {
+			const errorMessage = `Sorry your missing ${confirmedParams} please try again`
+			console.error(errorMessage);
        return res.status(400).send(errorMessage);
-     }
+		}
    }
-   // update query db via model with new params
-   Player
-   .where({id: req.params.id})
-   .fetch()
-   .then(function(player) {
-     return player.save({
-       email: req.body.email,
-       first_name: req.body.first_name,
-       last_name: req.body.last_name,
-       position: req.body.position
-     })
-   })
-   .then(function(player){
-     return res.status(200).json(player);
-   })
-   .catch(function(err) {
-     return res.status(500).json(err);
-   })
- })
+	// update query db via model with new params
+	Player
+		.where({id: req.params.id})
+		.fetch()
+		.then(function(player) {
+			return player.save({
+				email: req.body.email,
+				first_name: req.body.first_name,
+				last_name: req.body.last_name,
+				position: req.body.position
+			});
+		})
+		.then(function(player){
+			return res.status(200).json(player);
+		})
+		.catch(function(err) {
+			return res.status(500).json(err);
+		});
+});
 
 // update a stat tied to a player
  router.put('/:player_id/stats/:stat_catalog_id', function(req, res) {
@@ -103,32 +103,32 @@ router.put('/:id', function(req, res) {
  })
 
 // post new player
- router.post('/', function(req, res) {
-   const postParams = ['email', 'first_name', 'last_name', 'position'];
-   for (var i = 0; i < postParams.length; i++) {
-     const confirmPostParams = postParams[i];
-     if(!(confirmPostParams in req.body)) {
-       const errorMessage = `Sorry your missing ${confirmPostParams} please try again`
-       console.error(errorMessage);
-       return res.status(400).send(errorMessage);
-     }
-   }
+router.post('/', function(req, res) {
+	const postParams = ['email', 'first_name', 'last_name', 'position'];
+	for (var i = 0; i < postParams.length; i++) {
+		const confirmPostParams = postParams[i];
+		if(!(confirmPostParams in req.body)) {
+			const errorMessage = `Sorry your missing ${confirmPostParams} please try again`;
+			console.error(errorMessage);
+			return res.status(400).send(errorMessage);
+		}
+	}
 
-   Player
-   .forge({
-     email: req.body.email,
-     first_name: req.body.first_name,
-     last_name: req.body.last_name,
-     position: req.body.position,
-   })
-   .save()
-   .then(function(player) {
-     return res.status(200).json(player);
-   })
-   .catch(function(err) {
-     return res.status(500).json(err);
-   })
- })
+	Player
+		.forge({
+			email: req.body.email,
+			first_name: req.body.first_name,
+			last_name: req.body.last_name,
+			position: req.body.position,
+		})
+		.save()
+		.then(function(player) {
+			return res.status(200).json(player);
+		})
+		.catch(function(err) {
+			return res.status(500).json(err);
+		});
+});
 
 // post a new stat for a player
  router.post('/:player_id/stats/:stat_catalog_id', function(req, res) {

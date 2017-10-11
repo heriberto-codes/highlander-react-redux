@@ -1,13 +1,14 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 
-import { createTeam, getTeamProfile, hideModal } from '../actions/teamAction';
+import { createTeam, getTeamProfile, hideModal, addNewPlayer } from '../actions/teamAction';
 
 import { teamReducer } from '../reducers/teamReducer';
 
 import Nav from '../components/Nav';
 import TeamDetailsNavigation from '../components/TeamDetailsNavigation';
 import TeamDetailsComponent from '../components/TeamDetailsComponent';
+import AddPlayerModal from '../components/AddPlayerModal';
 
 class TeamDetails extends Component {
 	componentDidMount() {
@@ -15,7 +16,7 @@ class TeamDetails extends Component {
 		this.props.dispatch(getTeamProfile(id));
 	}
 
-	addPlayerButton(){
+	showModal(){
 		this.props.dispatch(createTeam());
 	}
 
@@ -23,14 +24,21 @@ class TeamDetails extends Component {
 		this.props.dispatch(hideModal());
 	}
 
+	addNewPlayer(teamId, email, firstName, lastName, position){
+		console.log('addPlayer function was called', teamId, email, firstName, lastName, position);
+		this.props.dispatch(addNewPlayer(teamId, email, firstName, lastName, position));
+	}
+
 	render() {
-		let teamModal = null;
-  		if(this.props.showModal === true){
-    		teamModal = <div>
-				<a href="#" onClick={() => this.closeModal()}>Close</a>
-					This will be the modal
-			</div>;
-  	}
+		let teamModal;
+		if(this.props.showModal === true){
+			teamModal = <AddPlayerModal
+				teamID={this.props.match.params.id}
+				addPlayer={(teamId, email, firstName, lastName, position) => this.addNewPlayer(teamId, email, firstName, lastName, position)}
+				closeModal={() => this.closeModal()} />;
+			// this will be the helper function for the closeModal button
+			// 	<a href="#" onClick={() => this.closeModal()}>Close</a>
+		}
 		return (
 			<div>
 				<Nav />
@@ -40,7 +48,7 @@ class TeamDetails extends Component {
 					first_name={this.props.first_name}
 					last_name={this.props.last_name}
 					email={this.props.email}
-					onClick={() => this.addPlayerButton()}
+					showModal={() => this.showModal()}
 				/>
 				<TeamDetailsComponent
 					players={this.props.players}

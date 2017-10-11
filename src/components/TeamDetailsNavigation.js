@@ -11,7 +11,7 @@ export default function TeamDetailsNavigation(props) {
 	const firstName = props.first_name;
 	const lastName = props.last_name;
 	const email = props.email;
-	const onClick = props.onClick;
+	const onClick = props.showModal;
 
 	return (
 		<section className="hero is-primary dashboard-bg-image">
@@ -39,10 +39,12 @@ export default function TeamDetailsNavigation(props) {
 							</div>
 							<div className="level-right">
 								<span className="level-item">
-									<button onClick={onClick} className="button is-primary is-outlined">
+									<button
+										onClick={onClick}
+										className="button is-primary is-outlined"
+									>
                     Add New Player
 									</button>
-									{/* <Link className="button is-primary is-outlined" to='/addnewplayer'>Add New Player</Link> */}
 								</span>
 								<span className="level-item">
 									<Link className="button is-primary is-outlined" to='/editteam'>Edit Team</Link>
