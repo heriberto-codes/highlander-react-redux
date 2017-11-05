@@ -5,12 +5,23 @@ React.Component = {
   ref(){}
 }
 
+es6
 class TeamDetails extends Component{
   let name;
   constructor(name){}
   customFunction(){}
   render(){}
 }
+
+es5
+var TeamDetails = {};
+TeamDetails.prototype = Component;
+TeamDetails.customFunction = function(){}
+TeamDetails.prototype.closeModal = function(){}
+
+var teamDetail = new TeamDetails();
+teamDetail.customFunction();
+teamDetail.closeModal();
 
 function TeamDetailsNav(){
   return <div></div>

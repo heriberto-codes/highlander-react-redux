@@ -7,28 +7,36 @@ export default function AddPlayerModal(props) {
 
 	const hideTheModal = props.closeModal;
 	const addPlayer = props.addPlayer;
-  const teamId = props.teamID;
+	const teamId = props.teamID;
 
 	let emailInput = null;
 	let firstName = null;
 	let lastName = null;
 	let position = null;
 
-	function handleClick() {
-		// console.log(emailInput.value);
-		// console.log(firstName.value);
-		// console.log(lastName.value);
-		// console.log(position.value);
-		addPlayer(teamId, emailInput.value, firstName.value, lastName.value, position.value);
+	function handleClick(emailInput, firstName, lastName, position) {
+		// we need to check the following:
+		// 	if the values in the form are empty then let the user know that they cannot continue
+		// 	if we have all values filled out and complete then let the user proceed to submit form
+		// if (emailInput && firstName && lastName && position === null) {
+		// 	return alert('Sorry you must fill out the whole form')
+		// } else {
+		// 	addPlayer(teamId, emailInput.value, firstName.value, lastName.value, position.value);
+		// }
 	}
 
 	return (
 		<div className="modal is-active">
-			<div className="modal-background">kdjsfhsdkjfhdj</div>
+			<div className="modal-background"></div>
 			<div className="modal-card">
 				<header className="modal-card-head">
 					<p className="modal-card-title">Add a Player</p>
-					<button onClick={hideTheModal} className="delete" aria-label="close"></button>
+					<button
+						onClick={hideTheModal}
+						className="delete"
+						aria-label="close"
+					>
+					</button>
 				</header>
 				<section className="modal-card-body">
 					<div className="notification is-success add-team-notification">
@@ -39,7 +47,7 @@ export default function AddPlayerModal(props) {
             Sorry you are missing details, please fill out the <strong>entire</strong> form.
 					</div>
 					<div className="field">
-						<label className="label">Email</label>
+						<label className="label" htmlFor='email'>Email</label>
 						<p className="control">
 							<input
 								className="input is-medium required"
@@ -50,7 +58,7 @@ export default function AddPlayerModal(props) {
 						</p>
 					</div>
 					<div className="field">
-						<label className="label">First Name</label>
+						<label className="label" htmlFor='firstname'>First Name</label>
 						<p className="control">
 							<input
 								className="input is-medium required"
@@ -61,7 +69,7 @@ export default function AddPlayerModal(props) {
 						</p>
 					</div>
 					<div className="field">
-						<label className="label">Last Name</label>
+						<label className="label" htmnlFor='lastname'>Last Name</label>
 						<p className="control">
 							<input
 								className="input is-medium required"
@@ -72,7 +80,7 @@ export default function AddPlayerModal(props) {
 						</p>
 					</div>
 					<div className="field">
-						<label className="label">Position</label>
+						<label className="label" htmlfor='position'>Position</label>
 						<p className="control">
 							<input
 								className="input is-medium required"
@@ -89,7 +97,11 @@ export default function AddPlayerModal(props) {
 						onClick={handleClick}
 					>Save changes
 					</button>
-					<button className="button">Cancel</button>
+					<button
+						className="button"
+						onClick={hideTheModal}
+					>Cancel
+					</button>
 				</footer>
 			</div>
 		</div>

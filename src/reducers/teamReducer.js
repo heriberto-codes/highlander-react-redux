@@ -6,7 +6,12 @@ const initialState = {
 	name: '',
 	city: '',
 	state: '',
-	players: [],
+	players: [{
+		first_name: false,
+		last_name: false,
+		email: false,
+		position: false
+	}],
 	coach: {
 		first_name: '',
 		last_name: '',

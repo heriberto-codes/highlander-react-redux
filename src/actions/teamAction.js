@@ -3,6 +3,7 @@ import axios from 'axios';
 const baseUrl = 'http://localhost:8080/';
 const teamsUrl = `${baseUrl}teams/`;
 const playersUrl = `${baseUrl}players/`;
+
 export const GET_TEAM_PROFILE = 'GET_TEAM_PROFILE';
 // create the action creater
 export const getTeamProfile = id => dispatch => {

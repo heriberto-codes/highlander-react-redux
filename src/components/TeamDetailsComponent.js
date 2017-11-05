@@ -26,7 +26,7 @@ export default function TeamDetailsComponent(props) {
 						<footer className='card-footer panel-heading dashboard-team-list-footer'>
 							<p className='card-footer-item'>
 								<span>
-									<a href="https://highlandersport.herokuapp.com/roster-list-player.html?id=4">View Player Details</a>
+									<a href="#">View Player Details</a>
 								</span>
 							</p>
 						</footer>

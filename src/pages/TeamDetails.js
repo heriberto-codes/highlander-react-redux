@@ -8,7 +8,9 @@ import { teamReducer } from '../reducers/teamReducer';
 import Nav from '../components/Nav';
 import TeamDetailsNavigation from '../components/TeamDetailsNavigation';
 import TeamDetailsComponent from '../components/TeamDetailsComponent';
-import AddPlayerModal from '../components/AddPlayerModal';
+// import AddPlayerModal from '../components/AddPlayerModal';
+import AddPlayer from '../components/AddPlayerModal2';
+
 
 class TeamDetails extends Component {
 	componentDidMount() {
@@ -32,13 +34,14 @@ class TeamDetails extends Component {
 	render() {
 		let teamModal;
 		if(this.props.showModal === true){
-			teamModal = <AddPlayerModal
+			teamModal = <AddPlayer
 				teamID={this.props.match.params.id}
 				addPlayer={(teamId, email, firstName, lastName, position) => this.addNewPlayer(teamId, email, firstName, lastName, position)}
-				closeModal={() => this.closeModal()} />;
-			// this will be the helper function for the closeModal button
-			// 	<a href="#" onClick={() => this.closeModal()}>Close</a>
+				closeModal={() => this.closeModal()}
+				onSubmit={ this.submit }
+			 />;
 		}
+		console.log(this);
 		return (
 			<div>
 				<Nav />
@@ -48,11 +51,9 @@ class TeamDetails extends Component {
 					first_name={this.props.first_name}
 					last_name={this.props.last_name}
 					email={this.props.email}
-					showModal={() => this.showModal()}
-				/>
+					showModal={() => this.showModal()} />
 				<TeamDetailsComponent
-					players={this.props.players}
-				/>
+					players={this.props.players} />
 				{teamModal}
 			</div>
 		);

@@ -11,37 +11,37 @@ import Footer from '../components/Footer';
 import Dashboard from '../pages/Dashboard';
 
 class Login extends Component {
-  componentWillReceiveProps(nextProps){
-    if(nextProps.shouldRedirect) {
-      this.props.history.push('/dashboard');
-    }
-  }
+	componentWillReceiveProps(nextProps){
+		if(nextProps.shouldRedirect) {
+			this.props.history.push('/dashboard');
+		}
+	}
 
-  callLogin(email, pwd){
-    this.props.dispatch(login(email, pwd))
-  }
+	callLogin(email, pwd){
+		this.props.dispatch(login(email, pwd));
+	}
 
-  render () {
-    const {loggedIn, error} = this.props;
-    let message;
-    if(!loggedIn && error){
-      message = <p className="error">{error.message}</p>
-    }
-    return (
-      <div>
-        <Nav isLoggedIn={loggedIn} />
-        {message}
-        <LoginForm onSubmit={(email, pwd) => this.callLogin(email, pwd)} />
-        <Footer />
-      </div>
-    )
-  }
+	render () {
+		const {loggedIn, error} = this.props;
+		let message;
+		if(!loggedIn && error){
+			message = <p className="error">{error.message}</p>;
+		}
+		return (
+			<div>
+				<Nav isLoggedIn={loggedIn} />
+				{message}
+				<LoginForm onSubmit={(email, pwd) => this.callLogin(email, pwd)} />
+				<Footer />
+			</div>
+		);
+	}
 }
 
 const mapStateToProps = state => ({
-  loggedIn: state.loginReducer.isloggedIn,
-  error: state.loginReducer.errorMessage,
-  shouldRedirect: state.loginReducer.shouldRedirect,
-})
+	loggedIn: state.loginReducer.isloggedIn,
+	error: state.loginReducer.errorMessage,
+	shouldRedirect: state.loginReducer.shouldRedirect,
+});
 
-export default connect(mapStateToProps)(Login)
+export default connect(mapStateToProps)(Login);
