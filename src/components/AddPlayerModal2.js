@@ -9,22 +9,25 @@ submit() {
 }
 
 locationInput({ input, meta: { touched, error }, ...custom}) {
-	const hasError = touched && error !== undefined;
+	// const hasError = touched && error !== undefined;
 	return (
+		// <div>
+		// 	{hasError &&
+		// 		<Message
+		// 			error
+		// 			header='Error'
+		// 			content={ error }
+		// 		/>}
+		// 		<Input
+		// 			error={ hasError }
+		// 			fluid
+		// 			placeholder='something goes here'
+		// 			{ ...input }
+		// 			{ ... custom }
+		// 		/>
+		// </div>
 		<div>
-			{hasError &&
-				<Message
-					error
-					header='Error'
-					content={ error }
-				/>}
-				<Input
-					error={ hasError }
-					fluid
-					placeholder='something goes here'
-					{ ...input }
-					{ ... custom }
-				/>
+			<h1>Some location input goes here</h1>
 		</div>
 	)
 }
@@ -32,7 +35,8 @@ locationInput({ input, meta: { touched, error }, ...custom}) {
 render() {
 	const { hanldeSubmit } = this.props;
 	return (
-		<form onSubmit = { handleSubmit(this.submit.bind(this))}>
+		<form>
+		{/* <form onSubmit = { handleSubmit(this.submit.bind(this))}> */}
 			<div className="modal is-active">
 				<div className="modal-background"></div>
 				<div className="modal-card">
