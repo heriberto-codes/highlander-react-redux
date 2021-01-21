@@ -9,6 +9,9 @@
 # production
 /build
 
+# pseudo code
+/pseudo-delete
+
 # misc
 .DS_Store
 .env.local
