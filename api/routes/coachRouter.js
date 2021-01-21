@@ -34,13 +34,13 @@ router.get('/:id', function(req, res) {
 });
 
 router.get('/hashed/:password', function(req, res){
-  console.log(req.params.password)
-  Coach.hashPassword(req.params.password)
+	console.log(req.params.password)
+	Coach.hashPassword(req.params.password)
 		.then(password => {
-    console.log(password)
+			console.log(password)
 			res.status(200)
 				.json({hashedPassword: password});
-  })
+		})
 
 })
 
@@ -74,59 +74,59 @@ router.post('/', function(req, res) {
 		const confirmPostParams = postParams[i];
 		if(!(confirmPostParams in req.body)) {
 			const errorMessage = `Sorry your missing ${confirmedParams} please try again`;
-      console.error(errorMessage);
-      return res.status(400).send(errorMessage)
+			console.error(errorMessage);
+			return res.status(400).send(errorMessage)
 		}
 	}
-  Coach.hashPassword(req.body.password)
-  .then(function(hashedPassword){
-    return Coach
-    .forge({
-      email: req.body.email,
-      first_name: req.body.first_name,
-      last_name: req.body.last_name,
-      password: hashedPassword
-    })
-    .save()
-  })
-  .then(function(coach){
-    return res.status(200).json(coach);
-  })
-  .catch(function(err){
-    return res.status(500).json(err);
-  })
+	Coach.hashPassword(req.body.password)
+		.then(function(hashedPassword){
+			return Coach
+				.forge({
+					email: req.body.email,
+					first_name: req.body.first_name,
+					last_name: req.body.last_name,
+					password: hashedPassword
+				})
+				.save()
+		})
+		.then(function(coach){
+			return res.status(200).json(coach);
+		})
+		.catch(function(err){
+			return res.status(500).json(err);
+		})
 })
 
 router.put('/:id', function(req, res) {
-  // check to see if the proper params is equal to what the user is inputting
-  const updateParams = ['email', 'first_name', 'last_name']
-  for(var i = 0; i < updateParams.length; i++) {
-    const confirmedParams = updateParams[i];
-    if(!(confirmedParams in req.body)) {
-      const errorMessage = `Sorry your missing ${confirmedParams} please try again`
-      console.error(errorMessage);
-      return res.status(400).send(errorMessage)
-    }
-  }
-  // update query db via model with new params
-  // req.session.coachId make comparison with req.params.id and say if they match
-  // allow user to update the coach credentials
-  Coach
-  .where({id: req.params.id})
-  .fetch()
-  .then(function(coach) {
-    return coach.save({
-      email: req.body.email,
-      first_name: req.body.first_name,
-      last_name: req.body.last_name
-    })
-  })
-  .then(function(coach){
-    return res.status(200).json(coach)
-  })
-  .catch(function(err) {
-    return res.status(500).json(err)
-  })
+	// check to see if the proper params is equal to what the user is inputting
+	const updateParams = ['email', 'first_name', 'last_name']
+	for(var i = 0; i < updateParams.length; i++) {
+		const confirmedParams = updateParams[i];
+		if(!(confirmedParams in req.body)) {
+			const errorMessage = `Sorry your missing ${confirmedParams} please try again`
+			console.error(errorMessage);
+			return res.status(400).send(errorMessage)
+		}
+	}
+	// update query db via model with new params
+	// req.session.coachId make comparison with req.params.id and say if they match
+	// allow user to update the coach credentials
+	Coach
+		.where({id: req.params.id})
+		.fetch()
+		.then(function(coach) {
+			return coach.save({
+				email: req.body.email,
+				first_name: req.body.first_name,
+				last_name: req.body.last_name
+			})
+		})
+		.then(function(coach){
+			return res.status(200).json(coach)
+		})
+		.catch(function(err) {
+			return res.status(500).json(err)
+		})
 })
 
 /*
@@ -134,8 +134,8 @@ router.put('/:id', function(req, res) {
  * Delete the current active session
  */
 router.delete('/', function(req, res) {
-  req.session.destroy(); //After this session is destroyes reauthenticate is needed
-  res.status(400).send();
+	req.session.destroy(); //After this session is destroyes reauthenticate is needed
+	res.status(400).send();
 })
 
 
