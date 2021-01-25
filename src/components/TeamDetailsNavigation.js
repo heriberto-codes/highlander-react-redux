@@ -6,6 +6,7 @@ import '../css/style.css';
 
 export default function TeamDetailsNavigation(props) {
 
+	//TODO: look into storing all of this via deconstruction
 	const name = props.name;
 	const location = props.city;
 	const firstName = props.first_name;
