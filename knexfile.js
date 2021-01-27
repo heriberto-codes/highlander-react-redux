@@ -4,7 +4,7 @@ module.exports = {
 		connection: {
 			database: 'highlander-react-redux',
 			user: 'iamromanh',
-			password: 'BananaBanana99',
+			password: 'updatePWandGitIgnore',
 			charset: 'utf8'
 		},
 		migrations: {
