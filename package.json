@@ -12,7 +12,7 @@
     "cors": "^2.8.4",
     "express": "^4.15.3",
     "express-session": "^1.17.1",
-    "mongodb": "^2.2.30",
+    "mongodb": "^3.1.13",
     "morgan": "^1.10.0",
     "pg": "^6.4.2",
     "radium": "^0.19.4",
