@@ -20,7 +20,12 @@
 .env.test.local
 .env.production.local
 config.js
+.AppleDouble
+.LSOverride
 
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+#DB Credentials
+/knexfile.js
