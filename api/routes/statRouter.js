@@ -13,17 +13,17 @@ router.use(jsonParser);
 router.get('/', function(req, res) {
   Stat
   .fetchAll()
-  .then(function(stats) {
-    res.json(stats);
+  .then(function(statCatalogs) {
+    res.json(statCatalogs);
   })
 })
 
 router.get('/:id', function(req, res) {
   Stat
   .where({id: req.params.id})
-  .fetch({withRelated: ['stats', 'stats.player']})
-  .then(function(stats) {
-    res.json(stats);
+  .fetch({withRelated: ['players', 'players.stats']})
+  .then(function(stat) {
+    res.json(stat);
   })
 })
 
