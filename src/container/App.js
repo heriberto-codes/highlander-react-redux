@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { BrowserRouter as Router, Route} from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import Home from '../pages/Home';
 import Login from '../pages/Login';
@@ -10,18 +10,20 @@ import TeamDetails from '../pages/TeamDetails';
 class App extends Component {
 	render() {
 		return (
-			<Router>
-				<div className="App">
-					<Route exact path='/' component={Home} />
-					<Route path='/login' component={Login} />
-					<Route path='/register' component={Register} />
-					<Route path='/dashboard' component={Dashboard} />
-					<Route path='/dashboard/:id' component={Dashboard} />
-					<Route path='/teamdetails/:id' component={TeamDetails} />
-				</div>
-			</Router>
-		);
-	}
+                        <Router>
+                                <div className="App">
+                                        <Routes>
+                                                <Route path='/' element={<Home />} />
+                                                <Route path='/login' element={<Login />} />
+                                                <Route path='/register' element={<Register />} />
+                                                <Route path='/dashboard' element={<Dashboard />} />
+                                                <Route path='/dashboard/:id' element={<Dashboard />} />
+                                                <Route path='/teamdetails/:id' element={<TeamDetails />} />
+                                        </Routes>
+                                </div>
+                        </Router>
+                );
+        }
 }
 
 export default App;
