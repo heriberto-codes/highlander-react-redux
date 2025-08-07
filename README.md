@@ -27,13 +27,21 @@ Want to keep up with the development and roadmap of Highlander?  https://trello.
    ```
 
 ### Environment variables
-Set the following variables in your shell or a `.env` file before starting the server:
+Set the following variables in your shell or copy `.env.example` to `.env` before starting the server:
 
 ```
 DATABASE_URL=postgresql://localhost/highlander-react-redux
 CLIENT_ORIGIN=http://localhost:3000
 SECRET=super-secret
 PORT=8080
+```
+
+The server loads these values from the environment and, during local development, from a `.env` file via [dotenv](https://www.npmjs.com/package/dotenv).
+
+On hosting platforms such as Heroku, configure the required variables with:
+
+```
+heroku config:set SECRET=your-secret DATABASE_URL=your-database-url CLIENT_ORIGIN=https://your-client-app
 ```
 
 ### Run database migrations
@@ -49,7 +57,7 @@ npm start
 
 ### Troubleshooting
 - **Heroku or similar platforms:**
-  - Ensure all environment variables above are configured with `heroku config:set ...`.
+  - Ensure `SECRET`, `DATABASE_URL`, and `CLIENT_ORIGIN` are configured with `heroku config:set`.
   - Run migrations on the remote instance with `heroku run npm run migrate`.
   - If the build fails, verify the Node.js buildpack is enabled and that `npm run build` succeeds locally before deploying.
 

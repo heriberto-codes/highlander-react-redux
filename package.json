@@ -16,6 +16,7 @@
     "mongodb": "^5.8.0",
     "morgan": "^1.10.0",
     "pg": "^8.11.5",
+    "dotenv": "^16.3.1",
     "radium": "^0.26.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -47,7 +48,8 @@
     "eject": "react-scripts eject",
     "migrate": "knex migrate:latest",
     "seed": "knex seed:run",
-    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint ."
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint .",
+    "postinstall": "npm run build"
   },
   "engines": {
     "node": ">=14"
