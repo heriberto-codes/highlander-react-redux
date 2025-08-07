@@ -14,23 +14,31 @@ router.use(jsonParser);
 
 router.get('/', function(req, res) {
 	if(req.session.coachId){ // If the session doesn't have an userId(accessToken, etc...) then you don't show the protected token
-		Coach
-			.fetchAll()
-			.then(function(coaches) {
-				res.json(coaches);
-			});
+               Coach
+                        .fetchAll()
+                        .then(function(coaches) {
+                                res.json(coaches);
+                        })
+                        .catch(function(err) {
+                                console.error(err);
+                                return res.status(500).json(err);
+                        });
 	} else {
 		res.status(403).send('No session available');
 	}
 });
 
 router.get('/:id', function(req, res) {
-	Coach
-		.where({id: req.params.id})
-		.fetch({withRelated: ['teams', 'teams.players', 'teams.players.stats']})
-		.then(function(coaches) {
-			res.json(coaches);
-		});
+        Coach
+                .where({id: req.params.id})
+                .fetch({withRelated: ['teams', 'teams.players', 'teams.players.stats']})
+                .then(function(coaches) {
+                        res.json(coaches);
+                })
+                .catch(function(err) {
+                        console.error(err);
+                        return res.status(500).json(err);
+                });
 });
 
 router.post('/', function(req, res) {
