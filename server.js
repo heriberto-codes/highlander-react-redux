@@ -1,15 +1,14 @@
 const express = require('express');
 const morgan = require('morgan');
 const session = require('express-session');
-const config = require('./config');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const { CLIENT_ORIGIN } = require('./config');
+const { SECRET, CLIENT_ORIGIN } = require('./config');
 
 const app = express();
 
 const sess = {
-	secret: config.SECRET,
+        secret: SECRET,
 	name: 'SessionMgmt',
 	resave: false,
 	saveUninitialized: true,
@@ -30,7 +29,7 @@ app.use(morgan('common'));
 app.use(session(sess));
 app.use(bodyParser.json());
 app.use(express.static('public'));
-app.use(cors());
+app.use(cors({ origin: CLIENT_ORIGIN }));
 
 app.use('/players', playerRouter);
 app.use('/coaches', coachRouter);
