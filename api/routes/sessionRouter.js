@@ -24,8 +24,15 @@ router.post('/login', function(req, res){
                 .fetch()
                 .then(function(coach) {
                         coachData = coach;
+                        if(!coachData){
+                                res.status(404).json('Coach not found');
+                                return;
+                        }
                         return Coach.validatePassword(coachData.get('password'), req.body.pwd);
                 }).then(function(validPassword){
+                        if(!coachData){
+                                return;
+                        }
                         if(validPassword){
                                 req.session.coachId = coachData.id;
                                 res.status(200).json(coachData);
