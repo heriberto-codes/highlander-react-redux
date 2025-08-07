@@ -29,7 +29,7 @@ router.get('/:id', function(req, res) {
                });
 });
 
-router.put('/:id', function(req, res) {
+router.put('/:id', function(req, res, next) {
 	// check to see if the proper params is equal to what the user is inputting
 	const updateParams = ['name', 'city', 'state'];
 	for(var i = 0; i < updateParams.length; i++) {
@@ -56,11 +56,11 @@ router.put('/:id', function(req, res) {
 			return res.status(200).json(team);
 		})
 		.catch(function(err) {
-			return res.status(500).json(err);
+			return next(err);
 		});
 });
 
-router.post('/', function(req, res) {
+router.post('/', function(req, res, next) {
         const postParams = ['name', 'city', 'state', 'coachId'];
         for (var i = 0; i < postParams.length; i++) {
                 const confirmPostParams = postParams[i];
@@ -100,11 +100,11 @@ router.post('/', function(req, res) {
                                 });
                 })
                 .catch(function(err) {
-                        return res.status(500).json(err);
+                        return next(err);
                 });
 });
 
-router.post('/:id/player', function(req, res) {
+router.post('/:id/player', function(req, res, next) {
   const postParams = ['email', 'first_name', 'last_name', 'position']
   for (var i = 0; i < postParams.length; i++) {
     const confirmPostParams = postParams[i];
@@ -128,7 +128,7 @@ router.post('/:id/player', function(req, res) {
     return res.status(200).json(player)
   })
   .catch(function(err) {
-    return res.status(500).json(err)
+    return next(err)
   })
 })
 

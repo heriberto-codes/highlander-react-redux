@@ -12,7 +12,7 @@ router.use(bodyParser.urlencoded({
 }));
 router.use(jsonParser);
 
-router.get('/', function(req, res) {
+router.get('/', function(req, res, next) {
 	if(req.session.coachId){ // If the session doesn't have an userId(accessToken, etc...) then you don't show the protected token
                Coach
                         .fetchAll()
@@ -20,15 +20,14 @@ router.get('/', function(req, res) {
                                 res.json(coaches);
                         })
                         .catch(function(err) {
-                                console.error(err);
-                                return res.status(500).json(err);
+                                return next(err);
                         });
 	} else {
 		res.status(403).send('No session available');
 	}
 });
 
-router.get('/:id', function(req, res) {
+router.get('/:id', function(req, res, next) {
         Coach
                 .where({id: req.params.id})
                 .fetch({withRelated: ['teams', 'teams.players', 'teams.players.stats']})
@@ -36,12 +35,11 @@ router.get('/:id', function(req, res) {
                         res.json(coaches);
                 })
                 .catch(function(err) {
-                        console.error(err);
-                        return res.status(500).json(err);
+                        return next(err);
                 });
 });
 
-router.post('/', function(req, res) {
+router.post('/', function(req, res, next) {
         const postParams = ['email', 'first_name', 'last_name', 'password'];
 	for (var i = 0; i < postParams.length; i++) {
 		const confirmPostParams = postParams[i];
@@ -66,11 +64,11 @@ router.post('/', function(req, res) {
 			return res.status(200).json(coach);
 		})
 		.catch(function(err){
-			return res.status(500).json(err);
+			return next(err);
 		})
 })
 
-router.put('/:id', function(req, res) {
+router.put('/:id', function(req, res, next) {
 	// check to see if the proper params is equal to what the user is inputting
 	const updateParams = ['email', 'first_name', 'last_name']
 	for(var i = 0; i < updateParams.length; i++) {
@@ -98,7 +96,7 @@ router.put('/:id', function(req, res) {
 			return res.status(200).json(coach)
 		})
 		.catch(function(err) {
-			return res.status(500).json(err)
+			return next(err)
 		})
 })
 

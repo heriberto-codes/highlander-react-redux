@@ -15,7 +15,7 @@ router.use(jsonParser);
 /*
  * Login and create a new session
  */
-router.post('/login', function(req, res){
+router.post('/login', function(req, res, next){
         let coachData;
         Coach
                 .where({
@@ -41,7 +41,7 @@ router.post('/login', function(req, res){
                         }
                 })
                 .catch(function(err){
-                        res.status(500).json(err);
+                        return next(err);
                 });
 });
 

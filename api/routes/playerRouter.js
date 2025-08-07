@@ -12,19 +12,18 @@ const PlayerStat = require('../models/PlayerStat');
 router.use(bodyParser.urlencoded({extended: true}));
 router.use(jsonParser);
 
-router.get('/', function(req, res) {
+router.get('/', function(req, res, next) {
   Player
   .fetchAll()
   .then(function(players) {
     res.json(players);
   })
   .catch(function(err) {
-    console.error(err);
-    return res.status(500).json(err);
+    return next(err);
   });
 })
 
-router.get('/:id', function(req, res) {
+router.get('/:id', function(req, res, next) {
   Player
   .where({id: parseInt(req.params.id, 10)})
   .fetch({withRelated: ['teams']})
@@ -32,12 +31,11 @@ router.get('/:id', function(req, res) {
     res.json(players);
   })
   .catch(function(err) {
-    console.error(err);
-    return res.status(500).json(err);
+    return next(err);
   });
 })
 
-router.get('/:id/stats', function(req, res) {
+router.get('/:id/stats', function(req, res, next) {
   Player
   .where({id: req.params.id})
   .fetch({withRelated: ['stats']})
@@ -45,13 +43,12 @@ router.get('/:id/stats', function(req, res) {
     res.json(stats);
   })
   .catch(function(err) {
-    console.error(err);
-    return res.status(500).json(err);
+    return next(err);
   });
 })
 
 // update player
-router.put('/:id', function(req, res) {
+router.put('/:id', function(req, res, next) {
 	// check to see if the proper params is equal to what the user is inputting
 	const updateParams = ['email', 'first_name', 'last_name', 'position'];
 	for(var i = 0; i < updateParams.length; i++) {
@@ -78,12 +75,12 @@ router.put('/:id', function(req, res) {
 			return res.status(200).json(player);
 		})
 		.catch(function(err) {
-			return res.status(500).json(err);
+			return next(err);
 		});
 });
 
 // update a stat tied to a player
- router.put('/:player_id/stats/:stat_catalog_id', function(req, res) {
+ router.put('/:player_id/stats/:stat_catalog_id', function(req, res, next) {
    const postParams = ['how_many'];
    for (var i = 0; i < postParams.length; i++) {
      const confirmPutParams = postParams[i];
@@ -109,12 +106,12 @@ router.put('/:id', function(req, res) {
      return res.status(200).json(player);
    })
    .catch(function(err) {
-     return res.status(500).json(err);
+     return next(err);
    })
  })
 
 // post new player
-router.post('/', function(req, res) {
+router.post('/', function(req, res, next) {
 	const postParams = ['email', 'first_name', 'last_name', 'position'];
 	for (var i = 0; i < postParams.length; i++) {
 		const confirmPostParams = postParams[i];
@@ -137,12 +134,12 @@ router.post('/', function(req, res) {
 			return res.status(200).json(player);
 		})
 		.catch(function(err) {
-			return res.status(500).json(err);
+			return next(err);
 		});
 });
 
 // post a new stat for a player
- router.post('/:player_id/stats/:stat_catalog_id', function(req, res) {
+ router.post('/:player_id/stats/:stat_catalog_id', function(req, res, next) {
    const postParams = ['how_many'];
    for (var i = 0; i < postParams.length; i++) {
      const confirmPostParams = postParams[i];
@@ -164,12 +161,12 @@ router.post('/', function(req, res) {
     return res.status(200).json(stat);
    })
    .catch(function(err) {
-     return res.status(500).json(err);
+     return next(err);
    })
  })
 
 
- router.delete('/:id', function(req, res) {
+ router.delete('/:id', function(req, res, next) {
    const deleteParams = ['id']
   for(var i = 0; i < deleteParams.length; i++) {
     const wrongId = deleteParams[i];
@@ -195,7 +192,7 @@ router.post('/', function(req, res) {
       });
   })
   .catch(function(err) {
-    return res.status(500).json(err);
+    return next(err);
   });
 })
 
