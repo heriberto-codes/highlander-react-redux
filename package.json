@@ -43,5 +43,8 @@
     "eject": "react-scripts eject",
     "migrate": "knex migrate:latest",
     "seed": "knex seed:run"
+  },
+  "engines": {
+    "node": ">=14"
   }
 }
