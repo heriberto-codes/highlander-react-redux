@@ -1,21 +1,19 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Route, Redirect, Router } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
-import { login, logout } from '../actions/loginAction';
-import { loginReducer } from '../reducers/loginReducer';
+import { login } from '../actions/loginAction';
 
 import Nav from '../components/Nav';
 import LoginForm from '../components/LoginForm';
 import Footer from '../components/Footer';
-import Dashboard from '../pages/Dashboard';
 
 class Login extends Component {
-	componentWillReceiveProps(nextProps){
-		if(nextProps.shouldRedirect) {
-			this.props.history.push('/dashboard');
-		}
-	}
+        componentDidUpdate(prevProps){
+                if(this.props.shouldRedirect && !prevProps.shouldRedirect) {
+                        this.props.navigate('/dashboard');
+                }
+        }
 
 	callLogin(email, pwd){
 		this.props.dispatch(login(email, pwd));
@@ -39,9 +37,14 @@ class Login extends Component {
 }
 
 const mapStateToProps = state => ({
-	loggedIn: state.loginReducer.isloggedIn,
-	error: state.loginReducer.errorMessage,
-	shouldRedirect: state.loginReducer.shouldRedirect,
+        loggedIn: state.loginReducer.isloggedIn,
+        error: state.loginReducer.errorMessage,
+        shouldRedirect: state.loginReducer.shouldRedirect,
 });
 
-export default connect(mapStateToProps)(Login);
+const ConnectedLogin = connect(mapStateToProps)(Login);
+
+export default function LoginWrapper(props) {
+        const navigate = useNavigate();
+        return <ConnectedLogin {...props} navigate={navigate} />;
+}
