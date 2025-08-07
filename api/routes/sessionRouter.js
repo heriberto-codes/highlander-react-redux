@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
 
 const Coach = require('../models/Coach');
+const ensureAuthenticated = require('../middleware/ensureAuthenticated');
 
 router.use(bodyParser.urlencoded({
         extended: true
@@ -48,7 +49,7 @@ router.post('/login', function(req, res){
 /*
  * Logout and destroy the current session
  */
-router.delete('/', function(req, res) {
+router.delete('/', ensureAuthenticated, function(req, res) {
         req.session.destroy();
         res.sendStatus(204);
 });
