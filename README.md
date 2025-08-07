@@ -52,6 +52,10 @@ npm start
   - Ensure all environment variables above are configured with `heroku config:set ...`.
   - Run migrations on the remote instance with `heroku run npm run migrate`.
   - If the build fails, verify the Node.js buildpack is enabled and that `npm run build` succeeds locally before deploying.
+=======
+## Requirements
+
+- Node.js 14 or later
 
 ## Screenshots
 ![main page](/public/assets/img/highlander_home.png)

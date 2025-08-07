@@ -1,21 +1,29 @@
 const express = require('express');
 const morgan = require('morgan');
 const session = require('express-session');
+const PGSession = require('connect-pg-simple')(session);
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const { SECRET, CLIENT_ORIGIN } = require('./config');
+const { SECRET, CLIENT_ORIGIN, DATABASE_URL } = require('./config');
+const path = require('path');
 
 const app = express();
 
 const sess = {
+        store: new PGSession({
+                conString: DATABASE_URL
+        }),
         secret: SECRET,
-	name: 'SessionMgmt',
-	resave: false,
-	saveUninitialized: true,
-	cookie: {
-		path: '/',
-		maxAge: 5 * 60 * 1000 //min * seconds * miliseconds
-	}
+        name: 'SessionMgmt',
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+                path: '/',
+                maxAge: 5 * 60 * 1000, //min * seconds * milliseconds
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict'
+        }
 };
 
 const playerRouter = require('./api/routes/playerRouter');
@@ -29,6 +37,7 @@ app.use(morgan('common'));
 app.use(session(sess));
 app.use(bodyParser.json());
 app.use(express.static('public'));
+app.use(express.static('build'));
 app.use(cors({ origin: CLIENT_ORIGIN }));
 
 app.use('/players', playerRouter);
@@ -36,6 +45,11 @@ app.use('/coaches', coachRouter);
 app.use('/teams', teamRouter);
 app.use('/stats', statRouter);
 app.use('/sessions', sessionRouter);
+
+// Fallback to index.html so React Router can handle routing in the client
+app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
 
 let server;
 
