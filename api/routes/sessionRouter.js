@@ -16,6 +16,10 @@ router.use(jsonParser);
  * Login and create a new session
  */
 router.post('/login', function(req, res){
+        if (!req.body.email || !req.body.pwd) {
+                res.status(400).json('Email and password are required');
+                return;
+        }
         let coachData;
         Coach
                 .where({
@@ -25,7 +29,7 @@ router.post('/login', function(req, res){
                 .then(function(coach) {
                         coachData = coach;
                         if(!coachData){
-                                res.status(404).json('Coach not found');
+                                res.status(401).json('Invalid credentials');
                                 return;
                         }
                         return Coach.validatePassword(coachData.get('password'), req.body.pwd);
@@ -37,12 +41,13 @@ router.post('/login', function(req, res){
                                 req.session.coachId = coachData.id;
                                 res.status(200).json(coachData);
                         } else {
-                                res.status(404).json('Wrong password');
+                                res.status(401).json('Invalid credentials');
                         }
                 })
                 .catch(function(err){
                         res.status(500).json(err);
                 });
+        // TODO: Implement rate limiting or account lockout to deter brute-force attacks.
 });
 
 /*
