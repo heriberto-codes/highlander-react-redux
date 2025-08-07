@@ -7,6 +7,7 @@ const jsonParser = bodyParser.json();
 const Team = require('../models/Team');
 const Player = require('../models/Player');
 const Coaches = require('../models/Coach');
+const ensureAuthenticated = require('../middleware/ensureAuthenticated');
 
 router.use(bodyParser.urlencoded({extended: true}));
 router.use(jsonParser);
@@ -29,7 +30,7 @@ router.get('/:id', function(req, res) {
                });
 });
 
-router.put('/:id', function(req, res, next) {
+router.put('/:id', ensureAuthenticated, function(req, res) {
 	// check to see if the proper params is equal to what the user is inputting
 	const updateParams = ['name', 'city', 'state'];
 	for(var i = 0; i < updateParams.length; i++) {
@@ -60,7 +61,8 @@ router.put('/:id', function(req, res, next) {
 		});
 });
 
-router.post('/', function(req, res, next) {
+
+router.post('/', ensureAuthenticated, function(req, res) {
         const postParams = ['name', 'city', 'state', 'coachId'];
         for (var i = 0; i < postParams.length; i++) {
                 const confirmPostParams = postParams[i];
@@ -104,7 +106,8 @@ router.post('/', function(req, res, next) {
                 });
 });
 
-router.post('/:id/player', function(req, res, next) {
+
+router.post('/:id/player', ensureAuthenticated, function(req, res) {
   const postParams = ['email', 'first_name', 'last_name', 'position']
   for (var i = 0; i < postParams.length; i++) {
     const confirmPostParams = postParams[i];

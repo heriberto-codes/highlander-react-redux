@@ -8,8 +8,8 @@ export const login = (email, pwd) => dispatch => {
 		email,
 		pwd
 	});
-	axios.post(url, {email, pwd})
-		.then(response => {
+       axios.post(url, {email, pwd}, { withCredentials: true })
+               .then(response => {
 			if(response.status === 200){
 				dispatch(loginSuccess(response));
 			}

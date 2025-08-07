@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
 
 const Coach = require('../models/Coach');
+const ensureAuthenticated = require('../middleware/ensureAuthenticated');
 
 router.use(bodyParser.urlencoded({
 	extended: true
@@ -39,7 +40,7 @@ router.get('/:id', function(req, res, next) {
                 });
 });
 
-router.post('/', function(req, res, next) {
+router.post('/', ensureAuthenticated, function(req, res) {
         const postParams = ['email', 'first_name', 'last_name', 'password'];
 	for (var i = 0; i < postParams.length; i++) {
 		const confirmPostParams = postParams[i];
@@ -68,7 +69,7 @@ router.post('/', function(req, res, next) {
 		})
 })
 
-router.put('/:id', function(req, res, next) {
+router.put('/:id', ensureAuthenticated, function(req, res) {
 	// check to see if the proper params is equal to what the user is inputting
 	const updateParams = ['email', 'first_name', 'last_name']
 	for(var i = 0; i < updateParams.length; i++) {

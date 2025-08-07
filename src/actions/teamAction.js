@@ -11,8 +11,8 @@ export const getTeamProfile = id => dispatch => {
 		type: GET_TEAM_PROFILE,
 		id
 	});
-	axios.get(`${teamsUrl}${id}`)
-		.then(response => {
+       axios.get(`${teamsUrl}${id}`, { withCredentials: true })
+               .then(response => {
 			if(response.status === 200) {
 				dispatch(getTeamProfileSuccess(response));
 			}
@@ -34,13 +34,17 @@ export const addNewPlayer = (id, emailInput, firstName, lastName, position) => d
 		lastName,
 		position
 	});
-	axios.post(`${teamsUrl}${id}/player`, {
-		email: emailInput,
-		first_name: firstName,
-		last_name: lastName,
-		position
-	})
-		.then(response => {
+       axios.post(
+               `${teamsUrl}${id}/player`,
+               {
+                       email: emailInput,
+                       first_name: firstName,
+                       last_name: lastName,
+                       position
+               },
+               { withCredentials: true }
+       )
+               .then(response => {
 			console.log('check to see if all the right values are in this payload ====>', response);
 			if(response.status === 200) {
 				dispatch(addPlayer(response));
