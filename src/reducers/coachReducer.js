@@ -65,21 +65,28 @@ export const coachReducer = (state = initialState, action) => {
 			}
 		});
 
-		// push the updated stats object for each player
-		filteredPlayerIds.forEach((player, index) => {
-			stats.push(generateStat(player));
-		});
+                // push the updated stats object for each player
+                filteredPlayerIds.forEach((player, index) => {
+                        stats.push(generateStat(player));
+                });
 
-		return Object.assign({}, state, {
-			stats: stats,
-			teams: action.response.data.teams,
-			players: filteredPlayerIds,
-			first_name: action.response.data.first_name,
-			last_name: action.response.data.last_name,
-			email: action.response.data.email,
-			id: action.response.data.id,
-			city: action.response.data.teams.city
-		});
+                const city =
+                        action.response.data.teams &&
+                        action.response.data.teams.length > 0 &&
+                        action.response.data.teams[0].city
+                                ? action.response.data.teams[0].city
+                                : '';
+
+                return Object.assign({}, state, {
+                        stats: stats,
+                        teams: action.response.data.teams,
+                        players: filteredPlayerIds,
+                        first_name: action.response.data.first_name,
+                        last_name: action.response.data.last_name,
+                        email: action.response.data.email,
+                        id: action.response.data.id,
+                        city: city
+                });
 		break;
 	default:
 		return state;
