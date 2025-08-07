@@ -1,10 +1,2 @@
 language: node_js
 node_js: node
-deploy:
-  provider: heroku
-  api_key:
-    secure:
-  app: stark-garden-73877
-  on:
-    repo: iamromanh/highlander-react-redux
-    branch: master
