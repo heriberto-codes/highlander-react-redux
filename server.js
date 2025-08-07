@@ -1,21 +1,28 @@
 const express = require('express');
 const morgan = require('morgan');
 const session = require('express-session');
+const PGSession = require('connect-pg-simple')(session);
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const { SECRET, CLIENT_ORIGIN } = require('./config');
+const { SECRET, CLIENT_ORIGIN, DATABASE_URL } = require('./config');
 
 const app = express();
 
 const sess = {
+        store: new PGSession({
+                conString: DATABASE_URL
+        }),
         secret: SECRET,
-	name: 'SessionMgmt',
-	resave: false,
-	saveUninitialized: true,
-	cookie: {
-		path: '/',
-		maxAge: 5 * 60 * 1000 //min * seconds * miliseconds
-	}
+        name: 'SessionMgmt',
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+                path: '/',
+                maxAge: 5 * 60 * 1000, //min * seconds * milliseconds
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict'
+        }
 };
 
 const playerRouter = require('./api/routes/playerRouter');
