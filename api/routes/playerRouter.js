@@ -18,6 +18,10 @@ router.get('/', function(req, res) {
   .then(function(players) {
     res.json(players);
   })
+  .catch(function(err) {
+    console.error(err);
+    return res.status(500).json(err);
+  });
 })
 
 router.get('/:id', function(req, res) {
@@ -27,6 +31,10 @@ router.get('/:id', function(req, res) {
   .then(function(players) {
     res.json(players);
   })
+  .catch(function(err) {
+    console.error(err);
+    return res.status(500).json(err);
+  });
 })
 
 router.get('/:id/stats', function(req, res) {
@@ -36,6 +44,10 @@ router.get('/:id/stats', function(req, res) {
   .then(function(stats) {
     res.json(stats);
   })
+  .catch(function(err) {
+    console.error(err);
+    return res.status(500).json(err);
+  });
 })
 
 // update player
