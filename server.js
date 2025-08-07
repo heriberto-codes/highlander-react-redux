@@ -1,6 +1,7 @@
 const express = require('express');
 const morgan = require('morgan');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const config = require('./config');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -9,14 +10,17 @@ const { CLIENT_ORIGIN } = require('./config');
 const app = express();
 
 const sess = {
-	secret: config.SECRET,
-	name: 'SessionMgmt',
-	resave: false,
-	saveUninitialized: true,
-	cookie: {
-		path: '/',
-		maxAge: 5 * 60 * 1000 //min * seconds * miliseconds
-	}
+        secret: config.SECRET,
+        name: 'SessionMgmt',
+        resave: false,
+        saveUninitialized: true,
+        store: MongoStore.create({
+                mongoUrl: process.env.SESSION_DB_URL || 'mongodb://127.0.0.1:27017/sessions'
+        }),
+        cookie: {
+                path: '/',
+                maxAge: 30 * 60 * 1000 //min * seconds * miliseconds
+        }
 };
 
 const playerRouter = require('./api/routes/playerRouter');
