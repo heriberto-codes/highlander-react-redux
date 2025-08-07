@@ -31,11 +31,7 @@ export const loginReducer = (state = initialState, action) => {
 		});
 		break;
     case LOGOUT:
-                return Object.assign({}, state, {
-                        isloggedIn: false,
-        email: '',
-                        pwd: ''
-                });
+                return Object.assign({}, initialState);
                 break;
         default:
 		return state;
