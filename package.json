@@ -29,13 +29,11 @@
     "sqlite3": "^5.0.1"
   },
   "devDependencies": {
-    "chai": "^4.0.2",
-    "chai-http": "^3.0.0",
     "eslint": "^3.19.0",
     "knex": "^0.21.17",
-    "mocha": "^3.4.2",
     "nodemon": "^1.11.0",
-    "react-scripts": "1.0.10"
+    "react-scripts": "1.0.10",
+    "supertest": "^6.3.3"
   },
   "scripts": {
     "start": "node server.js",
@@ -48,7 +46,5 @@
   },
   "engines": {
     "node": ">=14"
-    "seed": "knex seed:run",
-    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint ."
   }
 }
