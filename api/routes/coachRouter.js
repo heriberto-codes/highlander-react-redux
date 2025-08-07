@@ -72,11 +72,11 @@ router.post('/', function(req, res) {
 	const postParams = ['email', 'first_name', 'last_name', 'password'];
 	for (var i = 0; i < postParams.length; i++) {
 		const confirmPostParams = postParams[i];
-		if(!(confirmPostParams in req.body)) {
-			const errorMessage = `Sorry your missing ${confirmedParams} please try again`;
-			console.error(errorMessage);
-			return res.status(400).send(errorMessage)
-		}
+                if(!(confirmPostParams in req.body)) {
+                        const errorMessage = `Sorry your missing ${confirmPostParams} please try again`;
+                        console.error(errorMessage);
+                        return res.status(400).send(errorMessage)
+                }
 	}
 	Coach.hashPassword(req.body.password)
 		.then(function(hashedPassword){
