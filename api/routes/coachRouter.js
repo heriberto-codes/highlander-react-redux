@@ -44,32 +44,8 @@ router.get('/hashed/:password', function(req, res){
 
 })
 
-router.post('/login', function(req, res){
-	let coachData;
-	console.log(req.body);
-	Coach
-		.where({
-			email: req.body.email
-		})
-		.fetch()
-		.then(function(coach) {
-			coachData = coach;
-			console.log('password ====>', req.body.pwd);
-			return Coach.validatePassword(coachData.get('password'), req.body.pwd);
-		}).then(function(validPassword){
-			if(validPassword){
-				console.log(validPassword);
-				req.session.coachId = coachData.id; // assign / tie the user id to the session
-				res.status(200).json(coachData);
-			} else {
-				console.error('Wrong password');
-				res.status(404).json('Wrong password');
-			}
-		});
-});
-
 router.post('/', function(req, res) {
-	const postParams = ['email', 'first_name', 'last_name', 'password'];
+        const postParams = ['email', 'first_name', 'last_name', 'password'];
 	for (var i = 0; i < postParams.length; i++) {
 		const confirmPostParams = postParams[i];
                 if(!(confirmPostParams in req.body)) {
@@ -128,16 +104,5 @@ router.put('/:id', function(req, res) {
 			return res.status(500).json(err)
 		})
 })
-
-/*
- * # Logout
- * Delete the current active session
- */
-router.delete('/', function(req, res) {
-        req.session.destroy(); //After this session is destroyes reauthenticate is needed
-        res.sendStatus(204);
-})
-
-
 
 module.exports = router;
