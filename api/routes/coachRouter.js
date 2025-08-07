@@ -134,8 +134,8 @@ router.put('/:id', function(req, res) {
  * Delete the current active session
  */
 router.delete('/', function(req, res) {
-	req.session.destroy(); //After this session is destroyes reauthenticate is needed
-	res.status(400).send();
+        req.session.destroy(); //After this session is destroyes reauthenticate is needed
+        res.sendStatus(204);
 })
 
 
