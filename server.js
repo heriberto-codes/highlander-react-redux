@@ -3,6 +3,7 @@ const morgan = require('morgan');
 const session = require('express-session');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const helmet = require('helmet');
 const { SECRET, CLIENT_ORIGIN, DATABASE_URL } = require('./config');
 const path = require('path');
 
@@ -40,6 +41,7 @@ const statRouter = require('./api/routes/statRouter');
 const sessionRouter = require('./api/routes/sessionRouter');
 
 
+app.use(helmet());
 app.use(morgan('common'));
 app.use(session(sess));
 app.use(bodyParser.json());
