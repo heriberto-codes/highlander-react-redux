@@ -26,7 +26,7 @@ router.get('/', function(req, res) {
 
 router.get('/:id', function(req, res) {
   Player
-  .where({id: parseInt(req.params.id)})
+  .where({id: parseInt(req.params.id, 10)})
   .fetch({withRelated: ['teams']})
   .then(function(players) {
     res.json(players);
@@ -153,15 +153,15 @@ router.post('/', function(req, res) {
      }
    }
 
-   PlayerStat
-   .forge({
-     player_id: parseInt(req.params.player_id),
-     stat_catalog_id: parseInt(req.params.stat_catalog_id),
-     how_many: req.body.how_many
-   })
-   .save()
-   .then(function(stat) {
-     return res.status(200).json(stat);
+  PlayerStat
+  .forge({
+    player_id: parseInt(req.params.player_id, 10),
+    stat_catalog_id: parseInt(req.params.stat_catalog_id, 10),
+    how_many: req.body.how_many
+  })
+  .save()
+  .then(function(stat) {
+    return res.status(200).json(stat);
    })
    .catch(function(err) {
      return res.status(500).json(err);
@@ -180,17 +180,23 @@ router.post('/', function(req, res) {
      }
    }
 
-   Player
-   .where({
-     id: parseInt(req.params.id)
-   })
-   .fetch()
-   .then(function(player){
-     return player.destroy();
-   })
-   .then(function (player){
-     return res.status(200).end()
-   })
+  Player
+  .where({
+    id: parseInt(req.params.id, 10)
+  })
+  .fetch()
+  .then(function(player){
+    if (!player) {
+      return res.status(404).json({ error: 'Player not found' });
+    }
+    return player.destroy()
+      .then(function () {
+        return res.status(200).end();
+      });
+  })
+  .catch(function(err) {
+    return res.status(500).json(err);
+  });
 })
 
 module.exports = router;
