@@ -1,7 +1,6 @@
 const express = require('express');
 const morgan = require('morgan');
 const session = require('express-session');
-const PGSession = require('connect-pg-simple')(session);
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const { SECRET, CLIENT_ORIGIN, DATABASE_URL } = require('./config');
@@ -9,10 +8,18 @@ const path = require('path');
 
 const app = express();
 
-const sess = {
-        store: new PGSession({
+let store;
+if (process.env.NODE_ENV === 'test') {
+        store = new session.MemoryStore();
+} else {
+        const PGSession = require('connect-pg-simple')(session);
+        store = new PGSession({
                 conString: DATABASE_URL
-        }),
+        });
+}
+
+const sess = {
+        store,
         secret: SECRET,
         name: 'SessionMgmt',
         resave: false,

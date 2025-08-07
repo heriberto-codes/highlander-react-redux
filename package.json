@@ -29,6 +29,11 @@
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
+    "eslint": "^3.19.0",
+    "knex": "^0.21.17",
+    "nodemon": "^1.11.0",
+    "react-scripts": "1.0.10",
+    "supertest": "^6.3.3"
     "chai": "^4.3.8",
     "chai-http": "^4.3.0",
     "eslint": "^8.53.0",
@@ -37,6 +42,7 @@
     "mocha": "^10.2.0",
     "nodemon": "^3.0.3",
     "react-scripts": "^5.0.1"
+
   },
   "scripts": {
     "start": "node server.js",
