@@ -7,8 +7,8 @@ import '../css/style.css';
 export default function TeamDetailsComponent(props) {
 	return (
 		<section>
-			{props.players.map(player => {
-				return <div className='columns is-gapless team-details-page blockElement'>
+                        {props.players.map(player => {
+                                return <div key={player.id} className='columns is-gapless team-details-page blockElement'>
 					<div className='card-list'>
 						<div className='card has-text-centered'>
 							<div className='card-content'>
