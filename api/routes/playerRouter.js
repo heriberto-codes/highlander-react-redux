@@ -25,7 +25,6 @@ router.get('/:id', function(req, res) {
   .where({id: parseInt(req.params.id)})
   .fetch({withRelated: ['teams']})
   .then(function(players) {
-    console.log('players', players)
     res.json(players);
   })
 })
@@ -160,12 +159,11 @@ router.post('/', function(req, res) {
 
  router.delete('/:id', function(req, res) {
    const deleteParams = ['id']
-   for(var i = 0; i < deleteParams.length; i++) {
-     const wrongId = deleteParams[i];
-     console.log(':: wrong id is here =====> ::', wrongId)
-     if(!(wrongId in req.params)){
-       const errorMessage = `Sorry your missing ${wrongId} please try again`
-       console.error(errorMessage);
+  for(var i = 0; i < deleteParams.length; i++) {
+    const wrongId = deleteParams[i];
+    if(!(wrongId in req.params)){
+      const errorMessage = `Sorry your missing ${wrongId} please try again`
+      console.error(errorMessage);
        return res.status(400).send(errorMessage);
      }
    }
