@@ -7,8 +7,8 @@ export const getProfile = id => dispatch => {
 		type: GET_PROFILE,
 		id
 	});
-	axios.get(`${url}${id}`)
-		.then(response =>  {
+       axios.get(`${url}${id}`, { withCredentials: true })
+               .then(response =>  {
 			if(response.status === 200) {
 				dispatch(profileSuccess(response));
 			}
