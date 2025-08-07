@@ -4,6 +4,7 @@ const session = require('express-session');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const { SECRET, CLIENT_ORIGIN } = require('./config');
+const path = require('path');
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use(morgan('common'));
 app.use(session(sess));
 app.use(bodyParser.json());
 app.use(express.static('public'));
+app.use(express.static('build'));
 app.use(cors({ origin: CLIENT_ORIGIN }));
 
 app.use('/players', playerRouter);
@@ -36,6 +38,11 @@ app.use('/coaches', coachRouter);
 app.use('/teams', teamRouter);
 app.use('/stats', statRouter);
 app.use('/sessions', sessionRouter);
+
+// Fallback to index.html so React Router can handle routing in the client
+app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
 
 let server;
 
