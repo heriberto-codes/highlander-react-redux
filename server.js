@@ -30,6 +30,7 @@ app.use(morgan('common'));
 app.use(session(sess));
 app.use(bodyParser.json());
 app.use(express.static('public'));
+app.use(express.static('build'));
 app.use(cors());
 
 app.use('/players', playerRouter);
