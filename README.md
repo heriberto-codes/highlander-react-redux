@@ -110,9 +110,12 @@ id | description
 
 - [x] router.post('/')
 
-- [x] router.post('/login')
-
 - [x] router.put('/:id')
+
+#### `session`
+
+- [x] router.post('/login')
+- [x] router.delete('/')
 
 #### `player`
 

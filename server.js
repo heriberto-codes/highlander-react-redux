@@ -23,6 +23,7 @@ const playerRouter = require('./api/routes/playerRouter');
 const coachRouter = require('./api/routes/coachRouter');
 const teamRouter = require('./api/routes/teamRouter');
 const statRouter = require('./api/routes/statRouter');
+const sessionRouter = require('./api/routes/sessionRouter');
 
 
 app.use(morgan('common'));
@@ -35,7 +36,7 @@ app.use('/players', playerRouter);
 app.use('/coaches', coachRouter);
 app.use('/teams', teamRouter);
 app.use('/stats', statRouter);
-app.use('/sessions', coachRouter);
+app.use('/sessions', sessionRouter);
 
 let server;
 

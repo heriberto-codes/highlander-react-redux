@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const url = 'http://localhost:8080/coaches/login';
+const url = 'http://localhost:8080/sessions/login';
 export const LOGIN_REQUEST = 'LOGIN_REQUEST';
 export const login = (email, pwd) => dispatch => {
 	dispatch({
