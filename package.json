@@ -44,6 +44,10 @@
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject",
     "migrate": "knex migrate:latest",
+    "seed": "knex seed:run"
+  },
+  "engines": {
+    "node": ">=14"
     "seed": "knex seed:run",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint ."
   }

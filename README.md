@@ -14,6 +14,10 @@ Current MVP version omits :no_entry_sign:: </br>
 
 Want to keep up with the development and roadmap of Highlander?  https://trello.com/b/p1gqbNtQ/thinkful-capstone-highlander
 
+## Requirements
+
+- Node.js 14 or later
+
 ## Screenshots
 ![main page](/public/assets/img/highlander_home.png)
 
