@@ -6,13 +6,7 @@ import '../css/style.css';
 
 export default function TeamDetailsNavigation(props) {
 
-	//TODO: look into storing all of this via deconstruction
-	const name = props.name;
-	const location = props.city;
-	const firstName = props.first_name;
-	const lastName = props.last_name;
-	const email = props.email;
-	const onClick = props.showModal;
+        const { name, city: location, first_name: firstName, last_name: lastName, email, showModal: onClick } = props;
 
 	return (
 		<section className="hero is-primary dashboard-bg-image">
