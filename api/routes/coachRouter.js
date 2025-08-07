@@ -33,17 +33,6 @@ router.get('/:id', function(req, res) {
 		});
 });
 
-router.get('/hashed/:password', function(req, res){
-	console.log(req.params.password)
-	Coach.hashPassword(req.params.password)
-		.then(password => {
-			console.log(password)
-			res.status(200)
-				.json({hashedPassword: password});
-		})
-
-})
-
 router.post('/', function(req, res) {
         const postParams = ['email', 'first_name', 'last_name', 'password'];
 	for (var i = 0; i < postParams.length; i++) {
