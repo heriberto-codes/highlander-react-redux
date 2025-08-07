@@ -12,6 +12,7 @@
     "cors": "^2.8.4",
     "express": "^4.15.3",
     "express-session": "^1.17.1",
+    "connect-pg-simple": "^7.0.0",
     "mongodb": "^2.2.30",
     "morgan": "^1.10.0",
     "pg": "^6.4.2",
@@ -37,7 +38,8 @@
     "react-scripts": "1.0.10"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "node server.js",
+    "client": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject",
@@ -46,5 +48,7 @@
   },
   "engines": {
     "node": ">=14"
+    "seed": "knex seed:run",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint ."
   }
 }
