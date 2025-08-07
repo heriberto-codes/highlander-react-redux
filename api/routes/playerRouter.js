@@ -8,6 +8,7 @@ const jsonParser = bodyParser.json();
 const Player = require('../models/Player');
 const Stat_Catalog = require('../models/Stat_Catalog');
 const PlayerStat = require('../models/PlayerStat');
+const ensureAuthenticated = require('../middleware/ensureAuthenticated');
 
 router.use(bodyParser.urlencoded({extended: true}));
 router.use(jsonParser);
@@ -51,7 +52,7 @@ router.get('/:id/stats', function(req, res) {
 })
 
 // update player
-router.put('/:id', function(req, res) {
+router.put('/:id', ensureAuthenticated, function(req, res) {
 	// check to see if the proper params is equal to what the user is inputting
 	const updateParams = ['email', 'first_name', 'last_name', 'position'];
 	for(var i = 0; i < updateParams.length; i++) {
@@ -83,7 +84,7 @@ router.put('/:id', function(req, res) {
 });
 
 // update a stat tied to a player
- router.put('/:player_id/stats/:stat_catalog_id', function(req, res) {
+ router.put('/:player_id/stats/:stat_catalog_id', ensureAuthenticated, function(req, res) {
    const postParams = ['how_many'];
    for (var i = 0; i < postParams.length; i++) {
      const confirmPutParams = postParams[i];
@@ -114,7 +115,7 @@ router.put('/:id', function(req, res) {
  })
 
 // post new player
-router.post('/', function(req, res) {
+router.post('/', ensureAuthenticated, function(req, res) {
 	const postParams = ['email', 'first_name', 'last_name', 'position'];
 	for (var i = 0; i < postParams.length; i++) {
 		const confirmPostParams = postParams[i];
@@ -142,7 +143,7 @@ router.post('/', function(req, res) {
 });
 
 // post a new stat for a player
- router.post('/:player_id/stats/:stat_catalog_id', function(req, res) {
+ router.post('/:player_id/stats/:stat_catalog_id', ensureAuthenticated, function(req, res) {
    const postParams = ['how_many'];
    for (var i = 0; i < postParams.length; i++) {
      const confirmPostParams = postParams[i];
@@ -169,7 +170,7 @@ router.post('/', function(req, res) {
  })
 
 
- router.delete('/:id', function(req, res) {
+ router.delete('/:id', ensureAuthenticated, function(req, res) {
    const deleteParams = ['id']
   for(var i = 0; i < deleteParams.length; i++) {
     const wrongId = deleteParams[i];
@@ -197,6 +198,6 @@ router.post('/', function(req, res) {
   .catch(function(err) {
     return res.status(500).json(err);
   });
-})
+ })
 
 module.exports = router;
