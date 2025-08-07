@@ -13,19 +13,18 @@ const ensureAuthenticated = require('../middleware/ensureAuthenticated');
 router.use(bodyParser.urlencoded({extended: true}));
 router.use(jsonParser);
 
-router.get('/', function(req, res) {
+router.get('/', function(req, res, next) {
   Player
   .fetchAll()
   .then(function(players) {
     res.json(players);
   })
   .catch(function(err) {
-    console.error(err);
-    return res.status(500).json(err);
+    return next(err);
   });
 })
 
-router.get('/:id', function(req, res) {
+router.get('/:id', function(req, res, next) {
   Player
   .where({id: parseInt(req.params.id, 10)})
   .fetch({withRelated: ['teams']})
@@ -33,12 +32,11 @@ router.get('/:id', function(req, res) {
     res.json(players);
   })
   .catch(function(err) {
-    console.error(err);
-    return res.status(500).json(err);
+    return next(err);
   });
 })
 
-router.get('/:id/stats', function(req, res) {
+router.get('/:id/stats', function(req, res, next) {
   Player
   .where({id: req.params.id})
   .fetch({withRelated: ['stats']})
@@ -46,8 +44,7 @@ router.get('/:id/stats', function(req, res) {
     res.json(stats);
   })
   .catch(function(err) {
-    console.error(err);
-    return res.status(500).json(err);
+    return next(err);
   });
 })
 
@@ -79,7 +76,7 @@ router.put('/:id', ensureAuthenticated, function(req, res) {
 			return res.status(200).json(player);
 		})
 		.catch(function(err) {
-			return res.status(500).json(err);
+			return next(err);
 		});
 });
 
@@ -110,7 +107,7 @@ router.put('/:id', ensureAuthenticated, function(req, res) {
      return res.status(200).json(player);
    })
    .catch(function(err) {
-     return res.status(500).json(err);
+     return next(err);
    })
  })
 
@@ -138,7 +135,7 @@ router.post('/', ensureAuthenticated, function(req, res) {
 			return res.status(200).json(player);
 		})
 		.catch(function(err) {
-			return res.status(500).json(err);
+			return next(err);
 		});
 });
 
@@ -165,7 +162,7 @@ router.post('/', ensureAuthenticated, function(req, res) {
     return res.status(200).json(stat);
    })
    .catch(function(err) {
-     return res.status(500).json(err);
+     return next(err);
    })
  })
 
@@ -196,7 +193,7 @@ router.post('/', ensureAuthenticated, function(req, res) {
       });
   })
   .catch(function(err) {
-    return res.status(500).json(err);
+    return next(err);
   });
  })
 

@@ -13,7 +13,7 @@ router.use(bodyParser.urlencoded({
 }));
 router.use(jsonParser);
 
-router.get('/', function(req, res) {
+router.get('/', function(req, res, next) {
 	if(req.session.coachId){ // If the session doesn't have an userId(accessToken, etc...) then you don't show the protected token
                Coach
                         .fetchAll()
@@ -21,15 +21,14 @@ router.get('/', function(req, res) {
                                 res.json(coaches);
                         })
                         .catch(function(err) {
-                                console.error(err);
-                                return res.status(500).json(err);
+                                return next(err);
                         });
 	} else {
 		res.status(403).send('No session available');
 	}
 });
 
-router.get('/:id', function(req, res) {
+router.get('/:id', function(req, res, next) {
         Coach
                 .where({id: req.params.id})
                 .fetch({withRelated: ['teams', 'teams.players', 'teams.players.stats']})
@@ -37,8 +36,7 @@ router.get('/:id', function(req, res) {
                         res.json(coaches);
                 })
                 .catch(function(err) {
-                        console.error(err);
-                        return res.status(500).json(err);
+                        return next(err);
                 });
 });
 
@@ -67,7 +65,7 @@ router.post('/', ensureAuthenticated, function(req, res) {
 			return res.status(200).json(coach);
 		})
 		.catch(function(err){
-			return res.status(500).json(err);
+			return next(err);
 		})
 })
 
@@ -99,7 +97,7 @@ router.put('/:id', ensureAuthenticated, function(req, res) {
 			return res.status(200).json(coach)
 		})
 		.catch(function(err) {
-			return res.status(500).json(err)
+			return next(err)
 		})
 })
 

@@ -16,6 +16,7 @@ router.use(jsonParser);
 /*
  * Login and create a new session
  */
+
 router.post('/login', function(req, res){
         if (!req.body.email || !req.body.pwd) {
                 res.status(400).json('Email and password are required');
@@ -46,7 +47,7 @@ router.post('/login', function(req, res){
                         }
                 })
                 .catch(function(err){
-                        res.status(500).json(err);
+                        return next(err);
                 });
         // TODO: Implement rate limiting or account lockout to deter brute-force attacks.
 });

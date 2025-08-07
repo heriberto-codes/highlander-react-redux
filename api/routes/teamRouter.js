@@ -57,9 +57,10 @@ router.put('/:id', ensureAuthenticated, function(req, res) {
 			return res.status(200).json(team);
 		})
 		.catch(function(err) {
-			return res.status(500).json(err);
+			return next(err);
 		});
 });
+
 
 router.post('/', ensureAuthenticated, function(req, res) {
         const postParams = ['name', 'city', 'state', 'coachId'];
@@ -101,9 +102,10 @@ router.post('/', ensureAuthenticated, function(req, res) {
                                 });
                 })
                 .catch(function(err) {
-                        return res.status(500).json(err);
+                        return next(err);
                 });
 });
+
 
 router.post('/:id/player', ensureAuthenticated, function(req, res) {
   const postParams = ['email', 'first_name', 'last_name', 'position']
@@ -129,7 +131,7 @@ router.post('/:id/player', ensureAuthenticated, function(req, res) {
     return res.status(200).json(player)
   })
   .catch(function(err) {
-    return res.status(500).json(err)
+    return next(err)
   })
 })
 
