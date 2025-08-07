@@ -6,12 +6,7 @@ const initialState = {
 	name: '',
 	city: '',
 	state: '',
-	players: [{
-		first_name: false,
-		last_name: false,
-		email: false,
-		position: false
-	}],
+        players: [],
 	coach: {
 		first_name: '',
 		last_name: '',
@@ -24,11 +19,11 @@ const initialState = {
 const players = (state = initialState.players, action) => {
         switch(action.type) {
         case GET_TEAM_PROFILE_SUCCESS:
-                return action.response.data.players.map(player => Object.assign({}, state, {
-                        first_name: player.first_name,
-                        last_name: player.last_name,
-                        email: player.email,
-                        position: player.position
+                return action.response.data.players.map(({ first_name, last_name, email, position }) => ({
+                        first_name,
+                        last_name,
+                        email,
+                        position
                 }));
         case ADD_PLAYER:
                 return [...state, {
