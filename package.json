@@ -33,7 +33,7 @@
     "knex": "^0.21.17",
     "nodemon": "^1.11.0",
     "react-scripts": "1.0.10",
-    "supertest": "^6.3.3"
+    "supertest": "^6.3.3",
     "chai": "^4.3.8",
     "chai-http": "^4.3.0",
     "eslint": "^8.53.0",
@@ -52,7 +52,8 @@
     "eject": "react-scripts eject",
     "migrate": "knex migrate:latest",
     "seed": "knex seed:run",
-    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint ."
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint .",
+    "postinstall": "npm run build"
   },
   "engines": {
     "node": ">=14"
