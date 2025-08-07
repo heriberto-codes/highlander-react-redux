@@ -31,13 +31,13 @@ export const loginReducer = (state = initialState, action) => {
 		});
 		break;
     case LOGOUT:
-		return Object.assign({}, state, {
-			isLoggedin: false,
+                return Object.assign({}, state, {
+                        isloggedIn: false,
         email: '',
-			pwd: ''
-		});
-		break;
-	default:
+                        pwd: ''
+                });
+                break;
+        default:
 		return state;
 	}
 };
