@@ -2,7 +2,7 @@
 [![Build Status](https://travis-ci.org/iamromanh/highlander-react-redux.svg?branch=master)](https://travis-ci.org/iamromanh/highlander-react-redux)
 
 ## Live Demo
-Link: Coming soon!
+Currently no live demo is available.
 
 ## Description
 A simple app for coaches to manage their teams stats, averages, trash talk, and poach players from other teams.
@@ -52,7 +52,7 @@ npm start
   - Ensure all environment variables above are configured with `heroku config:set ...`.
   - Run migrations on the remote instance with `heroku run npm run migrate`.
   - If the build fails, verify the Node.js buildpack is enabled and that `npm run build` succeeds locally before deploying.
-=======
+
 ## Requirements
 
 - Node.js 14 or later
