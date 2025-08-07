@@ -62,31 +62,47 @@ router.put('/:id', function(req, res) {
 });
 
 router.post('/', function(req, res) {
-	const postParams = ['name', 'city', 'state'];
-	for (var i = 0; i < postParams.length; i++) {
-		const confirmPostParams = postParams[i];
-		if(!(confirmPostParams in req.body)) {
-			const errorMessage = `Sorry your missing ${confirmPostParams} please try again`;
-			console.error(errorMessage);
-			return res.status(400).send(errorMessage);
-		}
-	}
+        const postParams = ['name', 'city', 'state', 'coachId'];
+        for (var i = 0; i < postParams.length; i++) {
+                const confirmPostParams = postParams[i];
+                if(!(confirmPostParams in req.body)) {
+                        const errorMessage = `Sorry your missing ${confirmPostParams} please try again`;
+                        console.error(errorMessage);
+                        return res.status(400).send(errorMessage);
+                }
+        }
 
-	Team
-		.forge({
-			name: req.body.name,
-			city: req.body.city,
-			state: req.body.state,
-			game_date: new Date()
-		})
-		.save()
-		.then(function(team) {
-			team.coach().attach(req.body.coachId);
-			return res.status(200).json(team);
-		})
-		.catch(function(err) {
-			return res.status(500).json(err);
-		});
+        Coaches
+                .where({id: req.body.coachId})
+                .fetch()
+                .then(function(coach) {
+                        if(!coach) {
+                                const errorMessage = `Sorry your coachId is invalid please try again`;
+                                console.error(errorMessage);
+                                return res.status(400).send(errorMessage);
+                        }
+
+                        return Team
+                                .forge({
+                                        name: req.body.name,
+                                        city: req.body.city,
+                                        state: req.body.state,
+                                        game_date: new Date()
+                                })
+                                .save()
+                                .then(function(team) {
+                                        return team.coach().attach(req.body.coachId)
+                                                .then(function() {
+                                                        return team;
+                                                });
+                                })
+                                .then(function(team) {
+                                        return res.status(200).json(team);
+                                });
+                })
+                .catch(function(err) {
+                        return res.status(500).json(err);
+                });
 });
 
 router.post('/:id/player', function(req, res) {
