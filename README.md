@@ -14,6 +14,45 @@ Current MVP version omits :no_entry_sign:: </br>
 
 Want to keep up with the development and roadmap of Highlander?  https://trello.com/b/p1gqbNtQ/thinkful-capstone-highlander
 
+## Setup
+
+### Build the client
+1. Install dependencies
+   ```bash
+   npm install
+   ```
+2. Create a production build
+   ```bash
+   npm run build
+   ```
+
+### Environment variables
+Set the following variables in your shell or a `.env` file before starting the server:
+
+```
+DATABASE_URL=postgresql://localhost/highlander-react-redux
+CLIENT_ORIGIN=http://localhost:3000
+SECRET=super-secret
+PORT=8080
+```
+
+### Run database migrations
+```bash
+npm run migrate
+npm run seed   # optional, populate sample data
+```
+
+### Start the app
+```bash
+npm start
+```
+
+### Troubleshooting
+- **Heroku or similar platforms:**
+  - Ensure all environment variables above are configured with `heroku config:set ...`.
+  - Run migrations on the remote instance with `heroku run npm run migrate`.
+  - If the build fails, verify the Node.js buildpack is enabled and that `npm run build` succeeds locally before deploying.
+=======
 ## Requirements
 
 - Node.js 14 or later
