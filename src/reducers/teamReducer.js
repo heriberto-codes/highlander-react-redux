@@ -22,36 +22,38 @@ const initialState = {
 };
 
 const players = (state = initialState.players, action) => {
-	switch(action.type) {
-	case GET_TEAM_PROFILE_SUCCESS:
-		return action.response.data.players.map(player => Object.assign({}, state, {
-			first_name: player.first_name,
-			last_name: player.last_name,
-			email: player.email,
-			position: player.position
-		}));
-		break;
-	case ADD_PLAYER:
-		return [...state, {
-			first_name: action.response.data.first_name,
-			last_name: action.response.data.last_name,
-			email: action.response.data.email,
-			position: action.response.data.position
-		}]
+        switch(action.type) {
+        case GET_TEAM_PROFILE_SUCCESS:
+                return action.response.data.players.map(player => Object.assign({}, state, {
+                        first_name: player.first_name,
+                        last_name: player.last_name,
+                        email: player.email,
+                        position: player.position
+                }));
+        case ADD_PLAYER:
+                return [...state, {
+                        first_name: action.response.data.first_name,
+                        last_name: action.response.data.last_name,
+                        email: action.response.data.email,
+                        position: action.response.data.position
+                }];
+        default:
+                return state;
+        }
 };
-}
 
 // this is the way to approach nested state to generate the data im looking for
 const coach = (state = initialState.coach, action) => {
-	switch(action.type) {
-	case GET_TEAM_PROFILE_SUCCESS:
-		return Object.assign({}, state, {
-			first_name: action.response.data.coach[0].first_name,
-			last_name: action.response.data.coach[0].last_name,
-			email: action.response.data.coach[0].email
-		});
-		break;
-	}
+        switch(action.type) {
+        case GET_TEAM_PROFILE_SUCCESS:
+                return Object.assign({}, state, {
+                        first_name: action.response.data.coach[0].first_name,
+                        last_name: action.response.data.coach[0].last_name,
+                        email: action.response.data.coach[0].email
+                });
+        default:
+                return state;
+        }
 };
 
 // create the teamReducer and set the state equal to intial state
@@ -67,10 +69,10 @@ export const teamReducer = (state = initialState, action) => {
 			coach: coach(state.coach, action)
 		});
 		break;
-	case GET_TEAM_PROFILE_ERROR:
-		return Object.assign({}, state, {
-			errorMessage: action.err
-		});
+        case GET_TEAM_PROFILE_ERROR:
+                return Object.assign({}, state, {
+                        errorMessage: action.response
+                });
 	case CREATE_TEAM:
 		return Object.assign({}, state, {
 			showModal: true
