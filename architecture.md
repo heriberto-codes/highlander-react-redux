@@ -52,11 +52,11 @@ Base paths are mounted in `server.js` (no `/api` prefix):
 - `POST /sessions/login` (login)
 - `DELETE /sessions` (logout)
 - `GET /coaches` (list coaches, requires session)
-- `GET /coaches/:id` (coach by id)
+- `GET /coaches/:id` (coach by id; includes additive player analytics)
 - `POST /coaches` (create coach, auth required)
 - `PUT /coaches/:id` (update coach, auth required)
 - `GET /teams` (list teams)
-- `GET /teams/:id` (team by id, includes coach + players)
+- `GET /teams/:id` (team by id, includes coach, players, and additive player analytics)
 - `POST /teams` (create team, auth required)
 - `PUT /teams/:id` (update team, auth required)
 - `POST /teams/:id/player` (add player to team, auth required)
@@ -70,6 +70,23 @@ Base paths are mounted in `server.js` (no `/api` prefix):
 - `DELETE /players/:id` (delete player, auth required)
 - `GET /stats` (list stat catalog)
 - `GET /stats/:id` (stat catalog by id)
+
+### Player Analytics Contract
+- `GET /coaches/:id` remains the dashboard data source and includes `player.derivedStats`
+- `GET /teams/:id` exposes the same additive `player.derivedStats` shape
+- additive `derivedStats` fields:
+  - `battingAverage`
+  - `homeRunRate`
+  - `era`
+  - `strikeoutsPerInning`
+- values are numeric or `null` when missing data or zero denominators prevent valid calculation
+- excluded from v1 due to current stat catalog limits:
+  - `onBasePercentage`
+  - `sluggingPercentage`
+  - `ops`
+  - walks-based metrics
+  - doubles/triples-based metrics
+  - team leaderboards or rankings
 
 ## Authentication
 - Session-based auth via `express-session`, stored in Postgres with `connect-pg-simple`.

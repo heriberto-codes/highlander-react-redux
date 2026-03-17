@@ -7,6 +7,7 @@ const jsonParser = bodyParser.json();
 
 const Coach = require('../models/Coach');
 const ensureAuthenticated = require('../middleware/ensureAuthenticated');
+const { addDerivedStatsToCoachPayload } = require('../utils/playerAnalytics');
 
 router.use(bodyParser.urlencoded({
 	extended: true
@@ -29,11 +30,26 @@ router.get('/', function(req, res, next) {
 });
 
 router.get('/:id', function(req, res, next) {
+        /*
+         * Planned dashboard analytics contract for GET /coaches/:id:
+         * - keep the existing coach/team/player payload unchanged
+         * - add player.derivedStats as an additive field only
+         * - v1 fields:
+         *   - battingAverage
+         *   - homeRunRate
+         *   - era
+         *   - strikeoutsPerInning
+         * - values should be numeric or null when the denominator/missing data
+         *   prevents a valid calculation
+         * - excluded from v1 because the current stat catalog does not support
+         *   them correctly: OBP, SLG, OPS, RBI, walks-based metrics, doubles,
+         *   triples, and team-level leaderboards
+         */
         Coach
                 .where({id: req.params.id})
                 .fetch({withRelated: ['teams', 'teams.players', 'teams.players.stats']})
                 .then(function(coaches) {
-                        res.json(coaches);
+                        res.json(addDerivedStatsToCoachPayload(coaches));
                 })
                 .catch(function(err) {
                         return next(err);

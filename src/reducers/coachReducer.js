@@ -13,6 +13,52 @@ const initialState = {
 	state: ''
 };
 
+const defaultRawStats = () => ({
+	'Hits': 0,
+	'At Bats': 0,
+	'Home Runs': 0,
+	'Earned Runs': 0,
+	'Innings Pitched': 0,
+	'Strikeouts': 0
+});
+
+const normalizeDerivedStats = derivedStats => ({
+	battingAverage:
+		derivedStats && derivedStats.battingAverage !== undefined
+			? derivedStats.battingAverage
+			: null,
+	homeRunRate:
+		derivedStats && derivedStats.homeRunRate !== undefined
+			? derivedStats.homeRunRate
+			: null,
+	era:
+		derivedStats && derivedStats.era !== undefined
+			? derivedStats.era
+			: null,
+	strikeoutsPerInning:
+		derivedStats && derivedStats.strikeoutsPerInning !== undefined
+			? derivedStats.strikeoutsPerInning
+			: null
+});
+
+const extractRawStats = player => {
+	const playerStats = defaultRawStats();
+	(player.stats || []).forEach(stat => {
+		if (stat.description in playerStats) {
+			playerStats[stat.description] += stat._pivot_how_many;
+		}
+	});
+	return playerStats;
+};
+
+const buildDashboardPlayerStat = player => ({
+	first_name: player.first_name,
+	last_name: player.last_name,
+	position: player.position,
+	stats: extractRawStats(player),
+	derivedStats: normalizeDerivedStats(player.derivedStats)
+});
+
 export const coachReducer = (state = initialState, action) => {
 	switch (action.type) {
 	case LOGIN_SUCCESS:
@@ -25,27 +71,6 @@ export const coachReducer = (state = initialState, action) => {
 		action.response.data.teams.forEach(team => {
 			players = players.concat(team.players);
 		});
-
-		// this is how we are generating the player stats
-		const generateStat = player => {
-			let playerStats = {
-				'Hits': 0,
-				'At Bats': 0,
-				'Home Runs': 0,
-				'Earned Runs': 0,
-				'Innings Pitched': 0,
-				'Strikeouts': 0
-			};
-			player.stats.forEach(stat => {
-				playerStats[stat.description] = stat._pivot_how_many;
-			});
-			return {
-				first_name: player.first_name,
-				last_name: player.last_name,
-				position: player.position,
-				stats: playerStats
-			};
-		};
 
 		let stats = [];
 		let playerIds = [];
@@ -67,7 +92,7 @@ export const coachReducer = (state = initialState, action) => {
 
                 // push the updated stats object for each player
                 filteredPlayerIds.forEach((player, index) => {
-                        stats.push(generateStat(player));
+                        stats.push(buildDashboardPlayerStat(player));
                 });
 
                 const city =

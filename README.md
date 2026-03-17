@@ -9,8 +9,9 @@ A simple app for coaches to manage their teams stats, averages, trash talk, and 
 
 Current MVP version omits :no_entry_sign:: </br>
 - Poaching power :punch: </br>
-- Player averages :bar_chart: </br>
 - Trash talk  :speak_no_evil:
+
+The dashboard now includes derived player analytics from existing stat totals, including batting average, home run rate, ERA, and strikeouts per inning.
 
 Want to keep up with the development and roadmap of Highlander?  https://trello.com/b/p1gqbNtQ/thinkful-capstone-highlander
 

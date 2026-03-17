@@ -5,12 +5,14 @@ import '../css/style.css';
 
 export default function StatsList(props) {
 	const stats = props.stats;
+	const formatDerivedStat = value =>
+		value === null || value === undefined ? '--' : Number(value).toFixed(3);
 	// const mergeTeamStats = [];
 
 	// the fact that I am setting state for stats here seems dirty.
-	let playerStats = stats.map(player => {
-		return <tr>
-              // eslint-disable-next-line indent
+	let playerStats = stats.map((player, index) => {
+		const rowKey = player.id || `${player.first_name}-${player.last_name}-${player.position}-${index}`;
+		return <tr key={rowKey}>
 			<th>{player.position}</th>
 			<td>{player.first_name} {player.last_name}</td>
 			<td>{player.stats["Hits"]}</td>
@@ -19,6 +21,10 @@ export default function StatsList(props) {
 			<td>{player.stats["Earned Runs"]}</td>
 			<td>{player.stats["Innings Pitched"]}</td>
 			<td>{player.stats["Strikeouts"]}</td>
+			<td>{formatDerivedStat(player.derivedStats && player.derivedStats.battingAverage)}</td>
+			<td>{formatDerivedStat(player.derivedStats && player.derivedStats.homeRunRate)}</td>
+			<td>{formatDerivedStat(player.derivedStats && player.derivedStats.era)}</td>
+			<td>{formatDerivedStat(player.derivedStats && player.derivedStats.strikeoutsPerInning)}</td>
 		</tr>
 	})
 	// mergeTeamStats.push(newPlayerStat);
@@ -83,6 +89,18 @@ export default function StatsList(props) {
 								</th>
 								<th>
 									<abbr title='Strike Outs'>Strike Outs</abbr>
+								</th>
+								<th>
+									<abbr title='Batting Average'>AVG</abbr>
+								</th>
+								<th>
+									<abbr title='Home Run Rate'>HR Rate</abbr>
+								</th>
+								<th>
+									<abbr title='Earned Run Average'>ERA</abbr>
+								</th>
+								<th>
+									<abbr title='Strikeouts Per Inning'>K/IP</abbr>
 								</th>
 							</tr>
 						</thead>

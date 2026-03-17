@@ -8,6 +8,7 @@ const Team = require('../models/Team');
 const Player = require('../models/Player');
 const Coaches = require('../models/Coach');
 const ensureAuthenticated = require('../middleware/ensureAuthenticated');
+const { addDerivedStatsToTeamPayload } = require('../utils/playerAnalytics');
 
 router.use(bodyParser.urlencoded({extended: true}));
 router.use(jsonParser);
@@ -24,9 +25,9 @@ router.get('/', function(req, res) {
 router.get('/:id', function(req, res) {
 	Team
 		.where({id: req.params.id})
-               .fetch({withRelated: ['coach', 'players']})
+               .fetch({withRelated: ['coach', 'players', 'players.stats']})
                .then(function(teams) {
-                        res.json(teams);
+                        res.json(addDerivedStatsToTeamPayload(teams));
                });
 });
 
