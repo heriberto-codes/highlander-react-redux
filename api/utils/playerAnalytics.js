@@ -15,6 +15,30 @@ function divide(numerator, denominator) {
         return left / right;
 }
 
+function getStatSeason(stat) {
+        if (!stat || !stat._pivot_game_date) {
+                return null;
+        }
+
+        const date = new Date(stat._pivot_game_date);
+
+        if (Number.isNaN(date.getTime())) {
+                return null;
+        }
+
+        return date.getUTCFullYear();
+}
+
+function filterStatsBySeason(stats, season) {
+        if (season === null || season === undefined) {
+                return stats || [];
+        }
+
+        return (stats || []).filter(function(stat) {
+                return getStatSeason(stat) === season;
+        });
+}
+
 function collectRawStats(stats) {
         return (stats || []).reduce(function(acc, stat) {
                 const description = stat.description;
@@ -28,8 +52,8 @@ function collectRawStats(stats) {
         }, {});
 }
 
-function buildDerivedStats(player) {
-        const rawStats = collectRawStats(player.stats);
+function buildDerivedStats(player, season) {
+        const rawStats = collectRawStats(filterStatsBySeason(player.stats, season));
         const hits = rawStats['Hits'];
         const atBats = rawStats['At Bats'];
         const homeRuns = rawStats['Home Runs'];
@@ -45,10 +69,13 @@ function buildDerivedStats(player) {
         };
 }
 
-function addDerivedStatsToPlayers(players) {
+function addDerivedStatsToPlayers(players, season) {
         return (players || []).map(function(player) {
+                const filteredStats = filterStatsBySeason(player.stats, season);
+
                 return Object.assign({}, player, {
-                        derivedStats: buildDerivedStats(player)
+                        stats: filteredStats,
+                        derivedStats: buildDerivedStats(player, season)
                 });
         });
 }
@@ -82,6 +109,8 @@ function addDerivedStatsToTeamPayload(team) {
 module.exports = {
         addDerivedStatsToCoachPayload,
         addDerivedStatsToTeamPayload,
+        addDerivedStatsToPlayers,
         buildDerivedStats,
-        collectRawStats
+        collectRawStats,
+        filterStatsBySeason
 };

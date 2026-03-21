@@ -22,6 +22,9 @@ describe('StatsList', () => {
   it('renders existing raw totals and derived stats with fixed 3-decimal formatting', () => {
     ReactDOM.render(
       <StatsList
+        teams={[
+          { id: 1, name: 'Highlanders', season: 2026 }
+        ]}
         stats={[
           {
             first_name: 'Pat',
@@ -59,11 +62,15 @@ describe('StatsList', () => {
     expect(div.textContent).toContain('0.200');
     expect(div.textContent).toContain('4.500');
     expect(div.textContent).toContain('1.500');
+    expect(div.textContent).toContain('Showing season 2026');
   });
 
   it('renders fallback placeholders for null derived stats', () => {
     ReactDOM.render(
       <StatsList
+        teams={[
+          { id: 1, name: 'Highlanders', season: 2026 }
+        ]}
         stats={[
           {
             first_name: 'Sam',
@@ -96,6 +103,9 @@ describe('StatsList', () => {
   it('renders distinct rows for players with the same name and position', () => {
     ReactDOM.render(
       <StatsList
+        teams={[
+          { id: 1, name: 'Highlanders', season: 2026 }
+        ]}
         stats={[
           {
             first_name: 'Chris',

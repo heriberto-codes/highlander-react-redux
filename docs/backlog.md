@@ -3,7 +3,7 @@
 ## Features
 
 - [x] Player analytics and derived stats
-- [ ] Team season views
+- [x] Team season views
 - [ ] Game-based stat entry
 - [ ] Search and filtering
 - [ ] Coach collaboration and permissions

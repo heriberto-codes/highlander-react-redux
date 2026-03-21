@@ -52,13 +52,13 @@ Base paths are mounted in `server.js` (no `/api` prefix):
 - `POST /sessions/login` (login)
 - `DELETE /sessions` (logout)
 - `GET /coaches` (list coaches, requires session)
-- `GET /coaches/:id` (coach by id; includes additive player analytics)
+- `GET /coaches/:id` (coach by id; includes additive player analytics and season metadata)
 - `POST /coaches` (create coach, auth required)
 - `PUT /coaches/:id` (update coach, auth required)
 - `GET /teams` (list teams)
-- `GET /teams/:id` (team by id, includes coach, players, and additive player analytics)
-- `POST /teams` (create team, auth required)
-- `PUT /teams/:id` (update team, auth required)
+- `GET /teams/:id` (team by id, includes coach, players, additive player analytics, and season metadata)
+- `POST /teams` (create team, auth required, requires `season`)
+- `PUT /teams/:id` (update team, auth required, requires `season`)
 - `POST /teams/:id/player` (add player to team, auth required)
 - `GET /players` (list players)
 - `GET /players/:id` (player by id)
@@ -74,6 +74,13 @@ Base paths are mounted in `server.js` (no `/api` prefix):
 ### Player Analytics Contract
 - `GET /coaches/:id` remains the dashboard data source and includes `player.derivedStats`
 - `GET /teams/:id` exposes the same additive `player.derivedStats` shape
+- both endpoints support season-aware stat shaping:
+  - `GET /coaches/:id?season=<year>`
+  - `GET /teams/:id?season=<year>`
+- dashboard/team payloads may include:
+  - `availableSeasons`
+  - `activeSeason`
+- season-scoped stat filtering uses `players_stat_catalogs.game_date` year
 - additive `derivedStats` fields:
   - `battingAverage`
   - `homeRunRate`
@@ -87,6 +94,15 @@ Base paths are mounted in `server.js` (no `/api` prefix):
   - walks-based metrics
   - doubles/triples-based metrics
   - team leaderboards or rankings
+
+### Team Season Views Contract
+- `teams.season` is the persisted season/year source of truth for team membership and team browsing
+- `GET /coaches/:id` may return season-filtered teams plus `availableSeasons` and `activeSeason`
+- `GET /teams/:id` may return team `season` plus `availableSeasons` and `activeSeason`
+- current season-family heuristic for team details uses same `team.name` within the coach's teams
+- known limitation:
+  - player stats are dated, but not linked to `team_id`
+  - if a player changes teams within the same season, season-filtered stats cannot be perfectly attributed to one team
 
 ## Authentication
 - Session-based auth via `express-session`, stored in Postgres with `connect-pg-simple`.
@@ -115,6 +131,7 @@ Required variables (see `.env.example`):
 ## Database Schema (High Level)
 - `coaches`
 - `teams`
+  - includes persisted `season`
 - `players`
 - `stat_catalogs`
 - `players_stat_catalogs`

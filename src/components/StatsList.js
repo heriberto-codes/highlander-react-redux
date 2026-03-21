@@ -5,6 +5,10 @@ import '../css/style.css';
 
 export default function StatsList(props) {
 	const stats = props.stats;
+	const activeSeason =
+		props.teams && props.teams.length > 0 && props.teams[0].season !== undefined
+			? props.teams[0].season
+			: null;
 	const formatDerivedStat = value =>
 		value === null || value === undefined ? '--' : Number(value).toFixed(3);
 	// const mergeTeamStats = [];
@@ -58,7 +62,10 @@ export default function StatsList(props) {
 							</a>
 						</span>
 					</div>
-				</nav>
+			</nav>
+			{activeSeason !== null ? (
+				<p className="tagline profile-metadata">Showing season {activeSeason}</p>
+			) : null}
 
 				<section>
 					{nullStatsWarning}

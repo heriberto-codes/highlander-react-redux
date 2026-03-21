@@ -13,11 +13,26 @@ import RosterList from '../components/RosterList';
 import StatsList from '../components/StatsList';
 
 class Dashboard extends Component {
+	fetchProfile(season) {
+		if (!this.props.id) {
+			return;
+		}
+
+		this.props.dispatch(getProfile(this.props.id, season));
+	}
 
 	componentDidMount() {
-		const { id } = this.props;
-		console.log(id);
-		this.props.dispatch(getProfile(id))
+		this.fetchProfile();
+	}
+
+	componentDidUpdate(prevProps) {
+		if (prevProps.id !== this.props.id && this.props.id) {
+			this.fetchProfile();
+		}
+	}
+
+	handleSeasonChange(season) {
+		this.fetchProfile(season);
 	}
 
 	render() {
@@ -29,6 +44,9 @@ class Dashboard extends Component {
 					email={this.props.email}
 					firstName={this.props.first_name}
 					lastName={this.props.last_name}
+					activeSeason={this.props.activeSeason}
+					availableSeasons={this.props.availableSeasons}
+					onSeasonChange={season => this.handleSeasonChange(season)}
 				/>
 				<section className='section'>
 					<div className='tile is-ancestor'>
@@ -55,6 +73,8 @@ const mapStateToProps = state => ({
 	id: state.coachReducer.id,
 	teams: state.coachReducer.teams,
 	players: state.coachReducer.players,
+	availableSeasons: state.coachReducer.availableSeasons,
+	activeSeason: state.coachReducer.activeSeason,
 	isLoggedIn: state.loginReducer.isloggedIn,
 	first_name: state.coachReducer.first_name,
 	last_name: state.coachReducer.last_name,

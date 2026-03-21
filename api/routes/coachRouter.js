@@ -7,12 +7,37 @@ const jsonParser = bodyParser.json();
 
 const Coach = require('../models/Coach');
 const ensureAuthenticated = require('../middleware/ensureAuthenticated');
-const { addDerivedStatsToCoachPayload } = require('../utils/playerAnalytics');
+const { addDerivedStatsToCoachPayload, addDerivedStatsToPlayers } = require('../utils/playerAnalytics');
 
 router.use(bodyParser.urlencoded({
 	extended: true
 }));
 router.use(jsonParser);
+
+function parseRequestedSeason(value) {
+	if (value === undefined) {
+		return undefined;
+	}
+
+	const season = Number(value);
+	return Number.isInteger(season) ? season : undefined;
+}
+
+function getAvailableSeasons(teams) {
+	return Array.from(
+		new Set(
+			(teams || [])
+				.map(function(team) {
+					return team.season;
+				})
+				.filter(function(season) {
+					return Number.isInteger(season);
+				})
+		)
+	).sort(function(left, right) {
+		return right - left;
+	});
+}
 
 router.get('/', function(req, res, next) {
 	if(req.session.coachId){ // If the session doesn't have an userId(accessToken, etc...) then you don't show the protected token
@@ -49,7 +74,30 @@ router.get('/:id', function(req, res, next) {
                 .where({id: req.params.id})
                 .fetch({withRelated: ['teams', 'teams.players', 'teams.players.stats']})
                 .then(function(coaches) {
-                        res.json(addDerivedStatsToCoachPayload(coaches));
+                        const coachPayload = addDerivedStatsToCoachPayload(coaches);
+                        const availableSeasons = getAvailableSeasons(coachPayload.teams);
+                        const requestedSeason = parseRequestedSeason(req.query.season);
+                        const activeSeason =
+                                requestedSeason !== undefined
+                                        ? requestedSeason
+                                        : (availableSeasons[0] !== undefined ? availableSeasons[0] : null);
+
+                        const teams =
+                                activeSeason === null
+                                        ? coachPayload.teams
+                                        : (coachPayload.teams || []).filter(function(team) {
+                                                return team.season === activeSeason;
+                                        });
+
+                        coachPayload.teams = teams.map(function(team) {
+                                return Object.assign({}, team, {
+                                        players: addDerivedStatsToPlayers(team.players, activeSeason)
+                                });
+                        });
+                        coachPayload.availableSeasons = availableSeasons;
+                        coachPayload.activeSeason = activeSeason;
+
+                        res.json(coachPayload);
                 })
                 .catch(function(err) {
                         return next(err);

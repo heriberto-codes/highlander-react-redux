@@ -13,9 +13,23 @@ import AddPlayer from '../components/AddPlayerModal2';
 
 
 class TeamDetails extends Component {
-	componentDidMount() {
+	fetchTeamProfile(season) {
 		const { id } = this.props.match.params;
-		this.props.dispatch(getTeamProfile(id));
+		this.props.dispatch(getTeamProfile(id, season));
+	}
+
+	componentDidMount() {
+		this.fetchTeamProfile();
+	}
+
+	componentDidUpdate(prevProps) {
+		if (prevProps.match.params.id !== this.props.match.params.id) {
+			this.fetchTeamProfile();
+		}
+	}
+
+	handleSeasonChange(season) {
+		this.fetchTeamProfile(season);
 	}
 
 	showModal(){
@@ -48,9 +62,13 @@ class TeamDetails extends Component {
 				<TeamDetailsNavigation
 					name={this.props.name}
 					city={this.props.city}
+					season={this.props.season}
+					activeSeason={this.props.activeSeason}
+					availableSeasons={this.props.availableSeasons}
 					first_name={this.props.first_name}
 					last_name={this.props.last_name}
 					email={this.props.email}
+					onSeasonChange={season => this.handleSeasonChange(season)}
 					showModal={() => this.showModal()} />
 				<TeamDetailsComponent
 					players={this.props.players} />
@@ -63,6 +81,9 @@ class TeamDetails extends Component {
 const mapStateToProps = state => ({
 	name: state.teamReducer.name,
 	city: state.teamReducer.city,
+	season: state.teamReducer.season,
+	activeSeason: state.teamReducer.activeSeason,
+	availableSeasons: state.teamReducer.availableSeasons,
 	first_name: state.teamReducer.coach.first_name,
 	last_name: state.teamReducer.coach.last_name,
 	email: state.teamReducer.coach.email,
@@ -71,7 +92,6 @@ const mapStateToProps = state => ({
 });
 
 export default connect(mapStateToProps)(TeamDetails);
-
 
 
 

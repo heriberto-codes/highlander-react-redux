@@ -6,12 +6,19 @@ const playersUrl = `${baseUrl}players/`;
 
 export const GET_TEAM_PROFILE = 'GET_TEAM_PROFILE';
 // create the action creater
-export const getTeamProfile = id => dispatch => {
+export const getTeamProfile = (id, season) => dispatch => {
 	dispatch({
 		type: GET_TEAM_PROFILE,
-		id
+		id,
+		season
 	});
-       axios.get(`${teamsUrl}${id}`, { withCredentials: true })
+
+	const requestUrl =
+		season === undefined || season === null
+			? `${teamsUrl}${id}`
+			: `${teamsUrl}${id}?season=${encodeURIComponent(season)}`;
+
+       axios.get(requestUrl, { withCredentials: true })
                .then(response => {
 			if(response.status === 200) {
 				dispatch(getTeamProfileSuccess(response));

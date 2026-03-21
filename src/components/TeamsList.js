@@ -6,10 +6,17 @@ import '../css/style.css';
 
 export default function TeamsList(props) {
 	const teams = props.teams;
+	const activeSeason =
+		teams && teams.length > 0 && teams[0].season !== undefined
+			? teams[0].season
+			: null;
 
 	let listOfTeams = teams.map((team, index) => {
 		return <li className='panel-heading' key={index}>
-			<Link to={'/teamdetails/' + team.id}>{team.name}</Link>
+			<Link to={'/teamdetails/' + team.id}>
+				{team.name}
+				{team.season !== undefined ? ` (${team.season})` : ''}
+			</Link>
 		</li>
 	});
 
@@ -39,6 +46,9 @@ export default function TeamsList(props) {
 					</span>
 				</div>
 			</nav>
+			{activeSeason !== null ? (
+				<p className="tagline profile-metadata">Showing season {activeSeason}</p>
+			) : null}
 			<ul className="teams-list-container">
 				{teamsList}
 			</ul>

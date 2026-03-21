@@ -2,12 +2,19 @@ import axios from 'axios';
 
 const url = 'http://localhost:8080/coaches/';
 export const GET_PROFILE = 'GET_PROFILE';
-export const getProfile = id => dispatch => {
+export const getProfile = (id, season) => dispatch => {
 	dispatch({
 		type: GET_PROFILE,
-		id
+		id,
+		season
 	});
-       axios.get(`${url}${id}`, { withCredentials: true })
+
+	const requestUrl =
+		season === undefined || season === null
+			? `${url}${id}`
+			: `${url}${id}?season=${encodeURIComponent(season)}`;
+
+       axios.get(requestUrl, { withCredentials: true })
                .then(response =>  {
 			if(response.status === 200) {
 				dispatch(profileSuccess(response));

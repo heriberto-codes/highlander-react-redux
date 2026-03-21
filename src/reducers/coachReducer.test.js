@@ -24,6 +24,8 @@ describe('coachReducer', () => {
       type: PROFILE_SUCCESS,
       response: {
         data: {
+          availableSeasons: [2026, 2025],
+          activeSeason: 2026,
           teams: [
             {
               players: [
@@ -71,6 +73,8 @@ describe('coachReducer', () => {
     };
     const state = coachReducer(undefined, action);
     expect(state.first_name).toBe('Coach');
+    expect(state.availableSeasons).toEqual([2026, 2025]);
+    expect(state.activeSeason).toBe(2026);
     expect(state.players).toHaveLength(1);
     expect(state.stats[0].stats.Hits).toBe(5);
     expect(state.stats[0].stats['At Bats']).toBe(10);
@@ -119,6 +123,8 @@ describe('coachReducer', () => {
       era: null,
       strikeoutsPerInning: null
     });
+    expect(state.availableSeasons).toEqual([]);
+    expect(state.activeSeason).toBe(null);
   });
 
   it('should aggregate duplicate stat descriptions into raw totals', () => {
@@ -170,5 +176,115 @@ describe('coachReducer', () => {
       'Innings Pitched': 0,
       Strikeouts: 0
     });
+  });
+
+  it('should replace dashboard season data when a later PROFILE_SUCCESS switches seasons', () => {
+    const previousState = coachReducer(undefined, {
+      type: PROFILE_SUCCESS,
+      response: {
+        data: {
+          availableSeasons: [2026, 2025],
+          activeSeason: 2026,
+          teams: [
+            {
+              id: 10,
+              season: 2026,
+              players: [
+                {
+                  id: 1,
+                  first_name: 'Pat',
+                  last_name: 'Summer',
+                  position: 'Pitcher',
+                  derivedStats: {
+                    battingAverage: 0.5,
+                    homeRunRate: null,
+                    era: null,
+                    strikeoutsPerInning: 1.5
+                  },
+                  stats: [
+                    { description: 'Hits', _pivot_how_many: 5 },
+                    { description: 'At Bats', _pivot_how_many: 10 },
+                    { description: 'Strikeouts', _pivot_how_many: 9 },
+                    { description: 'Innings Pitched', _pivot_how_many: 6 }
+                  ]
+                }
+              ]
+            }
+          ],
+          first_name: 'Coach',
+          last_name: 'Test',
+          email: 'c@example.com',
+          id: 1
+        }
+      }
+    });
+
+    const nextState = coachReducer(previousState, {
+      type: PROFILE_SUCCESS,
+      response: {
+        data: {
+          availableSeasons: [2026, 2025],
+          activeSeason: 2025,
+          teams: [
+            {
+              id: 11,
+              season: 2025,
+              players: [
+                {
+                  id: 2,
+                  first_name: 'Pat',
+                  last_name: 'Spring',
+                  position: 'Catcher',
+                  derivedStats: {
+                    battingAverage: 0.25,
+                    homeRunRate: 0.125,
+                    era: null,
+                    strikeoutsPerInning: null
+                  },
+                  stats: [
+                    { description: 'Hits', _pivot_how_many: 2 },
+                    { description: 'At Bats', _pivot_how_many: 8 },
+                    { description: 'Home Runs', _pivot_how_many: 1 }
+                  ]
+                }
+              ]
+            }
+          ],
+          first_name: 'Coach',
+          last_name: 'Test',
+          email: 'c@example.com',
+          id: 1
+        }
+      }
+    });
+
+    expect(nextState.activeSeason).toBe(2025);
+    expect(nextState.teams).toEqual([
+      expect.objectContaining({ id: 11, season: 2025 })
+    ]);
+    expect(nextState.players).toEqual([
+      expect.objectContaining({ id: 2, first_name: 'Pat', last_name: 'Spring' })
+    ]);
+    expect(nextState.stats).toEqual([
+      {
+        first_name: 'Pat',
+        last_name: 'Spring',
+        position: 'Catcher',
+        stats: {
+          Hits: 2,
+          'At Bats': 8,
+          'Home Runs': 1,
+          'Earned Runs': 0,
+          'Innings Pitched': 0,
+          Strikeouts: 0
+        },
+        derivedStats: {
+          battingAverage: 0.25,
+          homeRunRate: 0.125,
+          era: null,
+          strikeoutsPerInning: null
+        }
+      }
+    ]);
   });
 });

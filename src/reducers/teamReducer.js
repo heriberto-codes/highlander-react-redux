@@ -6,6 +6,9 @@ const initialState = {
 	name: '',
 	city: '',
 	state: '',
+	season: null,
+	activeSeason: null,
+	availableSeasons: [],
         players: [],
 	coach: {
 		first_name: '',
@@ -60,6 +63,15 @@ export const teamReducer = (state = initialState, action) => {
 			name: action.response.data.name,
 			city: action.response.data.city,
 			state: action.response.data.state,
+			season:
+				action.response.data.season !== undefined
+					? action.response.data.season
+					: null,
+			activeSeason:
+				action.response.data.activeSeason !== undefined
+					? action.response.data.activeSeason
+					: null,
+			availableSeasons: action.response.data.availableSeasons || [],
 			players: players(state.players, action),
 			coach: coach(state.coach, action)
 		});

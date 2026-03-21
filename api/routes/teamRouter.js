@@ -8,10 +8,46 @@ const Team = require('../models/Team');
 const Player = require('../models/Player');
 const Coaches = require('../models/Coach');
 const ensureAuthenticated = require('../middleware/ensureAuthenticated');
-const { addDerivedStatsToTeamPayload } = require('../utils/playerAnalytics');
+const { addDerivedStatsToPlayers } = require('../utils/playerAnalytics');
 
 router.use(bodyParser.urlencoded({extended: true}));
 router.use(jsonParser);
+
+function parseSeason(value) {
+	const season = Number(value);
+
+	if (!Number.isInteger(season)) {
+		return null;
+	}
+
+	return season;
+}
+
+function parseRequestedSeason(value) {
+	if (value === undefined) {
+		return undefined;
+	}
+
+	const season = parseSeason(value);
+	return season === null ? undefined : season;
+}
+
+function getAvailableSeasonsForTeamFamily(teamPayload, coachTeams) {
+	const fallbackTeams = teamPayload && Number.isInteger(teamPayload.season) ? [teamPayload] : [];
+	const familyTeams = (coachTeams || fallbackTeams).filter(function(team) {
+		return team && team.name === teamPayload.name && Number.isInteger(team.season);
+	});
+
+	return Array.from(
+		new Set(
+			familyTeams.map(function(team) {
+				return team.season;
+			})
+		)
+	).sort(function(left, right) {
+		return right - left;
+	});
+}
 
 router.get('/', function(req, res) {
 	Team
@@ -22,18 +58,54 @@ router.get('/', function(req, res) {
 });
 
 
-router.get('/:id', function(req, res) {
+router.get('/:id', function(req, res, next) {
 	Team
 		.where({id: req.params.id})
                .fetch({withRelated: ['coach', 'players', 'players.stats']})
-               .then(function(teams) {
-                        res.json(addDerivedStatsToTeamPayload(teams));
+               .then(function(team) {
+                        const teamPayload = team.toJSON();
+                        const coachId = teamPayload.coach && teamPayload.coach[0] && teamPayload.coach[0].id;
+
+                        if (!coachId) {
+                                const availableSeasons = getAvailableSeasonsForTeamFamily(teamPayload);
+                                const activeSeason =
+                                        parseRequestedSeason(req.query.season) !== undefined
+                                                ? parseRequestedSeason(req.query.season)
+                                                : (availableSeasons[0] !== undefined ? availableSeasons[0] : null);
+
+                                teamPayload.players = addDerivedStatsToPlayers(teamPayload.players, activeSeason);
+                                teamPayload.availableSeasons = availableSeasons;
+                                teamPayload.activeSeason = activeSeason;
+                                return res.json(teamPayload);
+                        }
+
+                        return Coaches
+                                .where({id: coachId})
+                                .fetch({withRelated: ['teams']})
+                                .then(function(coach) {
+                                        const coachPayload = coach.toJSON();
+                                        const availableSeasons = getAvailableSeasonsForTeamFamily(
+                                                teamPayload,
+                                                coachPayload.teams
+                                        );
+                                        const requestedSeason = parseRequestedSeason(req.query.season);
+                                        const activeSeason =
+                                                requestedSeason !== undefined
+                                                        ? requestedSeason
+                                                        : (availableSeasons[0] !== undefined ? availableSeasons[0] : null);
+
+                                        teamPayload.players = addDerivedStatsToPlayers(teamPayload.players, activeSeason);
+                                        teamPayload.availableSeasons = availableSeasons;
+                                        teamPayload.activeSeason = activeSeason;
+
+                                        return res.json(teamPayload);
+                                });
                });
 });
 
-router.put('/:id', ensureAuthenticated, function(req, res) {
+router.put('/:id', ensureAuthenticated, function(req, res, next) {
 	// check to see if the proper params is equal to what the user is inputting
-	const updateParams = ['name', 'city', 'state'];
+	const updateParams = ['name', 'city', 'state', 'season'];
 	for(var i = 0; i < updateParams.length; i++) {
 		const confirmedParams = updateParams[i];
 		if(!(confirmedParams in req.body)) {
@@ -41,6 +113,13 @@ router.put('/:id', ensureAuthenticated, function(req, res) {
 			console.error(errorMessage);
 			return res.status(400).send(errorMessage);
 		}
+	}
+
+	const season = parseSeason(req.body.season);
+	if (season === null) {
+		const errorMessage = 'Sorry your season is invalid please try again';
+		console.error(errorMessage);
+		return res.status(400).send(errorMessage);
 	}
 
 	// update query db via model with new params
@@ -51,7 +130,8 @@ router.put('/:id', ensureAuthenticated, function(req, res) {
 			return team.save({
 				name: req.body.name,
 				city: req.body.city,
-				state: req.body.state
+				state: req.body.state,
+				season
 			});
 		})
 		.then(function(team) {
@@ -63,8 +143,8 @@ router.put('/:id', ensureAuthenticated, function(req, res) {
 });
 
 
-router.post('/', ensureAuthenticated, function(req, res) {
-        const postParams = ['name', 'city', 'state', 'coachId'];
+router.post('/', ensureAuthenticated, function(req, res, next) {
+        const postParams = ['name', 'city', 'state', 'coachId', 'season'];
         for (var i = 0; i < postParams.length; i++) {
                 const confirmPostParams = postParams[i];
                 if(!(confirmPostParams in req.body)) {
@@ -72,6 +152,13 @@ router.post('/', ensureAuthenticated, function(req, res) {
                         console.error(errorMessage);
                         return res.status(400).send(errorMessage);
                 }
+        }
+
+        const season = parseSeason(req.body.season);
+        if (season === null) {
+                const errorMessage = 'Sorry your season is invalid please try again';
+                console.error(errorMessage);
+                return res.status(400).send(errorMessage);
         }
 
         Coaches
@@ -89,6 +176,7 @@ router.post('/', ensureAuthenticated, function(req, res) {
                                         name: req.body.name,
                                         city: req.body.city,
                                         state: req.body.state,
+                                        season,
                                         game_date: new Date()
                                 })
                                 .save()
