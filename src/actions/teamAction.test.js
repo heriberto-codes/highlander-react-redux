@@ -1,5 +1,6 @@
 jest.mock('axios', () => ({
-  get: jest.fn(() => Promise.resolve({ status: 200, data: {} }))
+  get: jest.fn(() => Promise.resolve({ status: 200, data: {} })),
+  post: jest.fn(() => Promise.resolve({ status: 200, data: {} }))
 }));
 
 import axios from 'axios';
@@ -13,6 +14,12 @@ import {
   addPlayer,
   ADD_PLAYER_ERROR,
   addPlayerError,
+  CREATE_GAME_ENTRY,
+  createGameEntry,
+  CREATE_GAME_ENTRY_SUCCESS,
+  createGameEntrySuccess,
+  CREATE_GAME_ENTRY_ERROR,
+  createGameEntryError,
   GET_TEAM_PROFILE_SUCCESS,
   getTeamProfileSuccess,
   GET_TEAM_PROFILE_ERROR,
@@ -23,7 +30,9 @@ import {
 describe('team actions', () => {
   beforeEach(() => {
     axios.get.mockReset();
+    axios.post.mockReset();
     axios.get.mockResolvedValue({ status: 200, data: {} });
+    axios.post.mockResolvedValue({ status: 200, data: {} });
   });
 
   it('should expose GET_TEAM_PROFILE action type', () => {
@@ -102,5 +111,49 @@ describe('team actions', () => {
       response
     };
     expect(getTeamProfileError(response)).toEqual(expected);
+  });
+
+  it('should expose CREATE_GAME_ENTRY action type', () => {
+    expect(CREATE_GAME_ENTRY).toBe('CREATE_GAME_ENTRY');
+  });
+
+  it('should post a game entry to the team games endpoint', () => {
+    const dispatch = jest.fn();
+    const payload = {
+      opponent: 'Lions',
+      game_date: '2026-03-28T00:00:00Z',
+      playerStats: []
+    };
+
+    createGameEntry(9, payload)(dispatch);
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: CREATE_GAME_ENTRY,
+      id: 9,
+      payload
+    });
+    expect(axios.post).toHaveBeenCalledWith(
+      'http://localhost:8080/teams/9/games',
+      payload,
+      { withCredentials: true }
+    );
+  });
+
+  it('should create createGameEntrySuccess action', () => {
+    const response = { data: { id: 1 } };
+    const expected = {
+      type: CREATE_GAME_ENTRY_SUCCESS,
+      response
+    };
+    expect(createGameEntrySuccess(response)).toEqual(expected);
+  });
+
+  it('should create createGameEntryError action', () => {
+    const response = 'err';
+    const expected = {
+      type: CREATE_GAME_ENTRY_ERROR,
+      response
+    };
+    expect(createGameEntryError(response)).toEqual(expected);
   });
 });

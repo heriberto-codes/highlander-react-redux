@@ -1,4 +1,14 @@
-import { GET_TEAM_PROFILE, GET_TEAM_PROFILE_SUCCESS, GET_TEAM_PROFILE_ERROR, CREATE_TEAM, HIDE_MODAL, ADD_PLAYER  } from '../actions/teamAction';
+import {
+	GET_TEAM_PROFILE,
+	GET_TEAM_PROFILE_SUCCESS,
+	GET_TEAM_PROFILE_ERROR,
+	CREATE_TEAM,
+	HIDE_MODAL,
+	ADD_PLAYER,
+	CREATE_GAME_ENTRY,
+	CREATE_GAME_ENTRY_SUCCESS,
+	CREATE_GAME_ENTRY_ERROR
+} from '../actions/teamAction';
 
 // create intial state
 // think about what state is needed on this page
@@ -15,6 +25,10 @@ const initialState = {
 		last_name: '',
 		email: '',
 	},
+	isSubmittingGame: false,
+	gameSubmissionSuccess: false,
+	lastCreatedGame: null,
+	gameSubmissionError: null,
 	errorMessage: null,
 	showModal: false
 };
@@ -22,7 +36,8 @@ const initialState = {
 const players = (state = initialState.players, action) => {
         switch(action.type) {
         case GET_TEAM_PROFILE_SUCCESS:
-                return action.response.data.players.map(({ first_name, last_name, email, position }) => ({
+                return action.response.data.players.map(({ id, first_name, last_name, email, position }) => ({
+                        id,
                         first_name,
                         last_name,
                         email,
@@ -30,6 +45,7 @@ const players = (state = initialState.players, action) => {
                 }));
         case ADD_PLAYER:
                 return [...state, {
+                        id: action.response.data.id,
                         first_name: action.response.data.first_name,
                         last_name: action.response.data.last_name,
                         email: action.response.data.email,
@@ -76,7 +92,7 @@ export const teamReducer = (state = initialState, action) => {
 			coach: coach(state.coach, action)
 		});
 		break;
-        case GET_TEAM_PROFILE_ERROR:
+	case GET_TEAM_PROFILE_ERROR:
                 return Object.assign({}, state, {
                         errorMessage: action.response
                 });
@@ -93,6 +109,27 @@ export const teamReducer = (state = initialState, action) => {
 			showModal: false,
 			players: players(state.players, action),
 		})
+	case CREATE_GAME_ENTRY:
+		return Object.assign({}, state, {
+			isSubmittingGame: true,
+			gameSubmissionSuccess: false,
+			lastCreatedGame: null,
+			gameSubmissionError: null
+		});
+	case CREATE_GAME_ENTRY_SUCCESS:
+		return Object.assign({}, state, {
+			isSubmittingGame: false,
+			gameSubmissionSuccess: true,
+			lastCreatedGame: action.response.data,
+			gameSubmissionError: null
+		});
+	case CREATE_GAME_ENTRY_ERROR:
+		return Object.assign({}, state, {
+			isSubmittingGame: false,
+			gameSubmissionSuccess: false,
+			lastCreatedGame: null,
+			gameSubmissionError: action.response
+		});
 	default:
 		return state;
 	}

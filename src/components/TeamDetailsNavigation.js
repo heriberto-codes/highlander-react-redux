@@ -6,7 +6,15 @@ import '../css/style.css';
 
 export default function TeamDetailsNavigation(props) {
 
-        const { name, city: location, first_name: firstName, last_name: lastName, email, showModal: onClick } = props;
+        const {
+		name,
+		city: location,
+		first_name: firstName,
+		last_name: lastName,
+		email,
+		showModal: onClick,
+		showGameEntryForm: onShowGameEntry
+	} = props;
 
 	return (
 		<section className="hero is-primary dashboard-bg-image">
@@ -39,6 +47,14 @@ export default function TeamDetailsNavigation(props) {
 										className="button is-primary is-outlined"
 									>
                     Add New Player
+									</button>
+								</span>
+								<span className="level-item">
+									<button
+										onClick={onShowGameEntry}
+										className="button is-primary is-outlined"
+									>
+                    Add Game Stats
 									</button>
 								</span>
 								<span className="level-item">

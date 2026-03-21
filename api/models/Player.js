@@ -2,6 +2,7 @@ const Bookshelf = require('../config/bookshelf.config');
 
 require('./Team');
 require('./Stat_Catalog');
+require('./Game');
 
 const PlayerSchema = Bookshelf.Model.extend({
   tableName: 'players',

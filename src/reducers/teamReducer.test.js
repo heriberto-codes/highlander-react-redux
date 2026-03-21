@@ -8,7 +8,10 @@ import {
   GET_TEAM_PROFILE_SUCCESS,
   ADD_PLAYER,
   CREATE_TEAM,
-  HIDE_MODAL
+  HIDE_MODAL,
+  CREATE_GAME_ENTRY,
+  CREATE_GAME_ENTRY_SUCCESS,
+  CREATE_GAME_ENTRY_ERROR
 } from '../actions/teamAction';
 
 describe('teamReducer', () => {
@@ -24,7 +27,7 @@ describe('teamReducer', () => {
           activeSeason: 2026,
           availableSeasons: [2026, 2025],
           players: [
-            { first_name: 'P', last_name: 'L', email: 'e', position: 'p' }
+            { id: 7, first_name: 'P', last_name: 'L', email: 'e', position: 'p' }
           ],
           coach: [
             { first_name: 'C', last_name: 'L', email: 'c' }
@@ -41,9 +44,13 @@ describe('teamReducer', () => {
       activeSeason: 2026,
       availableSeasons: [2026, 2025],
       players: [
-        { first_name: 'P', last_name: 'L', email: 'e', position: 'p' }
+        { id: 7, first_name: 'P', last_name: 'L', email: 'e', position: 'p' }
       ],
       coach: { first_name: 'C', last_name: 'L', email: 'c' },
+      isSubmittingGame: false,
+      gameSubmissionSuccess: false,
+      lastCreatedGame: null,
+      gameSubmissionError: null,
       errorMessage: null,
       showModal: false
     });
@@ -54,11 +61,12 @@ describe('teamReducer', () => {
     const action = {
       type: ADD_PLAYER,
       response: {
-        data: { first_name: 'N', last_name: 'P', email: 'n', position: 's' }
+        data: { id: 8, first_name: 'N', last_name: 'P', email: 'n', position: 's' }
       }
     };
     const state = teamReducer(initial, action);
     expect(state.players).toHaveLength(1);
+    expect(state.players[0].id).toBe(8);
     expect(state.players[0].first_name).toBe('N');
   });
 
@@ -104,7 +112,7 @@ describe('teamReducer', () => {
           activeSeason: 2025,
           availableSeasons: [2026, 2025],
           players: [
-            { first_name: 'Pat', last_name: 'Spring', email: 'spring@example.com', position: 'C' }
+            { id: 10, first_name: 'Pat', last_name: 'Spring', email: 'spring@example.com', position: 'C' }
           ],
           coach: [
             { first_name: 'Casey', last_name: 'Jones', email: 'coach@example.com' }
@@ -124,7 +132,7 @@ describe('teamReducer', () => {
           activeSeason: 2026,
           availableSeasons: [2026, 2025],
           players: [
-            { first_name: 'Pat', last_name: 'Summer', email: 'summer@example.com', position: 'P' }
+            { id: 11, first_name: 'Pat', last_name: 'Summer', email: 'summer@example.com', position: 'P' }
           ],
           coach: [
             { first_name: 'Casey', last_name: 'Jones', email: 'coach@example.com' }
@@ -137,7 +145,88 @@ describe('teamReducer', () => {
     expect(nextState.activeSeason).toBe(2026);
     expect(nextState.availableSeasons).toEqual([2026, 2025]);
     expect(nextState.players).toEqual([
-      { first_name: 'Pat', last_name: 'Summer', email: 'summer@example.com', position: 'P' }
+      { id: 11, first_name: 'Pat', last_name: 'Summer', email: 'summer@example.com', position: 'P' }
     ]);
+  });
+
+  it('should track game submission loading state', () => {
+    const state = teamReducer(undefined, {
+      type: CREATE_GAME_ENTRY,
+      id: 50,
+      payload: {}
+    });
+
+    expect(state.isSubmittingGame).toBe(true);
+    expect(state.gameSubmissionSuccess).toBe(false);
+    expect(state.lastCreatedGame).toBe(null);
+    expect(state.gameSubmissionError).toBe(null);
+  });
+
+  it('should store a successful created game response', () => {
+    const loadingState = teamReducer(undefined, {
+      type: CREATE_GAME_ENTRY,
+      id: 50,
+      payload: {}
+    });
+
+    const state = teamReducer(loadingState, {
+      type: CREATE_GAME_ENTRY_SUCCESS,
+      response: {
+        data: {
+          id: 90,
+          team_id: 50,
+          insertedStatRows: 2
+        }
+      }
+    });
+
+    expect(state.isSubmittingGame).toBe(false);
+    expect(state.gameSubmissionSuccess).toBe(true);
+    expect(state.lastCreatedGame).toEqual({
+      id: 90,
+      team_id: 50,
+      insertedStatRows: 2
+    });
+    expect(state.gameSubmissionError).toBe(null);
+  });
+
+  it('should store game submission errors', () => {
+    const loadingState = teamReducer(undefined, {
+      type: CREATE_GAME_ENTRY,
+      id: 50,
+      payload: {}
+    });
+    const error = { message: 'request failed' };
+
+    const state = teamReducer(loadingState, {
+      type: CREATE_GAME_ENTRY_ERROR,
+      response: error
+    });
+
+    expect(state.isSubmittingGame).toBe(false);
+    expect(state.gameSubmissionSuccess).toBe(false);
+    expect(state.lastCreatedGame).toBe(null);
+    expect(state.gameSubmissionError).toBe(error);
+  });
+
+  it('should reset prior game submission result state when a new submission starts', () => {
+    const previousState = {
+      ...teamReducer(undefined, { type: '@@INIT' }),
+      isSubmittingGame: false,
+      gameSubmissionSuccess: true,
+      lastCreatedGame: { id: 90, insertedStatRows: 2 },
+      gameSubmissionError: { message: 'old error' }
+    };
+
+    const state = teamReducer(previousState, {
+      type: CREATE_GAME_ENTRY,
+      id: 50,
+      payload: {}
+    });
+
+    expect(state.isSubmittingGame).toBe(true);
+    expect(state.gameSubmissionSuccess).toBe(false);
+    expect(state.lastCreatedGame).toBe(null);
+    expect(state.gameSubmissionError).toBe(null);
   });
 });

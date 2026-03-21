@@ -60,12 +60,13 @@ Base paths are mounted in `server.js` (no `/api` prefix):
 - `POST /teams` (create team, auth required, requires `season`)
 - `PUT /teams/:id` (update team, auth required, requires `season`)
 - `POST /teams/:id/player` (add player to team, auth required)
+- `POST /teams/:id/games` (auth required; create-only game-based stat entry for one team)
 - `GET /players` (list players)
 - `GET /players/:id` (player by id)
 - `GET /players/:id/stats` (player stats)
 - `POST /players` (create player, auth required)
 - `PUT /players/:id` (update player, auth required)
-- `POST /players/:player_id/stats/:stat_catalog_id` (add stat, auth required)
+- `POST /players/:player_id/stats/:stat_catalog_id` (legacy direct stat write; auth required)
 - `PUT /players/:player_id/stats/:stat_catalog_id` (update stat, auth required)
 - `DELETE /players/:id` (delete player, auth required)
 - `GET /stats` (list stat catalog)
@@ -104,6 +105,36 @@ Base paths are mounted in `server.js` (no `/api` prefix):
   - player stats are dated, but not linked to `team_id`
   - if a player changes teams within the same season, season-filtered stats cannot be perfectly attributed to one team
 
+### Game-based Stat Entry Contract
+- v1 adds `games` as a first-class persisted record
+- current `games` fields:
+  - `id`
+  - `team_id`
+  - `opponent`
+  - `game_date`
+- v1 write path is create-only and team-scoped:
+  - `POST /teams/:id/games`
+- request body:
+  - `opponent`
+  - `game_date`
+  - `playerStats: [{ playerId, stats: [{ statCatalogId, howMany }] }]`
+- current server behavior:
+  - validate authenticated access
+  - validate target team exists
+  - validate each submitted player belongs to that team
+  - validate each submitted `statCatalogId` exists
+  - create one game row
+  - create one stat row per non-zero submitted stat
+- current persistence rules:
+  - each created stat row links to the created game via `game_id`
+  - each created stat row also stores `game_date`
+  - legacy stat rows may remain without `game_id`
+- v1 entry surface is the team details page for an existing roster
+- existing direct stat routes remain supported for backward compatibility, but are not the primary v1 entry path
+- current known limitations:
+  - route protection exists, but team ownership is not yet verified on `POST /teams/:id/games`
+  - team details page still depends on legacy routing assumptions outside this contract
+
 ## Authentication
 - Session-based auth via `express-session`, stored in Postgres with `connect-pg-simple`.
 - Login: `POST /sessions/login` creates a session; logout: `DELETE /sessions` destroys it.
@@ -132,9 +163,12 @@ Required variables (see `.env.example`):
 - `coaches`
 - `teams`
   - includes persisted `season`
+- `games`
+  - stores `team_id`, `opponent`, `game_date`
 - `players`
 - `stat_catalogs`
 - `players_stat_catalogs`
+  - may include nullable `game_id`
 - `players_teams`
 - `coaches_teams`
 

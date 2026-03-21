@@ -62,6 +62,29 @@ export const addNewPlayer = (id, emailInput, firstName, lastName, position) => d
 		});
 };
 
+export const CREATE_GAME_ENTRY = 'CREATE_GAME_ENTRY';
+export const createGameEntry = (id, payload) => dispatch => {
+	dispatch({
+		type: CREATE_GAME_ENTRY,
+		id,
+		payload
+	});
+
+	axios.post(
+		`${teamsUrl}${id}/games`,
+		payload,
+		{ withCredentials: true }
+	)
+		.then(response => {
+			if (response.status === 201) {
+				dispatch(createGameEntrySuccess(response));
+			}
+		})
+		.catch(err => {
+			dispatch(createGameEntryError(err));
+		});
+};
+
 export const GET_TEAM_PROFILE_SUCCESS = 'GET_TEAM_PROFILE_SUCCESS';
 export const getTeamProfileSuccess = response => ({
 	type: GET_TEAM_PROFILE_SUCCESS,
@@ -94,4 +117,16 @@ export const ADD_PLAYER_ERROR = 'ADD_PLAYER_ERROR';
 export const addPlayerError = response => ({
 	type: ADD_PLAYER_ERROR,
 	response
-})
+});
+
+export const CREATE_GAME_ENTRY_SUCCESS = 'CREATE_GAME_ENTRY_SUCCESS';
+export const createGameEntrySuccess = response => ({
+	type: CREATE_GAME_ENTRY_SUCCESS,
+	response
+});
+
+export const CREATE_GAME_ENTRY_ERROR = 'CREATE_GAME_ENTRY_ERROR';
+export const createGameEntryError = response => ({
+	type: CREATE_GAME_ENTRY_ERROR,
+	response
+});
