@@ -17,6 +17,19 @@ export default function TeamDetailsComponent(props) {
 	const [opponent, setOpponent] = useState('');
 	const [gameDate, setGameDate] = useState('');
 	const [statEntries, setStatEntries] = useState({});
+	const activeSeason =
+		props.activeSeason !== undefined && props.activeSeason !== null
+			? props.activeSeason
+			: null;
+	const hasActiveFilters = Boolean(
+		props.filters && (
+			props.filters.playerSearch ||
+			props.filters.position
+		)
+	);
+	const emptyMessage = hasActiveFilters
+		? `No players match the current filters${activeSeason !== null ? ` for season ${activeSeason}` : ''}.`
+		: 'You dont have a Roster.';
 	const canSubmitGameEntry = !props.isSubmittingGame && opponent.trim() !== '' && gameDate !== '';
 
 	useEffect(() => {
@@ -151,8 +164,11 @@ export default function TeamDetailsComponent(props) {
 					</form>
 				</div>
 			) : null}
-                        {props.players.map(player => {
-                                return <div key={player.id} className='columns is-gapless team-details-page blockElement'>
+			{activeSeason !== null ? (
+				<p className="tagline profile-metadata">Showing season {activeSeason}</p>
+			) : null}
+			{props.players.length > 0 ? props.players.map(player => {
+				return <div key={player.id} className='columns is-gapless team-details-page blockElement'>
 					<div className='card-list'>
 						<div className='card has-text-centered'>
 							<div className='card-content'>
@@ -176,7 +192,11 @@ export default function TeamDetailsComponent(props) {
 						</footer>
 					</div>
 				</div>;
-			}) }
+			}) : (
+				<div className="notification has-text-centered roster-dashboard-message">
+					{emptyMessage}
+				</div>
+			)}
 		</section>
 	);
 }

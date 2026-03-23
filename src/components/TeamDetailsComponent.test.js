@@ -131,4 +131,48 @@ describe('TeamDetailsComponent', () => {
     expect(submitButton.disabled).toBe(true);
     expect(submitButton.textContent).toContain('Saving...');
   });
+
+  it('renders the no-data empty state when there are no players', () => {
+    ReactDOM.render(
+      <TeamDetailsComponent
+        players={[]}
+        activeSeason={2026}
+        showGameEntryForm={false}
+        onSubmitGameEntry={() => {}}
+        onCancelGameEntry={() => {}}
+        isSubmittingGame={false}
+        gameSubmissionSuccess={false}
+        lastCreatedGame={null}
+        gameSubmissionError={null}
+      />,
+      div
+    );
+
+    expect(div.textContent).toContain('Showing season 2026');
+    expect(div.textContent).toContain('You dont have a Roster.');
+  });
+
+  it('renders the filtered empty state when filters remove all players', () => {
+    ReactDOM.render(
+      <TeamDetailsComponent
+        players={[]}
+        activeSeason={2026}
+        filters={{
+          playerSearch: 'Ace',
+          position: ''
+        }}
+        showGameEntryForm={false}
+        onSubmitGameEntry={() => {}}
+        onCancelGameEntry={() => {}}
+        isSubmittingGame={false}
+        gameSubmissionSuccess={false}
+        lastCreatedGame={null}
+        gameSubmissionError={null}
+      />,
+      div
+    );
+
+    expect(div.textContent).toContain('Showing season 2026');
+    expect(div.textContent).toContain('No players match the current filters for season 2026.');
+  });
 });

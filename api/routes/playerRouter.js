@@ -9,39 +9,102 @@ const Player = require('../models/Player');
 const Stat_Catalog = require('../models/Stat_Catalog');
 const PlayerStat = require('../models/PlayerStat');
 const ensureAuthenticated = require('../middleware/ensureAuthenticated');
+const requireTrustedOrigin = require('../middleware/requireTrustedOrigin');
+const { getAuthenticatedCoachId, coachOwnsPlayer } = require('../utils/authorization');
 
 router.use(bodyParser.urlencoded({extended: true}));
 router.use(jsonParser);
 
-router.get('/', function(req, res, next) {
+function buildScopedPlayerList(players) {
+  const seenPlayerIds = new Set();
+
+  return (players || []).filter(function(player) {
+    if (!player || !Number.isInteger(Number(player.id)) || seenPlayerIds.has(Number(player.id))) {
+      return false;
+    }
+
+    seenPlayerIds.add(Number(player.id));
+    return true;
+  });
+}
+
+function sanitizePlayerResponse(player) {
+  if (!player) {
+    return player;
+  }
+
+  return {
+    id: player.id,
+    email: player.email,
+    first_name: player.first_name,
+    last_name: player.last_name,
+    position: player.position
+  };
+}
+
+function sanitizePlayerStatsResponse(player) {
+  if (!player) {
+    return player;
+  }
+
+  return {
+    id: player.id,
+    email: player.email,
+    first_name: player.first_name,
+    last_name: player.last_name,
+    position: player.position,
+    stats: player.stats || []
+  };
+}
+
+router.get('/', ensureAuthenticated, function(req, res, next) {
+  const authenticatedCoachId = getAuthenticatedCoachId(req);
+
   Player
-  .fetchAll()
+  .fetchAll({ withRelated: ['teams', 'teams.coach'] })
   .then(function(players) {
-    res.json(players);
+    const playerPayload = typeof players.toJSON === 'function' ? players.toJSON() : players;
+    const scopedPlayers = buildScopedPlayerList(playerPayload.filter(function(player) {
+      return coachOwnsPlayer(player, authenticatedCoachId);
+    })).map(sanitizePlayerResponse);
+
+    res.json(scopedPlayers);
   })
   .catch(function(err) {
     return next(err);
   });
 })
 
-router.get('/:id', function(req, res, next) {
+router.get('/:id', ensureAuthenticated, function(req, res, next) {
+  const authenticatedCoachId = getAuthenticatedCoachId(req);
+
   Player
   .where({id: parseInt(req.params.id, 10)})
-  .fetch({withRelated: ['teams']})
-  .then(function(players) {
-    res.json(players);
+  .fetch({withRelated: ['teams', 'teams.coach']})
+  .then(function(player) {
+    if (!player || !coachOwnsPlayer(player, authenticatedCoachId)) {
+      return res.status(403).send('Unauthorized');
+    }
+
+    res.json(sanitizePlayerResponse(player.toJSON()));
   })
   .catch(function(err) {
     return next(err);
   });
 })
 
-router.get('/:id/stats', function(req, res, next) {
+router.get('/:id/stats', ensureAuthenticated, function(req, res, next) {
+  const authenticatedCoachId = getAuthenticatedCoachId(req);
+
   Player
   .where({id: req.params.id})
-  .fetch({withRelated: ['stats']})
-  .then(function(stats) {
-    res.json(stats);
+  .fetch({withRelated: ['teams', 'teams.coach', 'stats']})
+  .then(function(player) {
+    if (!player || !coachOwnsPlayer(player, authenticatedCoachId)) {
+      return res.status(403).send('Unauthorized');
+    }
+
+    res.json(sanitizePlayerStatsResponse(player.toJSON()));
   })
   .catch(function(err) {
     return next(err);
@@ -49,7 +112,8 @@ router.get('/:id/stats', function(req, res, next) {
 })
 
 // update player
-router.put('/:id', ensureAuthenticated, function(req, res) {
+router.put('/:id', ensureAuthenticated, requireTrustedOrigin, function(req, res, next) {
+	const authenticatedCoachId = getAuthenticatedCoachId(req);
 	// check to see if the proper params is equal to what the user is inputting
 	const updateParams = ['email', 'first_name', 'last_name', 'position'];
 	for(var i = 0; i < updateParams.length; i++) {
@@ -63,8 +127,11 @@ router.put('/:id', ensureAuthenticated, function(req, res) {
 	// update query db via model with new params
 	Player
 		.where({id: req.params.id})
-		.fetch()
+		.fetch({ withRelated: ['teams', 'teams.coach'] })
 		.then(function(player) {
+			if (!player || !coachOwnsPlayer(player, authenticatedCoachId)) {
+				return res.status(403).send('Unauthorized');
+			}
 			return player.save({
 				email: req.body.email,
 				first_name: req.body.first_name,
@@ -81,7 +148,8 @@ router.put('/:id', ensureAuthenticated, function(req, res) {
 });
 
 // update a stat tied to a player
- router.put('/:player_id/stats/:stat_catalog_id', ensureAuthenticated, function(req, res) {
+ router.put('/:player_id/stats/:stat_catalog_id', ensureAuthenticated, requireTrustedOrigin, function(req, res, next) {
+   const authenticatedCoachId = getAuthenticatedCoachId(req);
    const postParams = ['how_many'];
    for (var i = 0; i < postParams.length; i++) {
      const confirmPutParams = postParams[i];
@@ -91,19 +159,30 @@ router.put('/:id', ensureAuthenticated, function(req, res) {
        return res.status(400).send(errorMessage);
      }
    }
+   Player
+   .where({ id: req.params.player_id })
+   .fetch({ withRelated: ['teams', 'teams.coach'] })
+   .then(function(player) {
+     if (!player || !coachOwnsPlayer(player, authenticatedCoachId)) {
+       return res.status(403).send('Unauthorized');
+     }
 
-   PlayerStat
-   .where({
-     player_id: req.params.player_id,
-     stat_catalog_id: req.params.stat_catalog_id
-   })
-   .fetch()
-   .then(function(stat) {
-     return stat.save({
-       how_many: req.body.how_many
-     })
+     return PlayerStat
+       .where({
+         player_id: req.params.player_id,
+         stat_catalog_id: req.params.stat_catalog_id
+       })
+       .fetch()
+       .then(function(stat) {
+         return stat.save({
+           how_many: req.body.how_many
+         });
+       });
    })
    .then(function(player) {
+     if (!player || player.headersSent) {
+       return null;
+     }
      return res.status(200).json(player);
    })
    .catch(function(err) {
@@ -112,7 +191,7 @@ router.put('/:id', ensureAuthenticated, function(req, res) {
  })
 
 // post new player
-router.post('/', ensureAuthenticated, function(req, res) {
+router.post('/', ensureAuthenticated, requireTrustedOrigin, function(req, res, next) {
 	const postParams = ['email', 'first_name', 'last_name', 'position'];
 	for (var i = 0; i < postParams.length; i++) {
 		const confirmPostParams = postParams[i];
@@ -140,7 +219,8 @@ router.post('/', ensureAuthenticated, function(req, res) {
 });
 
 // post a new stat for a player
- router.post('/:player_id/stats/:stat_catalog_id', ensureAuthenticated, function(req, res) {
+router.post('/:player_id/stats/:stat_catalog_id', ensureAuthenticated, requireTrustedOrigin, function(req, res, next) {
+   const authenticatedCoachId = getAuthenticatedCoachId(req);
    const postParams = ['how_many'];
    for (var i = 0; i < postParams.length; i++) {
      const confirmPostParams = postParams[i];
@@ -150,15 +230,26 @@ router.post('/', ensureAuthenticated, function(req, res) {
        return res.status(400).send(errorMessage);
      }
    }
+  Player
+  .where({ id: req.params.player_id })
+  .fetch({ withRelated: ['teams', 'teams.coach'] })
+  .then(function(player) {
+    if (!player || !coachOwnsPlayer(player, authenticatedCoachId)) {
+      return res.status(403).send('Unauthorized');
+    }
 
-  PlayerStat
-  .forge({
-    player_id: parseInt(req.params.player_id, 10),
-    stat_catalog_id: parseInt(req.params.stat_catalog_id, 10),
-    how_many: req.body.how_many
+    return PlayerStat
+      .forge({
+        player_id: parseInt(req.params.player_id, 10),
+        stat_catalog_id: parseInt(req.params.stat_catalog_id, 10),
+        how_many: req.body.how_many
+      })
+      .save();
   })
-  .save()
   .then(function(stat) {
+    if (!stat || stat.headersSent) {
+      return null;
+    }
     return res.status(200).json(stat);
    })
    .catch(function(err) {
@@ -167,7 +258,8 @@ router.post('/', ensureAuthenticated, function(req, res) {
  })
 
 
- router.delete('/:id', ensureAuthenticated, function(req, res) {
+ router.delete('/:id', ensureAuthenticated, requireTrustedOrigin, function(req, res, next) {
+   const authenticatedCoachId = getAuthenticatedCoachId(req);
    const deleteParams = ['id']
   for(var i = 0; i < deleteParams.length; i++) {
     const wrongId = deleteParams[i];
@@ -182,8 +274,11 @@ router.post('/', ensureAuthenticated, function(req, res) {
   .where({
     id: parseInt(req.params.id, 10)
   })
-  .fetch()
+  .fetch({ withRelated: ['teams', 'teams.coach'] })
   .then(function(player){
+    if (player && !coachOwnsPlayer(player, authenticatedCoachId)) {
+      return res.status(403).send('Unauthorized');
+    }
     if (!player) {
       return res.status(404).json({ error: 'Player not found' });
     }

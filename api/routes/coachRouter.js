@@ -7,20 +7,60 @@ const jsonParser = bodyParser.json();
 
 const Coach = require('../models/Coach');
 const ensureAuthenticated = require('../middleware/ensureAuthenticated');
+const requireTrustedOrigin = require('../middleware/requireTrustedOrigin');
 const { addDerivedStatsToCoachPayload, addDerivedStatsToPlayers } = require('../utils/playerAnalytics');
+const { getAuthenticatedCoachId } = require('../utils/authorization');
+const {
+	parseRequestedSeason,
+	parseOptionalFilterText,
+	matchesCaseInsensitiveFilter,
+	matchesOptionalPositionFilter,
+	buildPlayerSearchText
+} = require('../utils/filterQuery');
 
 router.use(bodyParser.urlencoded({
 	extended: true
 }));
 router.use(jsonParser);
 
-function parseRequestedSeason(value) {
-	if (value === undefined) {
-		return undefined;
+function parseDashboardFilters(query) {
+	const requestedSeason = parseRequestedSeason(query.season);
+	if (requestedSeason.error) {
+		return requestedSeason;
 	}
 
-	const season = Number(value);
-	return Number.isInteger(season) ? season : undefined;
+	const teamSearch = parseOptionalFilterText(query.teamSearch, 'teamSearch');
+	if (teamSearch.error) {
+		return teamSearch;
+	}
+
+	const playerSearch = parseOptionalFilterText(query.playerSearch, 'playerSearch');
+	if (playerSearch.error) {
+		return playerSearch;
+	}
+
+	const position = parseOptionalFilterText(query.position, 'position');
+	if (position.error) {
+		return position;
+	}
+
+	return {
+		value: {
+			season: requestedSeason.value,
+			teamSearch: teamSearch.value,
+			playerSearch: playerSearch.value,
+			position: position.value,
+			matchesTeam: function(team) {
+				return matchesCaseInsensitiveFilter(team && team.name, teamSearch.value);
+			},
+			matchesPlayer: function(player) {
+				return matchesCaseInsensitiveFilter(buildPlayerSearchText(player), playerSearch.value);
+			},
+			matchesPosition: function(player) {
+				return matchesOptionalPositionFilter(player, position.value);
+			}
+		}
+	};
 }
 
 function getAvailableSeasons(teams) {
@@ -39,22 +79,25 @@ function getAvailableSeasons(teams) {
 	});
 }
 
-router.get('/', function(req, res, next) {
-	if(req.session.coachId){ // If the session doesn't have an userId(accessToken, etc...) then you don't show the protected token
-               Coach
-                        .fetchAll()
-                        .then(function(coaches) {
-                                res.json(coaches);
-                        })
-                        .catch(function(err) {
-                                return next(err);
-                        });
-	} else {
-		res.status(403).send('No session available');
-	}
+router.get('/', ensureAuthenticated, function(req, res, next) {
+	const authenticatedCoachId = getAuthenticatedCoachId(req);
+
+	Coach
+		.where({ id: authenticatedCoachId })
+		.fetch()
+		.then(function(coach) {
+			if (!coach) {
+				return res.status(404).send('Coach not found');
+			}
+
+			res.json([coach.toJSON()]);
+		})
+		.catch(function(err) {
+			return next(err);
+		});
 });
 
-router.get('/:id', function(req, res, next) {
+router.get('/:id', ensureAuthenticated, function(req, res, next) {
         /*
          * Planned dashboard analytics contract for GET /coaches/:id:
          * - keep the existing coach/team/player payload unchanged
@@ -69,14 +112,47 @@ router.get('/:id', function(req, res, next) {
          * - excluded from v1 because the current stat catalog does not support
          *   them correctly: OBP, SLG, OPS, RBI, walks-based metrics, doubles,
          *   triples, and team-level leaderboards
+         *
+         * Planned search/filter contract for GET /coaches/:id:
+         * - extend the existing read endpoint only; do not add a new endpoint
+         * - keep the response shape additive and backward-compatible
+         * - supported optional query params:
+         *   - season
+         *   - teamSearch
+         *   - playerSearch
+         *   - position
+         * - query param normalization rules:
+         *   - trim leading/trailing whitespace
+         *   - treat missing/empty values as "no filter"
+         *   - perform case-insensitive string matching for search values
+         *   - position remains a free-text filter based on current player data
+         * - validation rules:
+         *   - invalid season format may return 400
+         *   - valid filters with no matches should return 200 and empty result
+         *     collections, not 404
+         * - response invariants when filters are added:
+         *   - preserve top-level coach fields
+         *   - preserve availableSeasons and activeSeason contract
+         *   - only narrow teams/players/stats returned for this payload
+         *   - do not change auth requirements
          */
+        const parsedFilters = parseDashboardFilters(req.query);
+        if (parsedFilters.error) {
+                return res.status(400).send(parsedFilters.error);
+        }
+        const authenticatedCoachId = getAuthenticatedCoachId(req);
+        if (authenticatedCoachId === null || authenticatedCoachId !== Number(req.params.id)) {
+                return res.status(403).send('Unauthorized');
+        }
+
         Coach
                 .where({id: req.params.id})
                 .fetch({withRelated: ['teams', 'teams.players', 'teams.players.stats']})
                 .then(function(coaches) {
                         const coachPayload = addDerivedStatsToCoachPayload(coaches);
                         const availableSeasons = getAvailableSeasons(coachPayload.teams);
-                        const requestedSeason = parseRequestedSeason(req.query.season);
+                        const requestedSeason = parsedFilters.value.season;
+                        const dashboardFilters = parsedFilters.value;
                         const activeSeason =
                                 requestedSeason !== undefined
                                         ? requestedSeason
@@ -89,11 +165,21 @@ router.get('/:id', function(req, res, next) {
                                                 return team.season === activeSeason;
                                         });
 
-                        coachPayload.teams = teams.map(function(team) {
-                                return Object.assign({}, team, {
-                                        players: addDerivedStatsToPlayers(team.players, activeSeason)
+                        coachPayload.teams = teams
+                                .filter(function(team) {
+                                        return dashboardFilters.matchesTeam(team);
+                                })
+                                .map(function(team) {
+                                        const seasonScopedPlayers = addDerivedStatsToPlayers(team.players, activeSeason);
+                                        const filteredPlayers = seasonScopedPlayers.filter(function(player) {
+                                                return dashboardFilters.matchesPlayer(player) &&
+                                                        dashboardFilters.matchesPosition(player);
+                                        });
+
+                                        return Object.assign({}, team, {
+                                                players: filteredPlayers
+                                        });
                                 });
-                        });
                         coachPayload.availableSeasons = availableSeasons;
                         coachPayload.activeSeason = activeSeason;
 
@@ -104,7 +190,7 @@ router.get('/:id', function(req, res, next) {
                 });
 });
 
-router.post('/', ensureAuthenticated, function(req, res) {
+router.post('/', ensureAuthenticated, requireTrustedOrigin, function(req, res, next) {
         const postParams = ['email', 'first_name', 'last_name', 'password'];
 	for (var i = 0; i < postParams.length; i++) {
 		const confirmPostParams = postParams[i];
@@ -133,7 +219,11 @@ router.post('/', ensureAuthenticated, function(req, res) {
 		})
 })
 
-router.put('/:id', ensureAuthenticated, function(req, res) {
+router.put('/:id', ensureAuthenticated, requireTrustedOrigin, function(req, res, next) {
+	const authenticatedCoachId = getAuthenticatedCoachId(req);
+	if (authenticatedCoachId === null || authenticatedCoachId !== Number(req.params.id)) {
+		return res.status(403).send('Unauthorized');
+	}
 	// check to see if the proper params is equal to what the user is inputting
 	const updateParams = ['email', 'first_name', 'last_name']
 	for(var i = 0; i < updateParams.length; i++) {

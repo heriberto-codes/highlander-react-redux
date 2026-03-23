@@ -1,12 +1,19 @@
 import { LOGIN_SUCCESS } from '../actions/loginAction';
 import { GET_PROFILE, PROFILE_SUCCESS, PROFILE_ERROR } from '../actions/coachAction';
 
+const defaultFilters = () => ({
+	teamSearch: '',
+	playerSearch: '',
+	position: ''
+});
+
 const initialState = {
 	stats: [],
 	teams: [],
 	players: [],
 	availableSeasons: [],
 	activeSeason: null,
+	filters: defaultFilters(),
 	first_name: '',
 	last_name: '',
 	email: '',
@@ -61,6 +68,20 @@ const buildDashboardPlayerStat = player => ({
 	derivedStats: normalizeDerivedStats(player.derivedStats)
 });
 
+const normalizeFilterValue = value => {
+	if (typeof value !== 'string') {
+		return '';
+	}
+
+	return value.trim();
+};
+
+const normalizeCoachFilters = filters => ({
+	teamSearch: normalizeFilterValue(filters && filters.teamSearch),
+	playerSearch: normalizeFilterValue(filters && filters.playerSearch),
+	position: normalizeFilterValue(filters && filters.position)
+});
+
 export const coachReducer = (state = initialState, action) => {
 	switch (action.type) {
 	case LOGIN_SUCCESS:
@@ -68,6 +89,10 @@ export const coachReducer = (state = initialState, action) => {
 			id: action.response.data.id
 		});
 		break;
+	case GET_PROFILE:
+		return Object.assign({}, state, {
+			filters: normalizeCoachFilters(action.filters)
+		});
 	case PROFILE_SUCCESS:
 		let players = [];
 		action.response.data.teams.forEach(team => {
@@ -113,6 +138,7 @@ export const coachReducer = (state = initialState, action) => {
                                 action.response.data.activeSeason !== undefined
                                         ? action.response.data.activeSeason
                                         : null,
+                        filters: state.filters,
                         first_name: action.response.data.first_name,
                         last_name: action.response.data.last_name,
                         email: action.response.data.email,

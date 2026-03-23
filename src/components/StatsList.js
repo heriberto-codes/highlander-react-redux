@@ -6,9 +6,18 @@ import '../css/style.css';
 export default function StatsList(props) {
 	const stats = props.stats;
 	const activeSeason =
-		props.teams && props.teams.length > 0 && props.teams[0].season !== undefined
-			? props.teams[0].season
-			: null;
+		props.activeSeason !== undefined && props.activeSeason !== null
+			? props.activeSeason
+			: props.teams && props.teams.length > 0 && props.teams[0].season !== undefined
+				? props.teams[0].season
+				: null;
+	const hasActiveFilters = Boolean(
+		props.filters && (
+			props.filters.teamSearch ||
+			props.filters.playerSearch ||
+			props.filters.position
+		)
+	);
 	const formatDerivedStat = value =>
 		value === null || value === undefined ? '--' : Number(value).toFixed(3);
 	// const mergeTeamStats = [];
@@ -35,12 +44,9 @@ export default function StatsList(props) {
 	// })
 	// console.log(mergeTeamStats)
 
-	let nullStatsWarning;
-	// if(props.stats.length <= 0){
-	//   nullStatsWarning = <div className="notification has-text-centered stats-module-dashboard-message">
-	//     You dont have Stats.
-	//   </div>
-	// }
+	const emptyMessage = hasActiveFilters
+		? `No stats match the current filters${activeSeason !== null ? ` for season ${activeSeason}` : ''}.`
+		: 'You dont have Stats.';
 	return (
 		<div className='tile is-parent'>
 			<div className='tile is-child box header'>
@@ -68,53 +74,57 @@ export default function StatsList(props) {
 			) : null}
 
 				<section>
-					{nullStatsWarning}
-
-					<table className="table">
-						<thead className="stat-header-details-container">
-							<tr>
-								<th>
-									<abbr title='Position'>Pos</abbr>
-								</th>
-								<th>
-									<abbr title='Name'>Name</abbr>
-								</th>
-								<th>
-									<abbr title='Hits'>Hits</abbr>
-								</th>
-								<th>
-									<abbr title='At Bats'>AB</abbr>
-								</th>
-								<th>
-									<abbr title='Home Runs'>HR</abbr>
-								</th>
-								<th>
-									<abbr title='Earned Runs'>ER</abbr>
-								</th>
-								<th>
-									<abbr title='Inning Pitched'>IP</abbr>
-								</th>
-								<th>
-									<abbr title='Strike Outs'>Strike Outs</abbr>
-								</th>
-								<th>
-									<abbr title='Batting Average'>AVG</abbr>
-								</th>
-								<th>
-									<abbr title='Home Run Rate'>HR Rate</abbr>
-								</th>
-								<th>
-									<abbr title='Earned Run Average'>ERA</abbr>
-								</th>
-								<th>
-									<abbr title='Strikeouts Per Inning'>K/IP</abbr>
-								</th>
-							</tr>
-						</thead>
-						<tbody className="stat-details-container">
-							{ playerStats }
-						</tbody>
-					</table>
+					{playerStats.length > 0 ? (
+						<table className="table">
+							<thead className="stat-header-details-container">
+								<tr>
+									<th>
+										<abbr title='Position'>Pos</abbr>
+									</th>
+									<th>
+										<abbr title='Name'>Name</abbr>
+									</th>
+									<th>
+										<abbr title='Hits'>Hits</abbr>
+									</th>
+									<th>
+										<abbr title='At Bats'>AB</abbr>
+									</th>
+									<th>
+										<abbr title='Home Runs'>HR</abbr>
+									</th>
+									<th>
+										<abbr title='Earned Runs'>ER</abbr>
+									</th>
+									<th>
+										<abbr title='Inning Pitched'>IP</abbr>
+									</th>
+									<th>
+										<abbr title='Strike Outs'>Strike Outs</abbr>
+									</th>
+									<th>
+										<abbr title='Batting Average'>AVG</abbr>
+									</th>
+									<th>
+										<abbr title='Home Run Rate'>HR Rate</abbr>
+									</th>
+									<th>
+										<abbr title='Earned Run Average'>ERA</abbr>
+									</th>
+									<th>
+										<abbr title='Strikeouts Per Inning'>K/IP</abbr>
+									</th>
+								</tr>
+							</thead>
+							<tbody className="stat-details-container">
+								{ playerStats }
+							</tbody>
+						</table>
+					) : (
+						<div className="notification has-text-centered stats-module-dashboard-message">
+							{emptyMessage}
+						</div>
+					)}
 				</section>
 			</div>
 		</div>

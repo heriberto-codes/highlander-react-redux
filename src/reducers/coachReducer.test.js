@@ -10,7 +10,7 @@ jest.mock('../actions/coachAction', () => ({
 
 import { coachReducer } from './coachReducer';
 import { LOGIN_SUCCESS } from '../actions/loginAction';
-import { PROFILE_SUCCESS } from '../actions/coachAction';
+import { GET_PROFILE, PROFILE_SUCCESS } from '../actions/coachAction';
 
 describe('coachReducer', () => {
   it('should handle LOGIN_SUCCESS', () => {
@@ -75,6 +75,11 @@ describe('coachReducer', () => {
     expect(state.first_name).toBe('Coach');
     expect(state.availableSeasons).toEqual([2026, 2025]);
     expect(state.activeSeason).toBe(2026);
+    expect(state.filters).toEqual({
+      teamSearch: '',
+      playerSearch: '',
+      position: ''
+    });
     expect(state.players).toHaveLength(1);
     expect(state.stats[0].stats.Hits).toBe(5);
     expect(state.stats[0].stats['At Bats']).toBe(10);
@@ -125,6 +130,90 @@ describe('coachReducer', () => {
     });
     expect(state.availableSeasons).toEqual([]);
     expect(state.activeSeason).toBe(null);
+    expect(state.filters).toEqual({
+      teamSearch: '',
+      playerSearch: '',
+      position: ''
+    });
+  });
+
+  it('should store normalized filter state on GET_PROFILE', () => {
+    const state = coachReducer(undefined, {
+      type: GET_PROFILE,
+      id: 12,
+      season: 2026,
+      filters: {
+        teamSearch: ' War ',
+        playerSearch: ' Ace ',
+        position: ' Pitcher '
+      }
+    });
+
+    expect(state.filters).toEqual({
+      teamSearch: 'War',
+      playerSearch: 'Ace',
+      position: 'Pitcher'
+    });
+  });
+
+  it('should reset prior coach filter state when GET_PROFILE is dispatched without filters', () => {
+    const previousState = coachReducer(undefined, {
+      type: GET_PROFILE,
+      id: 12,
+      season: 2026,
+      filters: {
+        teamSearch: 'War',
+        playerSearch: 'Ace',
+        position: 'Pitcher'
+      }
+    });
+
+    const nextState = coachReducer(previousState, {
+      type: GET_PROFILE,
+      id: 12,
+      season: undefined,
+      filters: {}
+    });
+
+    expect(nextState.filters).toEqual({
+      teamSearch: '',
+      playerSearch: '',
+      position: ''
+    });
+  });
+
+  it('should preserve existing filter state across PROFILE_SUCCESS', () => {
+    const previousState = coachReducer(undefined, {
+      type: GET_PROFILE,
+      id: 12,
+      season: 2026,
+      filters: {
+        teamSearch: 'War',
+        playerSearch: 'Ace',
+        position: 'Pitcher'
+      }
+    });
+
+    const nextState = coachReducer(previousState, {
+      type: PROFILE_SUCCESS,
+      response: {
+        data: {
+          availableSeasons: [2026],
+          activeSeason: 2026,
+          teams: [],
+          first_name: 'Coach',
+          last_name: 'Test',
+          email: 'c@example.com',
+          id: 12
+        }
+      }
+    });
+
+    expect(nextState.filters).toEqual({
+      teamSearch: 'War',
+      playerSearch: 'Ace',
+      position: 'Pitcher'
+    });
   });
 
   it('should aggregate duplicate stat descriptions into raw totals', () => {
@@ -286,5 +375,10 @@ describe('coachReducer', () => {
         }
       }
     ]);
+    expect(nextState.filters).toEqual({
+      teamSearch: '',
+      playerSearch: '',
+      position: ''
+    });
   });
 });

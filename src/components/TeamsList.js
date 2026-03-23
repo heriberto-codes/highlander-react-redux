@@ -7,9 +7,21 @@ import '../css/style.css';
 export default function TeamsList(props) {
 	const teams = props.teams;
 	const activeSeason =
-		teams && teams.length > 0 && teams[0].season !== undefined
-			? teams[0].season
-			: null;
+		props.activeSeason !== undefined && props.activeSeason !== null
+			? props.activeSeason
+			: teams && teams.length > 0 && teams[0].season !== undefined
+				? teams[0].season
+				: null;
+	const hasActiveFilters = Boolean(
+		props.filters && (
+			props.filters.teamSearch ||
+			props.filters.playerSearch ||
+			props.filters.position
+		)
+	);
+	const emptyMessage = hasActiveFilters
+		? `No teams match the current filters${activeSeason !== null ? ` for season ${activeSeason}` : ''}.`
+		: 'You dont have any teams.';
 
 	let listOfTeams = teams.map((team, index) => {
 		return <li className='panel-heading' key={index}>
@@ -22,7 +34,7 @@ export default function TeamsList(props) {
 
 	const teamsList = listOfTeams.length > 0 ? listOfTeams
 		: <div className="notification has-text-centered add-team-message">
-    You dont have any teams.
+			{emptyMessage}
 		</div>;
 
 	return (

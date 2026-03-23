@@ -11,15 +11,36 @@ import TeamDetailsComponent from '../components/TeamDetailsComponent';
 // import AddPlayerModal from '../components/AddPlayerModal';
 import AddPlayer from '../components/AddPlayerModal2';
 
-
-class TeamDetails extends Component {
-	state = {
-		showGameEntryForm: false
+function getFilterStateFromProps(filters) {
+	return {
+		playerSearch: filters && filters.playerSearch ? filters.playerSearch : '',
+		position: filters && filters.position ? filters.position : ''
 	};
+}
 
-	fetchTeamProfile(season) {
+function haveFilterValuesChanged(previousFilters, nextFilters) {
+	return previousFilters.playerSearch !== nextFilters.playerSearch ||
+		previousFilters.position !== nextFilters.position;
+}
+
+function getRequestFilters(state) {
+	return {
+		playerSearch: state.playerSearch,
+		position: state.position
+	};
+}
+
+export class TeamDetails extends Component {
+	constructor(props) {
+		super(props);
+		this.state = Object.assign({
+			showGameEntryForm: false
+		}, getFilterStateFromProps(props.filters));
+	}
+
+	fetchTeamProfile(season, filters = getRequestFilters(this.state)) {
 		const { id } = this.props.match.params;
-		this.props.dispatch(getTeamProfile(id, season));
+		this.props.dispatch(getTeamProfile(id, season, filters));
 	}
 
 	componentDidMount() {
@@ -34,10 +55,26 @@ class TeamDetails extends Component {
 		if (!prevProps.gameSubmissionSuccess && this.props.gameSubmissionSuccess) {
 			this.setState({ showGameEntryForm: false });
 		}
+
+		const previousFilterState = getFilterStateFromProps(prevProps.filters);
+		const nextFilterState = getFilterStateFromProps(this.props.filters);
+		if (haveFilterValuesChanged(previousFilterState, nextFilterState)) {
+			this.setState(nextFilterState);
+		}
 	}
 
 	handleSeasonChange(season) {
-		this.fetchTeamProfile(season);
+		this.fetchTeamProfile(season, getRequestFilters(this.state));
+	}
+
+	handleFilterChange(field, value) {
+		this.setState({
+			[field]: value
+		});
+	}
+
+	applyFilters() {
+		this.fetchTeamProfile(this.props.activeSeason, getRequestFilters(this.state));
 	}
 
 	showModal(){
@@ -49,7 +86,6 @@ class TeamDetails extends Component {
 	}
 
 	addNewPlayer(teamId, email, firstName, lastName, position){
-		console.log('addPlayer function was called', teamId, email, firstName, lastName, position);
 		this.props.dispatch(addNewPlayer(teamId, email, firstName, lastName, position));
 	}
 
@@ -76,7 +112,6 @@ class TeamDetails extends Component {
 				onSubmit={ this.submit }
 			 />;
 		}
-		console.log(this);
 		return (
 			<div>
 				<Nav />
@@ -86,15 +121,21 @@ class TeamDetails extends Component {
 					season={this.props.season}
 					activeSeason={this.props.activeSeason}
 					availableSeasons={this.props.availableSeasons}
+					playerSearch={this.state.playerSearch}
+					position={this.state.position}
 					first_name={this.props.first_name}
 					last_name={this.props.last_name}
 					email={this.props.email}
 					onSeasonChange={season => this.handleSeasonChange(season)}
+					onFilterChange={(field, value) => this.handleFilterChange(field, value)}
+					onApplyFilters={() => this.applyFilters()}
 					showModal={() => this.showModal()}
 					showGameEntryForm={() => this.showGameEntryForm()} />
 				<TeamDetailsComponent
 					teamId={this.props.match.params.id}
 					players={this.props.players}
+					filters={this.props.filters}
+					activeSeason={this.props.activeSeason}
 					showGameEntryForm={this.state.showGameEntryForm}
 					onCancelGameEntry={() => this.hideGameEntryForm()}
 					onSubmitGameEntry={payload => this.submitGameEntry(payload)}
@@ -114,6 +155,7 @@ const mapStateToProps = state => ({
 	season: state.teamReducer.season,
 	activeSeason: state.teamReducer.activeSeason,
 	availableSeasons: state.teamReducer.availableSeasons,
+	filters: state.teamReducer.filters,
 	first_name: state.teamReducer.coach.first_name,
 	last_name: state.teamReducer.coach.last_name,
 	email: state.teamReducer.coach.email,
@@ -126,5 +168,3 @@ const mapStateToProps = state => ({
 });
 
 export default connect(mapStateToProps)(TeamDetails);
-
-

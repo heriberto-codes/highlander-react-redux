@@ -13,6 +13,12 @@ Current MVP version omits :no_entry_sign:: </br>
 
 The dashboard now includes derived player analytics from existing stat totals, including batting average, home run rate, ERA, and strikeouts per inning.
 
+The current UI also supports season-aware search and filtering on the dashboard and team details pages:
+- dashboard: `teamSearch`, `playerSearch`, `position`, `season`
+- team details: `playerSearch`, `position`, `season`
+
+This rollout did not require a schema change. It extends the existing read endpoints with additive query params.
+
 Want to keep up with the development and roadmap of Highlander?  https://trello.com/b/p1gqbNtQ/thinkful-capstone-highlander
 
 ## Setup
@@ -159,6 +165,7 @@ id | description
 
 - [x] router.get('/')
 - [x] router.get('/:id')
+  - optional query params: `season`, `teamSearch`, `playerSearch`, `position`
 
 - [x] router.post('/')
 
@@ -185,6 +192,7 @@ id | description
 
 - [x] router.get('/')
 - [x] router.get('/:id')
+  - optional query params: `season`, `playerSearch`, `position`
 
 - [x] router.post('/')
 - [x] router.post('/:id/player')

@@ -30,7 +30,8 @@ describe('coach actions', () => {
     expect(dispatch).toHaveBeenCalledWith({
       type: GET_PROFILE,
       id: 12,
-      season: undefined
+      season: undefined,
+      filters: {}
     });
     expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/coaches/12', {
       withCredentials: true
@@ -45,11 +46,67 @@ describe('coach actions', () => {
     expect(dispatch).toHaveBeenCalledWith({
       type: GET_PROFILE,
       id: 12,
-      season: 2026
+      season: 2026,
+      filters: {}
     });
     expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/coaches/12?season=2026', {
       withCredentials: true
     });
+  });
+
+  it('should append non-empty filter queries when provided', () => {
+    const dispatch = jest.fn();
+
+    getProfile(12, 2026, {
+      teamSearch: 'War',
+      playerSearch: 'Ace',
+      position: 'Pitcher'
+    })(dispatch);
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: GET_PROFILE,
+      id: 12,
+      season: 2026,
+      filters: {
+        teamSearch: 'War',
+        playerSearch: 'Ace',
+        position: 'Pitcher'
+      }
+    });
+    expect(axios.get).toHaveBeenCalledWith(
+      'http://localhost:8080/coaches/12?season=2026&teamSearch=War&playerSearch=Ace&position=Pitcher',
+      { withCredentials: true }
+    );
+  });
+
+  it('should omit empty string filters from the coach profile query', () => {
+    const dispatch = jest.fn();
+
+    getProfile(12, undefined, {
+      teamSearch: '   ',
+      playerSearch: 'Ace',
+      position: ''
+    })(dispatch);
+
+    expect(axios.get).toHaveBeenCalledWith(
+      'http://localhost:8080/coaches/12?playerSearch=Ace',
+      { withCredentials: true }
+    );
+  });
+
+  it('should trim non-empty filter values before serializing the coach profile query', () => {
+    const dispatch = jest.fn();
+
+    getProfile(12, 2026, {
+      teamSearch: '  War  ',
+      playerSearch: '  Ace Slugger  ',
+      position: '  Pitcher  '
+    })(dispatch);
+
+    expect(axios.get).toHaveBeenCalledWith(
+      'http://localhost:8080/coaches/12?season=2026&teamSearch=War&playerSearch=Ace+Slugger&position=Pitcher',
+      { withCredentials: true }
+    );
   });
 
   it('should create profileSuccess action', () => {

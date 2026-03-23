@@ -5,7 +5,7 @@
 - [x] Player analytics and derived stats
 - [x] Team season views
 - [x] Game-based stat entry
-- [ ] Search and filtering
+- [x] Search and filtering
 - [ ] Coach collaboration and permissions
 - [ ] Notifications and reminders
 

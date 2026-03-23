@@ -1,29 +1,35 @@
 import axios from 'axios';
+import { buildRequestUrl } from './queryParams';
 
 const baseUrl = 'http://localhost:8080/';
 const teamsUrl = `${baseUrl}teams/`;
 const playersUrl = `${baseUrl}players/`;
 
+function buildTeamProfileRequestUrl(id, season, filters) {
+	return buildRequestUrl(`${teamsUrl}${id}`, {
+		season,
+		playerSearch: filters.playerSearch,
+		position: filters.position
+	});
+}
+
 export const GET_TEAM_PROFILE = 'GET_TEAM_PROFILE';
 // create the action creater
-export const getTeamProfile = (id, season) => dispatch => {
+export const getTeamProfile = (id, season, filters = {}) => dispatch => {
 	dispatch({
 		type: GET_TEAM_PROFILE,
 		id,
-		season
+		season,
+		filters
 	});
 
-	const requestUrl =
-		season === undefined || season === null
-			? `${teamsUrl}${id}`
-			: `${teamsUrl}${id}?season=${encodeURIComponent(season)}`;
+	const requestUrl = buildTeamProfileRequestUrl(id, season, filters);
 
        axios.get(requestUrl, { withCredentials: true })
                .then(response => {
 			if(response.status === 200) {
 				dispatch(getTeamProfileSuccess(response));
 			}
-			console.log('this is the response from the team action axios call', response);
 		})
 		.catch(err => {
 			dispatch(getTeamProfileError(err));
@@ -33,7 +39,6 @@ export const getTeamProfile = (id, season) => dispatch => {
 
 export const ADD_TEAM_PLAYER = 'ADD_TEAM_PLAYER';
 export const addNewPlayer = (id, emailInput, firstName, lastName, position) => dispatch => {
-	console.log('Payload from action creater ADD TEAM PLAYER', emailInput, firstName, lastName, position);
 	dispatch({
 		type: ADD_TEAM_PLAYER,
 		emailInput,
@@ -52,7 +57,6 @@ export const addNewPlayer = (id, emailInput, firstName, lastName, position) => d
                { withCredentials: true }
        )
                .then(response => {
-			console.log('check to see if all the right values are in this payload ====>', response);
 			if(response.status === 200) {
 				dispatch(addPlayer(response));
 			}

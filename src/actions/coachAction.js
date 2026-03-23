@@ -1,18 +1,27 @@
 import axios from 'axios';
+import { buildRequestUrl } from './queryParams';
 
 const url = 'http://localhost:8080/coaches/';
+
+function buildCoachProfileRequestUrl(id, season, filters) {
+	return buildRequestUrl(`${url}${id}`, {
+		season,
+		teamSearch: filters.teamSearch,
+		playerSearch: filters.playerSearch,
+		position: filters.position
+	});
+}
+
 export const GET_PROFILE = 'GET_PROFILE';
-export const getProfile = (id, season) => dispatch => {
+export const getProfile = (id, season, filters = {}) => dispatch => {
 	dispatch({
 		type: GET_PROFILE,
 		id,
-		season
+		season,
+		filters
 	});
 
-	const requestUrl =
-		season === undefined || season === null
-			? `${url}${id}`
-			: `${url}${id}?season=${encodeURIComponent(season)}`;
+	const requestUrl = buildCoachProfileRequestUrl(id, season, filters);
 
        axios.get(requestUrl, { withCredentials: true })
                .then(response =>  {

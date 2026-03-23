@@ -105,6 +105,34 @@ Base paths are mounted in `server.js` (no `/api` prefix):
   - player stats are dated, but not linked to `team_id`
   - if a player changes teams within the same season, season-filtered stats cannot be perfectly attributed to one team
 
+### Search And Filtering Contract
+- v1 extends existing read endpoints; it does not add new endpoints
+- shipped filter surface:
+  - `GET /coaches/:id?season=<year>&teamSearch=<text>&playerSearch=<text>&position=<text>`
+  - `GET /teams/:id?season=<year>&playerSearch=<text>&position=<text>`
+- supported filter semantics:
+  - `season` continues to select the active season view
+  - `teamSearch` narrows dashboard teams by case-insensitive text match
+  - `playerSearch` narrows returned players by case-insensitive text match
+  - `position` narrows returned players using current free-text `players.position`
+- normalization rules:
+  - trim leading/trailing whitespace for text filters
+  - omit filtering for missing or empty values
+  - preserve existing payload shape and existing auth behavior
+- validation rules:
+  - invalid filter format may return `400`
+  - valid filters with no matches return `200` with empty result collections
+- response invariants:
+  - keep top-level coach/team fields unchanged
+  - keep additive `derivedStats` contract unchanged
+  - keep `availableSeasons` and `activeSeason` contract unchanged
+  - only narrow the returned teams/players/stats for the current payload
+- implementation note:
+  - prefer additive query params and small route/controller changes over new endpoints, new frameworks, or schema work
+- rollout note:
+  - no database schema change was required for v1
+  - filtering is applied in existing route/controller response shaping
+
 ### Game-based Stat Entry Contract
 - v1 adds `games` as a first-class persisted record
 - current `games` fields:

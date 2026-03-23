@@ -159,4 +159,39 @@ describe('StatsList', () => {
       expect.stringContaining('Encountered two children with the same key')
     );
   });
+
+  it('renders the no-data empty state when there are no stats', () => {
+    ReactDOM.render(
+      <StatsList
+        activeSeason={2026}
+        teams={[]}
+        stats={[]}
+      />,
+      div
+    );
+
+    expect(div.textContent).toContain('Showing season 2026');
+    expect(div.textContent).toContain('You dont have Stats.');
+    expect(div.querySelector('table')).toBeNull();
+  });
+
+  it('renders the filtered empty state when filters remove all stats', () => {
+    ReactDOM.render(
+      <StatsList
+        activeSeason={2026}
+        teams={[]}
+        stats={[]}
+        filters={{
+          teamSearch: '',
+          playerSearch: 'Ace',
+          position: ''
+        }}
+      />,
+      div
+    );
+
+    expect(div.textContent).toContain('Showing season 2026');
+    expect(div.textContent).toContain('No stats match the current filters for season 2026.');
+    expect(div.querySelector('table')).toBeNull();
+  });
 });

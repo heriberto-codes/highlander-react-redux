@@ -45,4 +45,24 @@ describe('TeamsList', () => {
 
     expect(div.textContent).toContain('You dont have any teams.');
   });
+
+  it('renders a filtered empty state with season context when filters are active', () => {
+    ReactDOM.render(
+      <MemoryRouter>
+        <TeamsList
+          teams={[]}
+          activeSeason={2026}
+          filters={{
+            teamSearch: 'War',
+            playerSearch: '',
+            position: ''
+          }}
+        />
+      </MemoryRouter>,
+      div
+    );
+
+    expect(div.textContent).toContain('Showing season 2026');
+    expect(div.textContent).toContain('No teams match the current filters for season 2026.');
+  });
 });

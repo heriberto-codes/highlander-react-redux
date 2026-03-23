@@ -10,6 +10,11 @@ import {
 	CREATE_GAME_ENTRY_ERROR
 } from '../actions/teamAction';
 
+const defaultFilters = () => ({
+	playerSearch: '',
+	position: ''
+});
+
 // create intial state
 // think about what state is needed on this page
 const initialState = {
@@ -19,6 +24,7 @@ const initialState = {
 	season: null,
 	activeSeason: null,
 	availableSeasons: [],
+	filters: defaultFilters(),
         players: [],
 	coach: {
 		first_name: '',
@@ -70,10 +76,27 @@ const coach = (state = initialState.coach, action) => {
         }
 };
 
+const normalizeFilterValue = value => {
+	if (typeof value !== 'string') {
+		return '';
+	}
+
+	return value.trim();
+};
+
+const normalizeTeamFilters = filters => ({
+	playerSearch: normalizeFilterValue(filters && filters.playerSearch),
+	position: normalizeFilterValue(filters && filters.position)
+});
+
 // create the teamReducer and set the state equal to intial state
 export const teamReducer = (state = initialState, action) => {
 	// create the switch statement and pass in action.type
 	switch(action.type) {
+	case GET_TEAM_PROFILE:
+		return Object.assign({}, state, {
+			filters: normalizeTeamFilters(action.filters)
+		});
 	case GET_TEAM_PROFILE_SUCCESS:
 		return Object.assign({}, state, {
 			name: action.response.data.name,
@@ -88,6 +111,7 @@ export const teamReducer = (state = initialState, action) => {
 					? action.response.data.activeSeason
 					: null,
 			availableSeasons: action.response.data.availableSeasons || [],
+			filters: state.filters,
 			players: players(state.players, action),
 			coach: coach(state.coach, action)
 		});

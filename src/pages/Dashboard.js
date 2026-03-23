@@ -12,13 +12,32 @@ import TeamsList from '../components/TeamsList';
 import RosterList from '../components/RosterList';
 import StatsList from '../components/StatsList';
 
-class Dashboard extends Component {
-	fetchProfile(season) {
+function getFilterStateFromProps(filters) {
+	return {
+		teamSearch: filters && filters.teamSearch ? filters.teamSearch : '',
+		playerSearch: filters && filters.playerSearch ? filters.playerSearch : '',
+		position: filters && filters.position ? filters.position : ''
+	};
+}
+
+function haveFilterValuesChanged(previousFilters, nextFilters) {
+	return previousFilters.teamSearch !== nextFilters.teamSearch ||
+		previousFilters.playerSearch !== nextFilters.playerSearch ||
+		previousFilters.position !== nextFilters.position;
+}
+
+export class Dashboard extends Component {
+	constructor(props) {
+		super(props);
+		this.state = getFilterStateFromProps(props.filters);
+	}
+
+	fetchProfile(season, filters = this.state) {
 		if (!this.props.id) {
 			return;
 		}
 
-		this.props.dispatch(getProfile(this.props.id, season));
+		this.props.dispatch(getProfile(this.props.id, season, filters));
 	}
 
 	componentDidMount() {
@@ -29,10 +48,26 @@ class Dashboard extends Component {
 		if (prevProps.id !== this.props.id && this.props.id) {
 			this.fetchProfile();
 		}
+
+		const previousFilterState = getFilterStateFromProps(prevProps.filters);
+		const nextFilterState = getFilterStateFromProps(this.props.filters);
+		if (haveFilterValuesChanged(previousFilterState, nextFilterState)) {
+			this.setState(nextFilterState);
+		}
 	}
 
 	handleSeasonChange(season) {
-		this.fetchProfile(season);
+		this.fetchProfile(season, this.state);
+	}
+
+	handleFilterChange(field, value) {
+		this.setState({
+			[field]: value
+		});
+	}
+
+	applyFilters() {
+		this.fetchProfile(this.props.activeSeason, this.state);
 	}
 
 	render() {
@@ -46,21 +81,32 @@ class Dashboard extends Component {
 					lastName={this.props.last_name}
 					activeSeason={this.props.activeSeason}
 					availableSeasons={this.props.availableSeasons}
+					teamSearch={this.state.teamSearch}
+					playerSearch={this.state.playerSearch}
+					position={this.state.position}
 					onSeasonChange={season => this.handleSeasonChange(season)}
+					onFilterChange={(field, value) => this.handleFilterChange(field, value)}
+					onApplyFilters={() => this.applyFilters()}
 				/>
 				<section className='section'>
 					<div className='tile is-ancestor'>
 						<div className='tile is-4 is-vertical is-parent'>
 							<TeamsList
 								teams={this.props.teams}
+								filters={this.props.filters}
+								activeSeason={this.props.activeSeason}
 							/>
 							<RosterList
 								players={this.props.players}
+								filters={this.props.filters}
+								activeSeason={this.props.activeSeason}
 							/>
 						</div>
 						<StatsList
 							stats={this.props.stats}
 							teams={this.props.teams}
+							filters={this.props.filters}
+							activeSeason={this.props.activeSeason}
 						/>
 					</div>
 				</section>
@@ -75,6 +121,7 @@ const mapStateToProps = state => ({
 	players: state.coachReducer.players,
 	availableSeasons: state.coachReducer.availableSeasons,
 	activeSeason: state.coachReducer.activeSeason,
+	filters: state.coachReducer.filters,
 	isLoggedIn: state.loginReducer.isloggedIn,
 	first_name: state.coachReducer.first_name,
 	last_name: state.coachReducer.last_name,

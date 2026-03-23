@@ -47,7 +47,8 @@ describe('team actions', () => {
     expect(dispatch).toHaveBeenCalledWith({
       type: GET_TEAM_PROFILE,
       id: 9,
-      season: undefined
+      season: undefined,
+      filters: {}
     });
     expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/teams/9', {
       withCredentials: true
@@ -62,11 +63,63 @@ describe('team actions', () => {
     expect(dispatch).toHaveBeenCalledWith({
       type: GET_TEAM_PROFILE,
       id: 9,
-      season: 2026
+      season: 2026,
+      filters: {}
     });
     expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/teams/9?season=2026', {
       withCredentials: true
     });
+  });
+
+  it('should append non-empty filter queries to the team profile URL when provided', () => {
+    const dispatch = jest.fn();
+
+    getTeamProfile(9, 2026, {
+      playerSearch: 'Ace',
+      position: 'Pitcher'
+    })(dispatch);
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: GET_TEAM_PROFILE,
+      id: 9,
+      season: 2026,
+      filters: {
+        playerSearch: 'Ace',
+        position: 'Pitcher'
+      }
+    });
+    expect(axios.get).toHaveBeenCalledWith(
+      'http://localhost:8080/teams/9?season=2026&playerSearch=Ace&position=Pitcher',
+      { withCredentials: true }
+    );
+  });
+
+  it('should omit empty string filters from the team profile query', () => {
+    const dispatch = jest.fn();
+
+    getTeamProfile(9, undefined, {
+      playerSearch: '   ',
+      position: 'Pitcher'
+    })(dispatch);
+
+    expect(axios.get).toHaveBeenCalledWith(
+      'http://localhost:8080/teams/9?position=Pitcher',
+      { withCredentials: true }
+    );
+  });
+
+  it('should trim non-empty filter values before serializing the team profile query', () => {
+    const dispatch = jest.fn();
+
+    getTeamProfile(9, 2026, {
+      playerSearch: '  Ace Slugger  ',
+      position: '  Pitcher  '
+    })(dispatch);
+
+    expect(axios.get).toHaveBeenCalledWith(
+      'http://localhost:8080/teams/9?season=2026&playerSearch=Ace+Slugger&position=Pitcher',
+      { withCredentials: true }
+    );
   });
 
   it('should create an action to show modal', () => {

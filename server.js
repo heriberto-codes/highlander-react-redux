@@ -10,7 +10,7 @@ const path = require('path');
 const app = express();
 
 let store;
-if (process.env.NODE_ENV === 'test') {
+if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID) {
         store = new session.MemoryStore();
 } else {
         const PGSession = require('connect-pg-simple')(session);

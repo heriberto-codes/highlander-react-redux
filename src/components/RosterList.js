@@ -6,6 +6,20 @@ import '../css/style.css';
 export default function RosterList(props) {
 
 	const players = props.players;
+	const activeSeason =
+		props.activeSeason !== undefined && props.activeSeason !== null
+			? props.activeSeason
+			: null;
+	const hasActiveFilters = Boolean(
+		props.filters && (
+			props.filters.teamSearch ||
+			props.filters.playerSearch ||
+			props.filters.position
+		)
+	);
+	const emptyMessage = hasActiveFilters
+		? `No players match the current filters${activeSeason !== null ? ` for season ${activeSeason}` : ''}.`
+		: 'You dont have a Roster.';
 	// const playersFirstName = props.players.first_name;
 	let listOfPlayers = players.map((player, index) => {
 		return <div key={index} className='card has-text-centered'>
@@ -26,7 +40,7 @@ export default function RosterList(props) {
 
 	const playerList = listOfPlayers.length > 0 ? listOfPlayers:
 		<div className="notification has-text-centered roster-dashboard-message">
-      You dont have a Roster.
+			{emptyMessage}
 		</div>
 
 	return (
@@ -50,6 +64,9 @@ export default function RosterList(props) {
 					</span>
 				</div>
 			</nav>
+			{activeSeason !== null ? (
+				<p className="tagline profile-metadata">Showing season {activeSeason}</p>
+			) : null}
 
 			<section>
 				<div className="columns">

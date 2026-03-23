@@ -14,12 +14,25 @@ export default function DashboardNavigation(props) {
 		}
 	};
 
+	const handleFilterChange = event => {
+		if (props.onFilterChange) {
+			props.onFilterChange(event.target.name, event.target.value);
+		}
+	};
+
+	const handleSubmit = event => {
+		event.preventDefault();
+		if (props.onApplyFilters) {
+			props.onApplyFilters();
+		}
+	};
+
 	return (
 		<section className="hero is-primary dashboard-bg-image">
 			<div className="hero-body hero-bg-image">
 				<div className="container profile">
 					<div className="profile-heading">
-						<nav className="columns level">
+						<div className="columns level">
 							<div className="column is-4 level-left">
 								<h1 className="title coach-title coach-heading-dashboard">Coach:</h1>
 								<p>
@@ -34,7 +47,41 @@ export default function DashboardNavigation(props) {
 									</p>
 								) : null}
 							</div>
-							<div className="level-right">
+							<div className="column">
+								<form className="level-right" onSubmit={handleSubmit}>
+									<span className="level-item">
+										<input
+											id="dashboard-team-search"
+											name="teamSearch"
+											className="input"
+											type="search"
+											placeholder="Search teams"
+											value={props.teamSearch || ''}
+											onChange={handleFilterChange}
+										/>
+									</span>
+									<span className="level-item">
+										<input
+											id="dashboard-player-search"
+											name="playerSearch"
+											className="input"
+											type="search"
+											placeholder="Search players"
+											value={props.playerSearch || ''}
+											onChange={handleFilterChange}
+										/>
+									</span>
+									<span className="level-item">
+										<input
+											id="dashboard-position-filter"
+											name="position"
+											className="input"
+											type="search"
+											placeholder="Filter by position"
+											value={props.position || ''}
+											onChange={handleFilterChange}
+										/>
+									</span>
 								{showSeasonSelector ? (
 									<span className="level-item">
 										<label className="tagline profile-metadata coach-email" htmlFor="dashboard-season-select">
@@ -53,6 +100,11 @@ export default function DashboardNavigation(props) {
 										</div>
 									</span>
 								) : null}
+									<span className="level-item">
+										<button className="button is-primary" type="submit">
+                    Apply Filters
+										</button>
+									</span>
 								<span className="level-item">
 									<a className="button is-primary is-outlined" href="add-team.html">
                     Add a New Team
@@ -68,8 +120,9 @@ export default function DashboardNavigation(props) {
                     Add New Stats
 									</a>
 								</span>
+								</form>
 							</div>
-						</nav>
+						</div>
 					</div>
 				</div>
 			</div>

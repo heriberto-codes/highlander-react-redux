@@ -5,6 +5,7 @@ jest.mock('axios', () => ({
 
 import { teamReducer } from './teamReducer';
 import {
+  GET_TEAM_PROFILE,
   GET_TEAM_PROFILE_SUCCESS,
   ADD_PLAYER,
   CREATE_TEAM,
@@ -43,6 +44,10 @@ describe('teamReducer', () => {
       season: 2025,
       activeSeason: 2026,
       availableSeasons: [2026, 2025],
+      filters: {
+        playerSearch: '',
+        position: ''
+      },
       players: [
         { id: 7, first_name: 'P', last_name: 'L', email: 'e', position: 'p' }
       ],
@@ -98,6 +103,86 @@ describe('teamReducer', () => {
     expect(state.season).toBe(null);
     expect(state.activeSeason).toBe(null);
     expect(state.availableSeasons).toEqual([]);
+    expect(state.filters).toEqual({
+      playerSearch: '',
+      position: ''
+    });
+  });
+
+  it('should store normalized filter state on GET_TEAM_PROFILE', () => {
+    const state = teamReducer(undefined, {
+      type: GET_TEAM_PROFILE,
+      id: 9,
+      season: 2026,
+      filters: {
+        playerSearch: ' Ace ',
+        position: ' Pitcher '
+      }
+    });
+
+    expect(state.filters).toEqual({
+      playerSearch: 'Ace',
+      position: 'Pitcher'
+    });
+  });
+
+  it('should reset prior team filter state when GET_TEAM_PROFILE is dispatched without filters', () => {
+    const previousState = teamReducer(undefined, {
+      type: GET_TEAM_PROFILE,
+      id: 9,
+      season: 2026,
+      filters: {
+        playerSearch: 'Ace',
+        position: 'Pitcher'
+      }
+    });
+
+    const nextState = teamReducer(previousState, {
+      type: GET_TEAM_PROFILE,
+      id: 9,
+      season: undefined,
+      filters: {}
+    });
+
+    expect(nextState.filters).toEqual({
+      playerSearch: '',
+      position: ''
+    });
+  });
+
+  it('should preserve existing filter state across GET_TEAM_PROFILE_SUCCESS', () => {
+    const previousState = teamReducer(undefined, {
+      type: GET_TEAM_PROFILE,
+      id: 9,
+      season: 2026,
+      filters: {
+        playerSearch: 'Ace',
+        position: 'Pitcher'
+      }
+    });
+
+    const nextState = teamReducer(previousState, {
+      type: GET_TEAM_PROFILE_SUCCESS,
+      response: {
+        data: {
+          name: 'Highlanders',
+          city: 'Bronx',
+          state: 'NY',
+          season: 2026,
+          activeSeason: 2026,
+          availableSeasons: [2026],
+          players: [],
+          coach: [
+            { first_name: 'Casey', last_name: 'Jones', email: 'coach@example.com' }
+          ]
+        }
+      }
+    });
+
+    expect(nextState.filters).toEqual({
+      playerSearch: 'Ace',
+      position: 'Pitcher'
+    });
   });
 
   it('should replace team season state when a later GET_TEAM_PROFILE_SUCCESS switches seasons', () => {
@@ -144,6 +229,10 @@ describe('teamReducer', () => {
     expect(nextState.season).toBe(2026);
     expect(nextState.activeSeason).toBe(2026);
     expect(nextState.availableSeasons).toEqual([2026, 2025]);
+    expect(nextState.filters).toEqual({
+      playerSearch: '',
+      position: ''
+    });
     expect(nextState.players).toEqual([
       { id: 11, first_name: 'Pat', last_name: 'Summer', email: 'summer@example.com', position: 'P' }
     ]);
