@@ -17,10 +17,19 @@ export default function TeamDetailsComponent(props) {
 	const [opponent, setOpponent] = useState('');
 	const [gameDate, setGameDate] = useState('');
 	const [statEntries, setStatEntries] = useState({});
+	const [newCollaboratorCoachId, setNewCollaboratorCoachId] = useState('');
+	const [newCollaboratorRole, setNewCollaboratorRole] = useState('assistant');
+	const [roleDrafts, setRoleDrafts] = useState({});
 	const activeSeason =
 		props.activeSeason !== undefined && props.activeSeason !== null
 			? props.activeSeason
 			: null;
+	const collaborators = props.collaborators || [];
+	const isOwner = props.currentCoachRole === 'owner';
+	const isCollaboratorMutationPending =
+		props.isAddingCollaborator ||
+		props.isUpdatingCollaborator ||
+		props.isRemovingCollaborator;
 	const hasActiveFilters = Boolean(
 		props.filters && (
 			props.filters.playerSearch ||
@@ -39,6 +48,14 @@ export default function TeamDetailsComponent(props) {
 			setStatEntries({});
 		}
 	}, [props.showGameEntryForm]);
+
+	useEffect(() => {
+		setRoleDrafts(
+			collaborators.reduce((drafts, collaborator) => Object.assign({}, drafts, {
+				[collaborator.id]: collaborator.role
+			}), {})
+		);
+	}, [collaborators]);
 
 	const updateStatEntry = (playerId, statCatalogId, value) => {
 		setStatEntries(Object.assign({}, statEntries, {
@@ -70,8 +87,162 @@ export default function TeamDetailsComponent(props) {
 		}
 	};
 
+	const handleRoleDraftChange = (collaboratorId, value) => {
+		setRoleDrafts(Object.assign({}, roleDrafts, {
+			[collaboratorId]: value
+		}));
+	};
+
+	const submitAddCollaborator = event => {
+		event.preventDefault();
+
+		const coachId = Number(newCollaboratorCoachId);
+		if (!isOwner || !Number.isInteger(coachId) || props.isAddingCollaborator) {
+			return;
+		}
+
+		if (props.onAddCollaborator) {
+			props.onAddCollaborator(coachId, newCollaboratorRole);
+		}
+	};
+
+	const submitCollaboratorRoleUpdate = (event, collaboratorId) => {
+		event.preventDefault();
+
+		if (!isOwner || !props.onUpdateCollaborator || props.isUpdatingCollaborator) {
+			return;
+		}
+
+		props.onUpdateCollaborator(collaboratorId, roleDrafts[collaboratorId] || 'assistant');
+	};
+
+	const removeCollaborator = collaboratorId => {
+		if (!isOwner || !props.onRemoveCollaborator || props.isRemovingCollaborator) {
+			return;
+		}
+
+		props.onRemoveCollaborator(collaboratorId);
+	};
+
+	const renderCollaboratorStatus = () => (
+		<div className="content">
+			{props.isAddingCollaborator ? <p>Adding collaborator...</p> : null}
+			{props.addCollaboratorSuccess ? <p className="has-text-success">Collaborator added.</p> : null}
+			{props.addCollaboratorError ? <p className="has-text-danger">Unable to add collaborator.</p> : null}
+			{props.isUpdatingCollaborator ? <p>Updating collaborator...</p> : null}
+			{props.updateCollaboratorSuccess ? <p className="has-text-success">Collaborator updated.</p> : null}
+			{props.updateCollaboratorError ? <p className="has-text-danger">Unable to update collaborator.</p> : null}
+			{props.isRemovingCollaborator ? <p>Removing collaborator...</p> : null}
+			{props.removeCollaboratorSuccess ? <p className="has-text-success">Collaborator removed.</p> : null}
+			{props.removeCollaboratorError ? <p className="has-text-danger">Unable to remove collaborator.</p> : null}
+		</div>
+	);
+
 	return (
 		<section>
+			<div className="box blockElement">
+				<h2 className="title is-4">Team Collaborators</h2>
+				{collaborators.length > 0 ? (
+					<div className="content">
+						{collaborators.map(collaborator => (
+							<div key={`collaborator-${collaborator.id}`} className="box">
+								<p>
+									<strong>{collaborator.first_name} {collaborator.last_name}</strong>
+								</p>
+								<p>{collaborator.email}</p>
+								<p>Role: {collaborator.role}</p>
+								{isOwner ? (
+									<form onSubmit={event => submitCollaboratorRoleUpdate(event, collaborator.id)}>
+										<div className="field is-grouped is-align-items-flex-end">
+											<div className="control">
+												<label className="label" htmlFor={`collaborator-role-${collaborator.id}`}>Role</label>
+								<div className="select">
+									<select
+										id={`collaborator-role-${collaborator.id}`}
+										value={roleDrafts[collaborator.id] || collaborator.role}
+										onChange={event => handleRoleDraftChange(collaborator.id, event.target.value)}
+										disabled={props.isUpdatingCollaborator}
+									>
+														<option value="owner">owner</option>
+														<option value="assistant">assistant</option>
+													</select>
+												</div>
+											</div>
+											<div className="control">
+											<button
+												type="submit"
+												className="button is-primary is-outlined"
+												data-collaborator-update-id={collaborator.id}
+												disabled={props.isUpdatingCollaborator}
+											>
+													Update Role
+												</button>
+											</div>
+											<div className="control">
+											<button
+												type="button"
+												className="button is-danger is-outlined"
+												data-collaborator-remove-id={collaborator.id}
+												onClick={() => removeCollaborator(collaborator.id)}
+												disabled={props.isRemovingCollaborator}
+											>
+													Remove
+												</button>
+											</div>
+										</div>
+									</form>
+								) : null}
+							</div>
+						))}
+					</div>
+				) : (
+					<p className="content">No collaborators yet.</p>
+				)}
+				{renderCollaboratorStatus()}
+				{isOwner ? (
+					<form onSubmit={submitAddCollaborator}>
+						<h3 className="title is-5">Add Collaborator</h3>
+						<div className="field is-grouped is-align-items-flex-end">
+							<div className="control">
+								<label className="label" htmlFor="team-collaborator-coach-id">Coach ID</label>
+								<input
+									id="team-collaborator-coach-id"
+									className="input"
+									type="number"
+									min="1"
+									step="1"
+									value={newCollaboratorCoachId}
+									onChange={event => setNewCollaboratorCoachId(event.target.value)}
+									disabled={props.isAddingCollaborator}
+								/>
+							</div>
+							<div className="control">
+								<label className="label" htmlFor="team-collaborator-role">Role</label>
+								<div className="select">
+									<select
+										id="team-collaborator-role"
+										value={newCollaboratorRole}
+										onChange={event => setNewCollaboratorRole(event.target.value)}
+										disabled={props.isAddingCollaborator}
+									>
+										<option value="assistant">assistant</option>
+										<option value="owner">owner</option>
+									</select>
+								</div>
+							</div>
+							<div className="control">
+								<button
+									type="submit"
+									className="button is-primary"
+									disabled={isCollaboratorMutationPending}
+								>
+									Add Collaborator
+								</button>
+							</div>
+						</div>
+					</form>
+				) : null}
+			</div>
 			{props.showGameEntryForm ? (
 				<div className="box blockElement">
 					<form onSubmit={submitGameEntry}>

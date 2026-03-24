@@ -1,11 +1,21 @@
 jest.mock('axios', () => ({
   get: jest.fn(() => Promise.resolve({ status: 200, data: {} })),
-  post: jest.fn(() => Promise.resolve({ status: 200, data: {} }))
+  post: jest.fn(() => Promise.resolve({ status: 200, data: {} })),
+  put: jest.fn(() => Promise.resolve({ status: 200, data: {} })),
+  delete: jest.fn(() => Promise.resolve({ status: 204, data: {} }))
 }));
+
+const flushPromises = () => new Promise(resolve => setTimeout(resolve, 0));
 
 import axios from 'axios';
 import {
   GET_TEAM_PROFILE,
+  GET_TEAM_COLLABORATORS,
+  GET_TEAM_COLLABORATORS_SUCCESS,
+  getTeamCollaboratorsSuccess,
+  GET_TEAM_COLLABORATORS_ERROR,
+  getTeamCollaboratorsError,
+  getTeamCollaborators,
   CREATE_TEAM,
   createTeam,
   HIDE_MODAL,
@@ -14,6 +24,24 @@ import {
   addPlayer,
   ADD_PLAYER_ERROR,
   addPlayerError,
+  ADD_TEAM_COLLABORATOR,
+  ADD_TEAM_COLLABORATOR_SUCCESS,
+  addTeamCollaboratorSuccess,
+  ADD_TEAM_COLLABORATOR_ERROR,
+  addTeamCollaboratorError,
+  addTeamCollaborator,
+  UPDATE_TEAM_COLLABORATOR,
+  UPDATE_TEAM_COLLABORATOR_SUCCESS,
+  updateTeamCollaboratorSuccess,
+  UPDATE_TEAM_COLLABORATOR_ERROR,
+  updateTeamCollaboratorError,
+  updateTeamCollaborator,
+  REMOVE_TEAM_COLLABORATOR,
+  REMOVE_TEAM_COLLABORATOR_SUCCESS,
+  removeTeamCollaboratorSuccess,
+  REMOVE_TEAM_COLLABORATOR_ERROR,
+  removeTeamCollaboratorError,
+  removeTeamCollaborator,
   CREATE_GAME_ENTRY,
   createGameEntry,
   CREATE_GAME_ENTRY_SUCCESS,
@@ -31,8 +59,12 @@ describe('team actions', () => {
   beforeEach(() => {
     axios.get.mockReset();
     axios.post.mockReset();
+    axios.put.mockReset();
+    axios.delete.mockReset();
     axios.get.mockResolvedValue({ status: 200, data: {} });
     axios.post.mockResolvedValue({ status: 200, data: {} });
+    axios.put.mockResolvedValue({ status: 200, data: {} });
+    axios.delete.mockResolvedValue({ status: 204, data: {} });
   });
 
   it('should expose GET_TEAM_PROFILE action type', () => {
@@ -164,6 +196,307 @@ describe('team actions', () => {
       response
     };
     expect(getTeamProfileError(response)).toEqual(expected);
+  });
+
+  it('should expose GET_TEAM_COLLABORATORS action type', () => {
+    expect(GET_TEAM_COLLABORATORS).toBe('GET_TEAM_COLLABORATORS');
+  });
+
+  it('should request team collaborators from the team coaches endpoint', () => {
+    const dispatch = jest.fn();
+
+    getTeamCollaborators(9)(dispatch);
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: GET_TEAM_COLLABORATORS,
+      id: 9
+    });
+    expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/teams/9/coaches', {
+      withCredentials: true
+    });
+  });
+
+  it('should create getTeamCollaboratorsSuccess action', () => {
+    const response = { data: [{ id: 1 }] };
+    expect(getTeamCollaboratorsSuccess(response)).toEqual({
+      type: GET_TEAM_COLLABORATORS_SUCCESS,
+      response
+    });
+  });
+
+  it('should create getTeamCollaboratorsError action', () => {
+    const response = 'err';
+    expect(getTeamCollaboratorsError(response)).toEqual({
+      type: GET_TEAM_COLLABORATORS_ERROR,
+      response
+    });
+  });
+
+  it('should dispatch getTeamCollaboratorsError when collaborator fetch fails', async () => {
+    const dispatch = jest.fn();
+    const error = new Error('fetch failed');
+    axios.get.mockRejectedValueOnce(error);
+
+    getTeamCollaborators(9)(dispatch);
+    await flushPromises();
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: GET_TEAM_COLLABORATORS,
+      id: 9
+    });
+    expect(dispatch).toHaveBeenLastCalledWith({
+      type: GET_TEAM_COLLABORATORS_ERROR,
+      response: error
+    });
+  });
+
+  it('should dispatch getTeamCollaboratorsSuccess when collaborator fetch succeeds', async () => {
+    const dispatch = jest.fn();
+    const response = { status: 200, data: [{ id: 2, role: 'assistant' }] };
+    axios.get.mockResolvedValueOnce(response);
+
+    getTeamCollaborators(9)(dispatch);
+    await flushPromises();
+
+    expect(dispatch).toHaveBeenNthCalledWith(1, {
+      type: GET_TEAM_COLLABORATORS,
+      id: 9
+    });
+    expect(dispatch).toHaveBeenNthCalledWith(2, {
+      type: GET_TEAM_COLLABORATORS_SUCCESS,
+      response
+    });
+  });
+
+  it('should expose ADD_TEAM_COLLABORATOR action type', () => {
+    expect(ADD_TEAM_COLLABORATOR).toBe('ADD_TEAM_COLLABORATOR');
+  });
+
+  it('should post a collaborator to the team coaches endpoint', () => {
+    const dispatch = jest.fn();
+
+    addTeamCollaborator(9, 2, 'assistant')(dispatch);
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: ADD_TEAM_COLLABORATOR,
+      id: 9,
+      coachId: 2,
+      role: 'assistant'
+    });
+    expect(axios.post).toHaveBeenCalledWith(
+      'http://localhost:8080/teams/9/coaches',
+      { coachId: 2, role: 'assistant' },
+      { withCredentials: true }
+    );
+  });
+
+  it('should create addTeamCollaboratorSuccess action', () => {
+    const response = { data: { id: 2 } };
+    expect(addTeamCollaboratorSuccess(response)).toEqual({
+      type: ADD_TEAM_COLLABORATOR_SUCCESS,
+      response
+    });
+  });
+
+  it('should create addTeamCollaboratorError action', () => {
+    const response = 'err';
+    expect(addTeamCollaboratorError(response)).toEqual({
+      type: ADD_TEAM_COLLABORATOR_ERROR,
+      response
+    });
+  });
+
+  it('should dispatch addTeamCollaboratorError when collaborator creation fails', async () => {
+    const dispatch = jest.fn();
+    const error = new Error('create failed');
+    axios.post.mockRejectedValueOnce(error);
+
+    addTeamCollaborator(9, 2, 'assistant')(dispatch);
+    await flushPromises();
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: ADD_TEAM_COLLABORATOR,
+      id: 9,
+      coachId: 2,
+      role: 'assistant'
+    });
+    expect(dispatch).toHaveBeenLastCalledWith({
+      type: ADD_TEAM_COLLABORATOR_ERROR,
+      response: error
+    });
+  });
+
+  it('should dispatch addTeamCollaboratorSuccess when collaborator creation succeeds', async () => {
+    const dispatch = jest.fn();
+    const response = { status: 201, data: { id: 2, role: 'assistant' } };
+    axios.post.mockResolvedValueOnce(response);
+
+    addTeamCollaborator(9, 2, 'assistant')(dispatch);
+    await flushPromises();
+
+    expect(dispatch).toHaveBeenNthCalledWith(1, {
+      type: ADD_TEAM_COLLABORATOR,
+      id: 9,
+      coachId: 2,
+      role: 'assistant'
+    });
+    expect(dispatch).toHaveBeenNthCalledWith(2, {
+      type: ADD_TEAM_COLLABORATOR_SUCCESS,
+      response
+    });
+  });
+
+  it('should expose UPDATE_TEAM_COLLABORATOR action type', () => {
+    expect(UPDATE_TEAM_COLLABORATOR).toBe('UPDATE_TEAM_COLLABORATOR');
+  });
+
+  it('should put collaborator role updates to the team coaches endpoint', () => {
+    const dispatch = jest.fn();
+
+    updateTeamCollaborator(9, 2, 'owner')(dispatch);
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: UPDATE_TEAM_COLLABORATOR,
+      id: 9,
+      coachId: 2,
+      role: 'owner'
+    });
+    expect(axios.put).toHaveBeenCalledWith(
+      'http://localhost:8080/teams/9/coaches/2',
+      { role: 'owner' },
+      { withCredentials: true }
+    );
+  });
+
+  it('should create updateTeamCollaboratorSuccess action', () => {
+    const response = { data: { id: 2, role: 'owner' } };
+    expect(updateTeamCollaboratorSuccess(response)).toEqual({
+      type: UPDATE_TEAM_COLLABORATOR_SUCCESS,
+      response
+    });
+  });
+
+  it('should create updateTeamCollaboratorError action', () => {
+    const response = 'err';
+    expect(updateTeamCollaboratorError(response)).toEqual({
+      type: UPDATE_TEAM_COLLABORATOR_ERROR,
+      response
+    });
+  });
+
+  it('should dispatch updateTeamCollaboratorError when collaborator update fails', async () => {
+    const dispatch = jest.fn();
+    const error = new Error('update failed');
+    axios.put.mockRejectedValueOnce(error);
+
+    updateTeamCollaborator(9, 2, 'owner')(dispatch);
+    await flushPromises();
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: UPDATE_TEAM_COLLABORATOR,
+      id: 9,
+      coachId: 2,
+      role: 'owner'
+    });
+    expect(dispatch).toHaveBeenLastCalledWith({
+      type: UPDATE_TEAM_COLLABORATOR_ERROR,
+      response: error
+    });
+  });
+
+  it('should dispatch updateTeamCollaboratorSuccess when collaborator update succeeds', async () => {
+    const dispatch = jest.fn();
+    const response = { status: 200, data: { id: 2, role: 'owner' } };
+    axios.put.mockResolvedValueOnce(response);
+
+    updateTeamCollaborator(9, 2, 'owner')(dispatch);
+    await flushPromises();
+
+    expect(dispatch).toHaveBeenNthCalledWith(1, {
+      type: UPDATE_TEAM_COLLABORATOR,
+      id: 9,
+      coachId: 2,
+      role: 'owner'
+    });
+    expect(dispatch).toHaveBeenNthCalledWith(2, {
+      type: UPDATE_TEAM_COLLABORATOR_SUCCESS,
+      response
+    });
+  });
+
+  it('should expose REMOVE_TEAM_COLLABORATOR action type', () => {
+    expect(REMOVE_TEAM_COLLABORATOR).toBe('REMOVE_TEAM_COLLABORATOR');
+  });
+
+  it('should delete collaborators from the team coaches endpoint', () => {
+    const dispatch = jest.fn();
+
+    removeTeamCollaborator(9, 2)(dispatch);
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: REMOVE_TEAM_COLLABORATOR,
+      id: 9,
+      coachId: 2
+    });
+    expect(axios.delete).toHaveBeenCalledWith(
+      'http://localhost:8080/teams/9/coaches/2',
+      { withCredentials: true }
+    );
+  });
+
+  it('should create removeTeamCollaboratorSuccess action', () => {
+    expect(removeTeamCollaboratorSuccess(9, 2)).toEqual({
+      type: REMOVE_TEAM_COLLABORATOR_SUCCESS,
+      id: 9,
+      coachId: 2
+    });
+  });
+
+  it('should create removeTeamCollaboratorError action', () => {
+    const response = 'err';
+    expect(removeTeamCollaboratorError(response)).toEqual({
+      type: REMOVE_TEAM_COLLABORATOR_ERROR,
+      response
+    });
+  });
+
+  it('should dispatch removeTeamCollaboratorError when collaborator deletion fails', async () => {
+    const dispatch = jest.fn();
+    const error = new Error('delete failed');
+    axios.delete.mockRejectedValueOnce(error);
+
+    removeTeamCollaborator(9, 2)(dispatch);
+    await flushPromises();
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: REMOVE_TEAM_COLLABORATOR,
+      id: 9,
+      coachId: 2
+    });
+    expect(dispatch).toHaveBeenLastCalledWith({
+      type: REMOVE_TEAM_COLLABORATOR_ERROR,
+      response: error
+    });
+  });
+
+  it('should dispatch removeTeamCollaboratorSuccess when collaborator deletion succeeds', async () => {
+    const dispatch = jest.fn();
+    const response = { status: 204, data: {} };
+    axios.delete.mockResolvedValueOnce(response);
+
+    removeTeamCollaborator(9, 2)(dispatch);
+    await flushPromises();
+
+    expect(dispatch).toHaveBeenNthCalledWith(1, {
+      type: REMOVE_TEAM_COLLABORATOR,
+      id: 9,
+      coachId: 2
+    });
+    expect(dispatch).toHaveBeenNthCalledWith(2, {
+      type: REMOVE_TEAM_COLLABORATOR_SUCCESS,
+      id: 9,
+      coachId: 2
+    });
   });
 
   it('should expose CREATE_GAME_ENTRY action type', () => {

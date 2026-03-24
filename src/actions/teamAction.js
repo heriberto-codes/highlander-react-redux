@@ -89,6 +89,94 @@ export const createGameEntry = (id, payload) => dispatch => {
 		});
 };
 
+export const GET_TEAM_COLLABORATORS = 'GET_TEAM_COLLABORATORS';
+export const getTeamCollaborators = id => dispatch => {
+	dispatch({
+		type: GET_TEAM_COLLABORATORS,
+		id
+	});
+
+	axios.get(`${teamsUrl}${id}/coaches`, { withCredentials: true })
+		.then(response => {
+			if (response.status === 200) {
+				dispatch(getTeamCollaboratorsSuccess(response));
+			}
+		})
+		.catch(err => {
+			dispatch(getTeamCollaboratorsError(err));
+		});
+};
+
+export const ADD_TEAM_COLLABORATOR = 'ADD_TEAM_COLLABORATOR';
+export const addTeamCollaborator = (id, coachId, role) => dispatch => {
+	dispatch({
+		type: ADD_TEAM_COLLABORATOR,
+		id,
+		coachId,
+		role
+	});
+
+	axios.post(
+		`${teamsUrl}${id}/coaches`,
+		{ coachId, role },
+		{ withCredentials: true }
+	)
+		.then(response => {
+			if (response.status === 201) {
+				dispatch(addTeamCollaboratorSuccess(response));
+			}
+		})
+		.catch(err => {
+			dispatch(addTeamCollaboratorError(err));
+		});
+};
+
+export const UPDATE_TEAM_COLLABORATOR = 'UPDATE_TEAM_COLLABORATOR';
+export const updateTeamCollaborator = (id, coachId, role) => dispatch => {
+	dispatch({
+		type: UPDATE_TEAM_COLLABORATOR,
+		id,
+		coachId,
+		role
+	});
+
+	axios.put(
+		`${teamsUrl}${id}/coaches/${coachId}`,
+		{ role },
+		{ withCredentials: true }
+	)
+		.then(response => {
+			if (response.status === 200) {
+				dispatch(updateTeamCollaboratorSuccess(response));
+			}
+		})
+		.catch(err => {
+			dispatch(updateTeamCollaboratorError(err));
+		});
+};
+
+export const REMOVE_TEAM_COLLABORATOR = 'REMOVE_TEAM_COLLABORATOR';
+export const removeTeamCollaborator = (id, coachId) => dispatch => {
+	dispatch({
+		type: REMOVE_TEAM_COLLABORATOR,
+		id,
+		coachId
+	});
+
+	axios.delete(
+		`${teamsUrl}${id}/coaches/${coachId}`,
+		{ withCredentials: true }
+	)
+		.then(response => {
+			if (response.status === 204) {
+				dispatch(removeTeamCollaboratorSuccess(id, coachId));
+			}
+		})
+		.catch(err => {
+			dispatch(removeTeamCollaboratorError(err));
+		});
+};
+
 export const GET_TEAM_PROFILE_SUCCESS = 'GET_TEAM_PROFILE_SUCCESS';
 export const getTeamProfileSuccess = response => ({
 	type: GET_TEAM_PROFILE_SUCCESS,
@@ -132,5 +220,54 @@ export const createGameEntrySuccess = response => ({
 export const CREATE_GAME_ENTRY_ERROR = 'CREATE_GAME_ENTRY_ERROR';
 export const createGameEntryError = response => ({
 	type: CREATE_GAME_ENTRY_ERROR,
+	response
+});
+
+export const GET_TEAM_COLLABORATORS_SUCCESS = 'GET_TEAM_COLLABORATORS_SUCCESS';
+export const getTeamCollaboratorsSuccess = response => ({
+	type: GET_TEAM_COLLABORATORS_SUCCESS,
+	response
+});
+
+export const GET_TEAM_COLLABORATORS_ERROR = 'GET_TEAM_COLLABORATORS_ERROR';
+export const getTeamCollaboratorsError = response => ({
+	type: GET_TEAM_COLLABORATORS_ERROR,
+	response
+});
+
+export const ADD_TEAM_COLLABORATOR_SUCCESS = 'ADD_TEAM_COLLABORATOR_SUCCESS';
+export const addTeamCollaboratorSuccess = response => ({
+	type: ADD_TEAM_COLLABORATOR_SUCCESS,
+	response
+});
+
+export const ADD_TEAM_COLLABORATOR_ERROR = 'ADD_TEAM_COLLABORATOR_ERROR';
+export const addTeamCollaboratorError = response => ({
+	type: ADD_TEAM_COLLABORATOR_ERROR,
+	response
+});
+
+export const UPDATE_TEAM_COLLABORATOR_SUCCESS = 'UPDATE_TEAM_COLLABORATOR_SUCCESS';
+export const updateTeamCollaboratorSuccess = response => ({
+	type: UPDATE_TEAM_COLLABORATOR_SUCCESS,
+	response
+});
+
+export const UPDATE_TEAM_COLLABORATOR_ERROR = 'UPDATE_TEAM_COLLABORATOR_ERROR';
+export const updateTeamCollaboratorError = response => ({
+	type: UPDATE_TEAM_COLLABORATOR_ERROR,
+	response
+});
+
+export const REMOVE_TEAM_COLLABORATOR_SUCCESS = 'REMOVE_TEAM_COLLABORATOR_SUCCESS';
+export const removeTeamCollaboratorSuccess = (id, coachId) => ({
+	type: REMOVE_TEAM_COLLABORATOR_SUCCESS,
+	id,
+	coachId
+});
+
+export const REMOVE_TEAM_COLLABORATOR_ERROR = 'REMOVE_TEAM_COLLABORATOR_ERROR';
+export const removeTeamCollaboratorError = response => ({
+	type: REMOVE_TEAM_COLLABORATOR_ERROR,
 	response
 });

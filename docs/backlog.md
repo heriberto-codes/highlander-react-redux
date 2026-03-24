@@ -6,7 +6,7 @@
 - [x] Team season views
 - [x] Game-based stat entry
 - [x] Search and filtering
-- [ ] Coach collaboration and permissions
+- [x] Coach collaboration and permissions
 - [ ] Notifications and reminders
 
 ## Architecture Improvements

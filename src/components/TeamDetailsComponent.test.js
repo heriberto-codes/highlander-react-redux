@@ -175,4 +175,260 @@ describe('TeamDetailsComponent', () => {
     expect(div.textContent).toContain('Showing season 2026');
     expect(div.textContent).toContain('No players match the current filters for season 2026.');
   });
+
+  it('renders collaborator management controls for owners and dispatches add, update, and remove actions', () => {
+    const onAddCollaborator = jest.fn();
+    const onUpdateCollaborator = jest.fn();
+    const onRemoveCollaborator = jest.fn();
+
+    ReactDOM.render(
+      <TeamDetailsComponent
+        teamId="9"
+        players={[]}
+        collaborators={[
+          { id: 1, first_name: 'Casey', last_name: 'Jones', email: 'coach@example.com', role: 'owner' },
+          { id: 2, first_name: 'Alex', last_name: 'Smith', email: 'alex@example.com', role: 'assistant' }
+        ]}
+        currentCoachRole="owner"
+        onAddCollaborator={onAddCollaborator}
+        onUpdateCollaborator={onUpdateCollaborator}
+        onRemoveCollaborator={onRemoveCollaborator}
+        showGameEntryForm={false}
+        onSubmitGameEntry={() => {}}
+        onCancelGameEntry={() => {}}
+        isAddingCollaborator={false}
+        addCollaboratorSuccess={false}
+        addCollaboratorError={null}
+        isUpdatingCollaborator={false}
+        updateCollaboratorSuccess={false}
+        updateCollaboratorError={null}
+        isRemovingCollaborator={false}
+        removeCollaboratorSuccess={false}
+        removeCollaboratorError={null}
+        isSubmittingGame={false}
+        gameSubmissionSuccess={false}
+        lastCreatedGame={null}
+        gameSubmissionError={null}
+      />,
+      div
+    );
+
+    expect(div.textContent).toContain('Team Collaborators');
+    expect(div.textContent).toContain('Add Collaborator');
+
+    const coachIdInput = div.querySelector('#team-collaborator-coach-id');
+    const roleSelect = div.querySelector('#team-collaborator-role');
+    const addForm = coachIdInput.closest('form');
+    const collaboratorRoleSelect = div.querySelector('#collaborator-role-2');
+    const updateForm = collaboratorRoleSelect.closest('form');
+    const removeButton = div.querySelector('[data-collaborator-remove-id="2"]');
+
+    TestUtils.Simulate.change(coachIdInput, { target: { value: '7' } });
+    TestUtils.Simulate.change(roleSelect, { target: { value: 'owner' } });
+    TestUtils.Simulate.submit(addForm);
+
+    expect(onAddCollaborator).toHaveBeenCalledWith(7, 'owner');
+
+    TestUtils.Simulate.change(collaboratorRoleSelect, { target: { value: 'owner' } });
+    TestUtils.Simulate.submit(updateForm);
+
+    expect(onUpdateCollaborator).toHaveBeenCalledWith(2, 'owner');
+
+    TestUtils.Simulate.click(removeButton);
+
+    expect(onRemoveCollaborator).toHaveBeenCalledWith(2);
+  });
+
+  it('renders collaborators read-only for assistants', () => {
+    ReactDOM.render(
+      <TeamDetailsComponent
+        teamId="9"
+        players={[]}
+        collaborators={[
+          { id: 1, first_name: 'Casey', last_name: 'Jones', email: 'coach@example.com', role: 'owner' },
+          { id: 2, first_name: 'Alex', last_name: 'Smith', email: 'alex@example.com', role: 'assistant' }
+        ]}
+        currentCoachRole="assistant"
+        showGameEntryForm={false}
+        onSubmitGameEntry={() => {}}
+        onCancelGameEntry={() => {}}
+        isAddingCollaborator={false}
+        addCollaboratorSuccess={false}
+        addCollaboratorError={null}
+        isUpdatingCollaborator={false}
+        updateCollaboratorSuccess={false}
+        updateCollaboratorError={null}
+        isRemovingCollaborator={false}
+        removeCollaboratorSuccess={false}
+        removeCollaboratorError={null}
+        isSubmittingGame={false}
+        gameSubmissionSuccess={false}
+        lastCreatedGame={null}
+        gameSubmissionError={null}
+      />,
+      div
+    );
+
+    expect(div.textContent).toContain('Casey Jones');
+    expect(div.textContent).toContain('Alex Smith');
+    expect(div.querySelector('#team-collaborator-coach-id')).toBeNull();
+    expect(div.querySelector('[data-collaborator-update-id="2"]')).toBeNull();
+    expect(div.querySelector('[data-collaborator-remove-id="2"]')).toBeNull();
+  });
+
+  it('disables collaborator controls while collaborator mutations are pending', () => {
+    ReactDOM.render(
+      <TeamDetailsComponent
+        teamId="9"
+        players={[]}
+        collaborators={[
+          { id: 1, first_name: 'Casey', last_name: 'Jones', email: 'coach@example.com', role: 'owner' },
+          { id: 2, first_name: 'Alex', last_name: 'Smith', email: 'alex@example.com', role: 'assistant' }
+        ]}
+        currentCoachRole="owner"
+        showGameEntryForm={false}
+        onSubmitGameEntry={() => {}}
+        onCancelGameEntry={() => {}}
+        isAddingCollaborator={true}
+        addCollaboratorSuccess={false}
+        addCollaboratorError={null}
+        isUpdatingCollaborator={true}
+        updateCollaboratorSuccess={false}
+        updateCollaboratorError={null}
+        isRemovingCollaborator={true}
+        removeCollaboratorSuccess={false}
+        removeCollaboratorError={null}
+        isSubmittingGame={false}
+        gameSubmissionSuccess={false}
+        lastCreatedGame={null}
+        gameSubmissionError={null}
+      />,
+      div
+    );
+
+    expect(div.querySelector('#team-collaborator-coach-id').disabled).toBe(true);
+    expect(div.querySelector('#team-collaborator-role').disabled).toBe(true);
+    expect(div.querySelector('button[type="submit"]').disabled).toBe(true);
+    expect(div.querySelector('#collaborator-role-2').disabled).toBe(true);
+    expect(div.querySelector('[data-collaborator-update-id="2"]').disabled).toBe(true);
+    expect(div.querySelector('[data-collaborator-remove-id="2"]').disabled).toBe(true);
+  });
+
+  it('renders collaborator mutation feedback messages', () => {
+    ReactDOM.render(
+      <TeamDetailsComponent
+        teamId="9"
+        players={[]}
+        collaborators={[
+          { id: 1, first_name: 'Casey', last_name: 'Jones', email: 'coach@example.com', role: 'owner' }
+        ]}
+        currentCoachRole="owner"
+        showGameEntryForm={false}
+        onSubmitGameEntry={() => {}}
+        onCancelGameEntry={() => {}}
+        isAddingCollaborator={false}
+        addCollaboratorSuccess={true}
+        addCollaboratorError={{ message: 'add failed' }}
+        isUpdatingCollaborator={false}
+        updateCollaboratorSuccess={true}
+        updateCollaboratorError={{ message: 'update failed' }}
+        isRemovingCollaborator={false}
+        removeCollaboratorSuccess={true}
+        removeCollaboratorError={{ message: 'remove failed' }}
+        isSubmittingGame={false}
+        gameSubmissionSuccess={false}
+        lastCreatedGame={null}
+        gameSubmissionError={null}
+      />,
+      div
+    );
+
+    expect(div.textContent).toContain('Collaborator added.');
+    expect(div.textContent).toContain('Unable to add collaborator.');
+    expect(div.textContent).toContain('Collaborator updated.');
+    expect(div.textContent).toContain('Unable to update collaborator.');
+    expect(div.textContent).toContain('Collaborator removed.');
+    expect(div.textContent).toContain('Unable to remove collaborator.');
+  });
+
+  it('does not dispatch add collaborator for empty or non-numeric coach ids', () => {
+    const onAddCollaborator = jest.fn();
+
+    ReactDOM.render(
+      <TeamDetailsComponent
+        teamId="9"
+        players={[]}
+        collaborators={[]}
+        currentCoachRole="owner"
+        onAddCollaborator={onAddCollaborator}
+        showGameEntryForm={false}
+        onSubmitGameEntry={() => {}}
+        onCancelGameEntry={() => {}}
+        isAddingCollaborator={false}
+        addCollaboratorSuccess={false}
+        addCollaboratorError={null}
+        isUpdatingCollaborator={false}
+        updateCollaboratorSuccess={false}
+        updateCollaboratorError={null}
+        isRemovingCollaborator={false}
+        removeCollaboratorSuccess={false}
+        removeCollaboratorError={null}
+        isSubmittingGame={false}
+        gameSubmissionSuccess={false}
+        lastCreatedGame={null}
+        gameSubmissionError={null}
+      />,
+      div
+    );
+
+    const coachIdInput = div.querySelector('#team-collaborator-coach-id');
+    const addForm = coachIdInput.closest('form');
+
+    TestUtils.Simulate.change(coachIdInput, { target: { value: '' } });
+    TestUtils.Simulate.submit(addForm);
+
+    TestUtils.Simulate.change(coachIdInput, { target: { value: 'abc' } });
+    TestUtils.Simulate.submit(addForm);
+
+    expect(onAddCollaborator).not.toHaveBeenCalled();
+  });
+
+  it('dispatches add collaborator for the smallest valid coach id', () => {
+    const onAddCollaborator = jest.fn();
+
+    ReactDOM.render(
+      <TeamDetailsComponent
+        teamId="9"
+        players={[]}
+        collaborators={[]}
+        currentCoachRole="owner"
+        onAddCollaborator={onAddCollaborator}
+        showGameEntryForm={false}
+        onSubmitGameEntry={() => {}}
+        onCancelGameEntry={() => {}}
+        isAddingCollaborator={false}
+        addCollaboratorSuccess={false}
+        addCollaboratorError={null}
+        isUpdatingCollaborator={false}
+        updateCollaboratorSuccess={false}
+        updateCollaboratorError={null}
+        isRemovingCollaborator={false}
+        removeCollaboratorSuccess={false}
+        removeCollaboratorError={null}
+        isSubmittingGame={false}
+        gameSubmissionSuccess={false}
+        lastCreatedGame={null}
+        gameSubmissionError={null}
+      />,
+      div
+    );
+
+    const coachIdInput = div.querySelector('#team-collaborator-coach-id');
+    const addForm = coachIdInput.closest('form');
+
+    TestUtils.Simulate.change(coachIdInput, { target: { value: '1' } });
+    TestUtils.Simulate.submit(addForm);
+
+    expect(onAddCollaborator).toHaveBeenCalledWith(1, 'assistant');
+  });
 });

@@ -16,7 +16,11 @@ const mockTeamForge = jest.fn();
 const mockStatCatalogFetch = jest.fn();
 const mockGameForge = jest.fn();
 const mockPlayerStatForge = jest.fn();
+const mockPlayerStatFetch = jest.fn();
 const mockTransaction = jest.fn();
+const mockTeamCoachAttach = jest.fn();
+const mockTeamCoachUpdatePivot = jest.fn();
+const mockTeamCoachDetach = jest.fn();
 
 jest.mock('../api/models/Coach', () => ({
   where: jest.fn(),
@@ -39,7 +43,8 @@ jest.mock('../api/models/Game', () => ({
 }));
 
 jest.mock('../api/models/PlayerStat', () => ({
-  forge: jest.fn()
+  forge: jest.fn(),
+  where: jest.fn()
 }));
 
 jest.mock('../api/models/Stat_Catalog', () => ({
@@ -80,7 +85,11 @@ describe('server routes', () => {
     mockStatCatalogFetch.mockReset();
     mockGameForge.mockReset();
     mockPlayerStatForge.mockReset();
+    mockPlayerStatFetch.mockReset();
     mockTransaction.mockReset();
+    mockTeamCoachAttach.mockReset();
+    mockTeamCoachUpdatePivot.mockReset();
+    mockTeamCoachDetach.mockReset();
     Coach.where.mockReset();
     Coach.validatePassword.mockReset();
     Team.where.mockReset();
@@ -89,6 +98,7 @@ describe('server routes', () => {
     Team.forge.mockReset();
     Game.forge.mockReset();
     PlayerStat.forge.mockReset();
+    PlayerStat.where.mockReset();
     Stat_Catalog.where.mockReset();
     Bookshelf.transaction.mockReset();
     ensureAuthenticated.mockReset();
@@ -109,9 +119,15 @@ describe('server routes', () => {
     });
     Game.forge.mockImplementation(mockGameForge);
     PlayerStat.forge.mockImplementation(mockPlayerStatForge);
+    PlayerStat.where.mockReturnValue({
+      fetch: mockPlayerStatFetch
+    });
     Bookshelf.transaction.mockImplementation(function(callback) {
       return callback(mockTransaction);
     });
+    mockTeamCoachAttach.mockResolvedValue(undefined);
+    mockTeamCoachUpdatePivot.mockResolvedValue(undefined);
+    mockTeamCoachDetach.mockResolvedValue(undefined);
     ensureAuthenticated.mockImplementation((req, res, next) => {
       const authenticatedCoachId = req.path.indexOf('/coaches/') === 0
         ? Number(req.params.id)
@@ -262,6 +278,557 @@ describe('server routes', () => {
     const response = await request(app).get('/players/13/stats').expect(403);
 
     expect(response.text).toBe('Unauthorized');
+  });
+
+  it('GET /teams/:id/coaches returns sanitized collaborators for a team member', async () => {
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 9,
+        coach: [
+          { id: 1, email: 'owner@example.com', first_name: 'Owner', last_name: 'Coach', _pivot_role: 'owner' },
+          { id: 2, email: 'assistant@example.com', first_name: 'Assist', last_name: 'Coach', _pivot_role: 'assistant' }
+        ]
+      })
+    });
+
+    const response = await request(app).get('/teams/9/coaches').expect(200);
+
+    expect(response.body).toEqual([
+      { id: 1, email: 'owner@example.com', first_name: 'Owner', last_name: 'Coach', role: 'owner' },
+      { id: 2, email: 'assistant@example.com', first_name: 'Assist', last_name: 'Coach', role: 'assistant' }
+    ]);
+  });
+
+  it('GET /teams/:id/coaches surfaces role metadata from fetched relation payloads', async () => {
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 9,
+        coach: [
+          { id: 1, email: 'owner@example.com', first_name: 'Owner', last_name: 'Coach', _pivot_role: 'owner' },
+          { id: 2, email: 'assistant@example.com', first_name: 'Assist', last_name: 'Coach', role: 'assistant' }
+        ]
+      })
+    });
+
+    const response = await request(app).get('/teams/9/coaches').expect(200);
+
+    expect(response.body[0].role).toBe('owner');
+    expect(response.body[1].role).toBe('assistant');
+  });
+
+  it('GET /teams/:id/coaches rejects coaches outside the team', async () => {
+    ensureAuthenticated.mockImplementationOnce((req, res, next) => {
+      req.authenticatedCoachId = 99;
+      req.session.coachId = 99;
+      next();
+    });
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 9,
+        coach: [
+          { id: 1, _pivot_role: 'owner' }
+        ]
+      })
+    });
+
+    const response = await request(app).get('/teams/9/coaches').expect(403);
+
+    expect(response.text).toBe('Unauthorized');
+  });
+
+  it('GET /teams/:id/coaches rejects unauthenticated access', async () => {
+    ensureAuthenticated.mockImplementationOnce((req, res) => {
+      res.status(403).send('No session available');
+    });
+
+    const response = await request(app).get('/teams/9/coaches').expect(403);
+
+    expect(response.text).toBe('No session available');
+    expect(mockTeamFetch).not.toHaveBeenCalled();
+  });
+
+  it('POST /teams/:id/coaches lets an owner add a collaborator with a role', async () => {
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 9,
+        coach: [
+          { id: 1, email: 'owner@example.com', first_name: 'Owner', last_name: 'Coach', _pivot_role: 'owner' }
+        ]
+      }),
+      coach: () => ({
+        attach: mockTeamCoachAttach,
+        updatePivot: mockTeamCoachUpdatePivot
+      })
+    });
+    mockFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 2,
+        email: 'assistant@example.com',
+        first_name: 'Assist',
+        last_name: 'Coach'
+      })
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .post('/teams/9/coaches'))
+      .send({
+        coachId: 2,
+        role: 'assistant'
+      })
+      .expect(201);
+
+    expect(mockTeamCoachAttach).toHaveBeenCalledWith({
+      coach_id: 2,
+      role: 'assistant'
+    });
+    expect(mockTeamCoachUpdatePivot).not.toHaveBeenCalled();
+    expect(response.body).toEqual({
+      id: 2,
+      email: 'assistant@example.com',
+      first_name: 'Assist',
+      last_name: 'Coach',
+      role: 'assistant'
+    });
+  });
+
+  it('POST /teams/:id/coaches should write the role during the initial attach and not require updatePivot', async () => {
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 9,
+        coach: [
+          { id: 1, email: 'owner@example.com', first_name: 'Owner', last_name: 'Coach', _pivot_role: 'owner' }
+        ]
+      }),
+      coach: () => ({
+        attach: mockTeamCoachAttach,
+        updatePivot: mockTeamCoachUpdatePivot
+      })
+    });
+    mockFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 2,
+        email: 'assistant@example.com',
+        first_name: 'Assist',
+        last_name: 'Coach'
+      })
+    });
+
+    await withTrustedOrigin(request(app)
+      .post('/teams/9/coaches'))
+      .send({
+        coachId: 2,
+        role: 'assistant'
+      })
+      .expect(201);
+
+    expect(mockTeamCoachAttach).toHaveBeenCalledWith({
+      coach_id: 2,
+      role: 'assistant'
+    });
+    expect(mockTeamCoachUpdatePivot).not.toHaveBeenCalled();
+  });
+
+  it('POST /teams/:id/coaches rejects duplicate collaborators', async () => {
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 9,
+        coach: [
+          { id: 1, _pivot_role: 'owner' },
+          { id: 2, _pivot_role: 'assistant' }
+        ]
+      }),
+      coach: () => ({
+        attach: mockTeamCoachAttach,
+        updatePivot: mockTeamCoachUpdatePivot
+      })
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .post('/teams/9/coaches'))
+      .send({
+        coachId: 2,
+        role: 'assistant'
+      })
+      .expect(400);
+
+    expect(response.text).toBe('Sorry this coach is already assigned to the team');
+    expect(mockTeamCoachAttach).not.toHaveBeenCalled();
+  });
+
+  it('POST /teams/:id/coaches rejects nonexistent coach ids', async () => {
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 9,
+        coach: [
+          { id: 1, _pivot_role: 'owner' }
+        ]
+      }),
+      coach: () => ({
+        attach: mockTeamCoachAttach,
+        updatePivot: mockTeamCoachUpdatePivot
+      })
+    });
+    mockFetch.mockResolvedValue(null);
+
+    const response = await withTrustedOrigin(request(app)
+      .post('/teams/9/coaches'))
+      .send({
+        coachId: 99,
+        role: 'assistant'
+      })
+      .expect(400);
+
+    expect(response.text).toBe('Sorry your coachId is invalid please try again');
+    expect(mockTeamCoachAttach).not.toHaveBeenCalled();
+  });
+
+  it('POST /teams/:id/coaches rejects non-owner collaborators', async () => {
+    ensureAuthenticated.mockImplementationOnce((req, res, next) => {
+      req.authenticatedCoachId = 2;
+      req.session.coachId = 2;
+      next();
+    });
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 9,
+        coach: [
+          { id: 1, _pivot_role: 'owner' },
+          { id: 2, _pivot_role: 'assistant' }
+        ]
+      }),
+      coach: () => ({
+        attach: mockTeamCoachAttach,
+        updatePivot: mockTeamCoachUpdatePivot
+      })
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .post('/teams/9/coaches'))
+      .send({
+        coachId: 3,
+        role: 'assistant'
+      })
+      .expect(403);
+
+    expect(response.text).toBe('Unauthorized');
+    expect(mockTeamCoachAttach).not.toHaveBeenCalled();
+  });
+
+  it('POST /teams/:id/coaches rejects invalid roles', async () => {
+    const response = await withTrustedOrigin(request(app)
+      .post('/teams/9/coaches'))
+      .send({
+        coachId: 2,
+        role: 'manager'
+      })
+      .expect(400);
+
+    expect(response.text).toBe('Sorry your role is invalid please try again');
+  });
+
+  it('POST /teams/:id/coaches rejects unauthenticated access', async () => {
+    ensureAuthenticated.mockImplementationOnce((req, res) => {
+      res.status(403).send('No session available');
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .post('/teams/9/coaches'))
+      .send({
+        coachId: 2,
+        role: 'assistant'
+      })
+      .expect(403);
+
+    expect(response.text).toBe('No session available');
+    expect(mockTeamFetch).not.toHaveBeenCalled();
+    expect(mockTeamCoachAttach).not.toHaveBeenCalled();
+  });
+
+  it('PUT /teams/:id/coaches/:coachId lets an owner update a collaborator role', async () => {
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 9,
+        coach: [
+          { id: 1, email: 'owner@example.com', first_name: 'Owner', last_name: 'Coach', _pivot_role: 'owner' },
+          { id: 2, email: 'assistant@example.com', first_name: 'Assist', last_name: 'Coach', _pivot_role: 'assistant' }
+        ]
+      }),
+      coach: () => ({
+        updatePivot: mockTeamCoachUpdatePivot
+      })
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .put('/teams/9/coaches/2'))
+      .send({
+        role: 'owner'
+      })
+      .expect(200);
+
+    expect(mockTeamCoachUpdatePivot).toHaveBeenCalledWith(
+      { role: 'owner' },
+      { query: { coach_id: 2 }, require: true }
+    );
+    expect(response.body).toEqual({
+      id: 2,
+      email: 'assistant@example.com',
+      first_name: 'Assist',
+      last_name: 'Coach',
+      role: 'owner'
+    });
+  });
+
+  it('PUT /teams/:id/coaches/:coachId rejects non-owner collaborators', async () => {
+    ensureAuthenticated.mockImplementationOnce((req, res, next) => {
+      req.authenticatedCoachId = 2;
+      req.session.coachId = 2;
+      next();
+    });
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 9,
+        coach: [
+          { id: 1, _pivot_role: 'owner' },
+          { id: 2, _pivot_role: 'assistant' }
+        ]
+      }),
+      coach: () => ({
+        updatePivot: mockTeamCoachUpdatePivot
+      })
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .put('/teams/9/coaches/1'))
+      .send({
+        role: 'assistant'
+      })
+      .expect(403);
+
+    expect(response.text).toBe('Unauthorized');
+    expect(mockTeamCoachUpdatePivot).not.toHaveBeenCalled();
+  });
+
+  it('PUT /teams/:id/coaches/:coachId rejects invalid coach ids', async () => {
+    const response = await withTrustedOrigin(request(app)
+      .put('/teams/9/coaches/not-a-number'))
+      .send({
+        role: 'assistant'
+      })
+      .expect(400);
+
+    expect(response.text).toBe('Sorry your coachId is invalid please try again');
+  });
+
+  it('PUT /teams/:id/coaches/:coachId rejects nonexistent target coach ids', async () => {
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 9,
+        coach: [
+          { id: 1, _pivot_role: 'owner' },
+          { id: 2, _pivot_role: 'assistant' }
+        ]
+      }),
+      coach: () => ({
+        updatePivot: mockTeamCoachUpdatePivot
+      })
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .put('/teams/9/coaches/99'))
+      .send({
+        role: 'assistant'
+      })
+      .expect(400);
+
+    expect(response.text).toBe('Sorry your coachId is invalid please try again');
+    expect(mockTeamCoachUpdatePivot).not.toHaveBeenCalled();
+  });
+
+  it('PUT /teams/:id/coaches/:coachId rejects missing roles', async () => {
+    const response = await withTrustedOrigin(request(app)
+      .put('/teams/9/coaches/2'))
+      .send({})
+      .expect(400);
+
+    expect(response.text).toBe('Sorry your missing role please try again');
+  });
+
+  it('PUT /teams/:id/coaches/:coachId rejects unauthenticated access', async () => {
+    ensureAuthenticated.mockImplementationOnce((req, res) => {
+      res.status(403).send('No session available');
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .put('/teams/9/coaches/2'))
+      .send({
+        role: 'assistant'
+      })
+      .expect(403);
+
+    expect(response.text).toBe('No session available');
+    expect(mockTeamFetch).not.toHaveBeenCalled();
+    expect(mockTeamCoachUpdatePivot).not.toHaveBeenCalled();
+  });
+
+  it('DELETE /teams/:id/coaches/:coachId rejects removing the last owner', async () => {
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 9,
+        coach: [
+          { id: 1, _pivot_role: 'owner' },
+          { id: 2, _pivot_role: 'assistant' }
+        ]
+      }),
+      coach: () => ({
+        detach: mockTeamCoachDetach
+      })
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .delete('/teams/9/coaches/1'))
+      .expect(400);
+
+    expect(response.text).toBe('Sorry this coach cannot be removed from the team');
+    expect(mockTeamCoachDetach).not.toHaveBeenCalled();
+  });
+
+  it('DELETE /teams/:id/coaches/:coachId lets an owner remove a non-owner collaborator', async () => {
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 9,
+        coach: [
+          { id: 1, _pivot_role: 'owner' },
+          { id: 2, _pivot_role: 'assistant' }
+        ]
+      }),
+      coach: () => ({
+        detach: mockTeamCoachDetach
+      })
+    });
+
+    await withTrustedOrigin(request(app)
+      .delete('/teams/9/coaches/2'))
+      .expect(204);
+
+    expect(mockTeamCoachDetach).toHaveBeenCalledWith([2]);
+  });
+
+  it('DELETE /teams/:id/coaches/:coachId rejects non-owner collaborators', async () => {
+    ensureAuthenticated.mockImplementationOnce((req, res, next) => {
+      req.authenticatedCoachId = 2;
+      req.session.coachId = 2;
+      next();
+    });
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 9,
+        coach: [
+          { id: 1, _pivot_role: 'owner' },
+          { id: 2, _pivot_role: 'assistant' }
+        ]
+      }),
+      coach: () => ({
+        detach: mockTeamCoachDetach
+      })
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .delete('/teams/9/coaches/1'))
+      .expect(403);
+
+    expect(response.text).toBe('Unauthorized');
+    expect(mockTeamCoachDetach).not.toHaveBeenCalled();
+  });
+
+  it('DELETE /teams/:id/coaches/:coachId rejects invalid collaborator ids', async () => {
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 9,
+        coach: [
+          { id: 1, _pivot_role: 'owner' },
+          { id: 2, _pivot_role: 'assistant' }
+        ]
+      }),
+      coach: () => ({
+        detach: mockTeamCoachDetach
+      })
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .delete('/teams/9/coaches/99'))
+      .expect(400);
+
+    expect(response.text).toBe('Sorry your coachId is invalid please try again');
+    expect(mockTeamCoachDetach).not.toHaveBeenCalled();
+  });
+
+  it('DELETE /teams/:id/coaches/:coachId rejects non-numeric target coach ids explicitly', async () => {
+    const response = await withTrustedOrigin(request(app)
+      .delete('/teams/9/coaches/not-a-number'))
+      .expect(400);
+
+    expect(response.text).toBe('Sorry your coachId is invalid please try again');
+    expect(mockTeamCoachDetach).not.toHaveBeenCalled();
+  });
+
+  it('DELETE /teams/:id/coaches/:coachId rejects unauthenticated access', async () => {
+    ensureAuthenticated.mockImplementationOnce((req, res) => {
+      res.status(403).send('No session available');
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .delete('/teams/9/coaches/2'))
+      .expect(403);
+
+    expect(response.text).toBe('No session available');
+    expect(mockTeamFetch).not.toHaveBeenCalled();
+    expect(mockTeamCoachDetach).not.toHaveBeenCalled();
+  });
+
+  it('POST /teams/:id/coaches fails if the initial relation attach does not include the required role', async () => {
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 9,
+        coach: [
+          { id: 1, email: 'owner@example.com', first_name: 'Owner', last_name: 'Coach', _pivot_role: 'owner' }
+        ]
+      }),
+      coach: () => ({
+        attach: mockTeamCoachAttach,
+        updatePivot: mockTeamCoachUpdatePivot
+      })
+    });
+    mockFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 2,
+        email: 'assistant@example.com',
+        first_name: 'Assist',
+        last_name: 'Coach'
+      })
+    });
+    mockTeamCoachAttach.mockImplementation(payload => {
+      if (!payload || payload.coach_id !== 2 || payload.role !== 'assistant') {
+        return Promise.reject(new Error('role required on attach'));
+      }
+      return Promise.resolve();
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .post('/teams/9/coaches'))
+      .send({
+        coachId: 2,
+        role: 'assistant'
+      })
+      .expect(201);
+
+    expect(response.body).toEqual({
+      id: 2,
+      email: 'assistant@example.com',
+      first_name: 'Assist',
+      last_name: 'Coach',
+      role: 'assistant'
+    });
+    expect(mockTeamCoachUpdatePivot).not.toHaveBeenCalled();
   });
 
   it('POST /sessions/login rejects requests from an untrusted origin', async () => {
@@ -1663,7 +2230,10 @@ describe('server routes', () => {
         season: 2026
       })
     );
-    expect(attach).toHaveBeenCalledWith(1);
+    expect(attach).toHaveBeenCalledWith({
+      coach_id: 1,
+      role: 'owner'
+    });
     expect(response.body.season).toBe(2026);
   });
 
@@ -1769,6 +2339,49 @@ describe('server routes', () => {
     expect(response.body.season).toBe(2027);
   });
 
+  it('PUT /teams/:id allows assistant collaborators to update team details', async () => {
+    ensureAuthenticated.mockImplementationOnce((req, res, next) => {
+      req.authenticatedCoachId = 2;
+      req.session.coachId = 2;
+      next();
+    });
+    const save = jest.fn().mockResolvedValue({
+      id: 50,
+      name: 'Highlanders',
+      city: 'Bronx',
+      state: 'NY',
+      season: 2028
+    });
+
+    Team.where.mockReturnValue({
+      fetch: jest.fn().mockResolvedValue({
+        toJSON: () => ({
+          id: 50,
+          coach: [{ id: 1, _pivot_role: 'owner' }, { id: 2, _pivot_role: 'assistant' }]
+        }),
+        save
+      })
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .put('/teams/50'))
+      .send({
+        name: 'Highlanders',
+        city: 'Bronx',
+        state: 'NY',
+        season: '2028'
+      })
+      .expect(200);
+
+    expect(save).toHaveBeenCalledWith({
+      name: 'Highlanders',
+      city: 'Bronx',
+      state: 'NY',
+      season: 2028
+    });
+    expect(response.body.season).toBe(2028);
+  });
+
   it('PUT /teams/:id rejects updates for a team outside the authenticated coach', async () => {
     const save = jest.fn();
 
@@ -1794,6 +2407,23 @@ describe('server routes', () => {
 
     expect(response.text).toBe('Unauthorized');
     expect(save).not.toHaveBeenCalled();
+  });
+
+  it('PUT /teams/:id rejects unauthenticated requests', async () => {
+    ensureAuthenticated.mockImplementationOnce((req, res) => res.status(401).send('Unauthorized'));
+
+    const response = await withTrustedOrigin(request(app)
+      .put('/teams/50'))
+      .send({
+        name: 'Highlanders',
+        city: 'Bronx',
+        state: 'NY',
+        season: '2027'
+      })
+      .expect(401);
+
+    expect(response.text).toBe('Unauthorized');
+    expect(Team.where).not.toHaveBeenCalled();
   });
 
   it('POST /teams/:id/games creates a game and linked non-zero stat rows in one transaction', async () => {
@@ -1874,6 +2504,60 @@ describe('server routes', () => {
       opponent: 'Lions',
       game_date: '2026-03-28T00:00:00.000Z',
       insertedStatRows: 2
+    });
+  });
+
+  it('POST /teams/:id/games allows assistant collaborators to create game entries', async () => {
+    ensureAuthenticated.mockImplementationOnce((req, res, next) => {
+      req.authenticatedCoachId = 2;
+      req.session.coachId = 2;
+      next();
+    });
+    const gameSave = jest.fn().mockResolvedValue({ id: 91 });
+    const playerStatSave = jest.fn().mockResolvedValue({ id: 92 });
+
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 50,
+        coach: [
+          { id: 1, _pivot_role: 'owner' },
+          { id: 2, _pivot_role: 'assistant' }
+        ],
+        players: [
+          { id: 1 }
+        ]
+      })
+    });
+    mockStatCatalogFetch.mockResolvedValue({ id: 1 });
+    mockGameForge.mockReturnValue({
+      save: gameSave
+    });
+    mockPlayerStatForge.mockReturnValue({
+      save: playerStatSave
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .post('/teams/50/games'))
+      .send({
+        opponent: 'Bears',
+        game_date: '2026-04-01T00:00:00Z',
+        playerStats: [
+          {
+            playerId: 1,
+            stats: [
+              { statCatalogId: 1, howMany: 2 }
+            ]
+          }
+        ]
+      })
+      .expect(201);
+
+    expect(response.body).toEqual({
+      id: 91,
+      team_id: 50,
+      opponent: 'Bears',
+      game_date: '2026-04-01T00:00:00.000Z',
+      insertedStatRows: 1
     });
   });
 
@@ -2137,5 +2821,330 @@ describe('server routes', () => {
       .expect(403);
 
     expect(response.text).toBe('Unauthorized');
+  });
+
+  it('POST /teams/:id/player rejects unauthenticated requests', async () => {
+    ensureAuthenticated.mockImplementationOnce((req, res) => res.status(401).send('Unauthorized'));
+
+    const response = await withTrustedOrigin(request(app)
+      .post('/teams/50/player'))
+      .send({
+        email: 'pat@example.com',
+        first_name: 'Pat',
+        last_name: 'Lee',
+        position: 'Pitcher'
+      })
+      .expect(401);
+
+    expect(response.text).toBe('Unauthorized');
+    expect(Team.where).not.toHaveBeenCalled();
+    expect(Player.forge).not.toHaveBeenCalled();
+  });
+
+  it('GET /teams/:id includes collaborators and the current coach role in the team detail payload', async () => {
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 50,
+        name: 'Highlanders',
+        city: 'Bronx',
+        state: 'NY',
+        season: 2026,
+        coach: [
+          { id: 1, email: 'owner@example.com', first_name: 'Owner', last_name: 'Coach', _pivot_role: 'owner' },
+          { id: 2, email: 'assistant@example.com', first_name: 'Assist', last_name: 'Coach', _pivot_role: 'assistant' }
+        ],
+        players: []
+      })
+    });
+    mockFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 1,
+        teams: [
+          { id: 50, name: 'Highlanders', season: 2026 },
+          { id: 51, name: 'Highlanders', season: 2025 }
+        ]
+      })
+    });
+
+    const response = await request(app).get('/teams/50').expect(200);
+
+    expect(response.body.collaborators).toEqual([
+      { id: 1, email: 'owner@example.com', first_name: 'Owner', last_name: 'Coach', role: 'owner' },
+      { id: 2, email: 'assistant@example.com', first_name: 'Assist', last_name: 'Coach', role: 'assistant' }
+    ]);
+    expect(response.body.currentCoachRole).toBe('owner');
+  });
+
+  it('GET /teams/:id returns currentCoachRole as assistant for assistant-authenticated coaches', async () => {
+    ensureAuthenticated.mockImplementationOnce((req, res, next) => {
+      req.authenticatedCoachId = 2;
+      req.session.coachId = 2;
+      next();
+    });
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 50,
+        name: 'Highlanders',
+        city: 'Bronx',
+        state: 'NY',
+        season: 2026,
+        coach: [
+          { id: 1, email: 'owner@example.com', first_name: 'Owner', last_name: 'Coach', _pivot_role: 'owner' },
+          { id: 2, email: 'assistant@example.com', first_name: 'Assist', last_name: 'Coach', _pivot_role: 'assistant' }
+        ],
+        players: []
+      })
+    });
+    mockFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 1,
+        teams: [
+          { id: 50, name: 'Highlanders', season: 2026 }
+        ]
+      })
+    });
+
+    const response = await request(app).get('/teams/50').expect(200);
+
+    expect(response.body.currentCoachRole).toBe('assistant');
+  });
+
+  it('GET /teams/:id includes collaboration metadata in the fallback branch without coach season lookup', async () => {
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 50,
+        name: 'Highlanders',
+        city: 'Bronx',
+        state: 'NY',
+        season: 2026,
+        coach: [],
+        players: []
+      })
+    });
+
+    const response = await request(app).get('/teams/50').expect(200);
+
+    expect(response.body.collaborators).toEqual([]);
+    expect(response.body.currentCoachRole).toBeNull();
+    expect(response.body.availableSeasons).toEqual([2026]);
+    expect(response.body.activeSeason).toBe(2026);
+  });
+
+  it('POST /teams/:id/player allows assistant collaborators to add players', async () => {
+    ensureAuthenticated.mockImplementationOnce((req, res, next) => {
+      req.authenticatedCoachId = 2;
+      req.session.coachId = 2;
+      next();
+    });
+    const attach = jest.fn().mockResolvedValue(undefined);
+    const savedPlayer = {
+      id: 77,
+      email: 'pat@example.com',
+      first_name: 'Pat',
+      last_name: 'Lee',
+      position: 'Pitcher',
+      teams: () => ({ attach })
+    };
+
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 50,
+        coach: [
+          { id: 1, _pivot_role: 'owner' },
+          { id: 2, _pivot_role: 'assistant' }
+        ]
+      })
+    });
+    Player.forge.mockReturnValue({
+      save: jest.fn().mockResolvedValue(savedPlayer)
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .post('/teams/50/player'))
+      .send({
+        email: 'pat@example.com',
+        first_name: 'Pat',
+        last_name: 'Lee',
+        position: 'Pitcher'
+      })
+      .expect(200);
+
+    expect(attach).toHaveBeenCalledWith('50');
+    expect(response.body.id).toBe(77);
+  });
+
+  it('PUT /players/:id allows assistant collaborators to update players', async () => {
+    ensureAuthenticated.mockImplementationOnce((req, res, next) => {
+      req.authenticatedCoachId = 2;
+      req.session.coachId = 2;
+      next();
+    });
+    const save = jest.fn().mockResolvedValue({
+      id: 12,
+      email: 'ace@example.com',
+      first_name: 'Ace',
+      last_name: 'Lee',
+      position: 'Catcher'
+    });
+
+    Player.where.mockReturnValue({
+      fetch: jest.fn().mockResolvedValue({
+        toJSON: () => ({
+          id: 12,
+          teams: [
+            {
+              id: 50,
+              coach: [{ id: 1, _pivot_role: 'owner' }, { id: 2, _pivot_role: 'assistant' }]
+            }
+          ]
+        }),
+        save
+      })
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .put('/players/12'))
+      .send({
+        email: 'ace@example.com',
+        first_name: 'Ace',
+        last_name: 'Lee',
+        position: 'Catcher'
+      })
+      .expect(200);
+
+    expect(save).toHaveBeenCalledWith({
+      email: 'ace@example.com',
+      first_name: 'Ace',
+      last_name: 'Lee',
+      position: 'Catcher'
+    });
+    expect(response.body.position).toBe('Catcher');
+  });
+
+  it('PUT /players/:id rejects unauthenticated requests', async () => {
+    ensureAuthenticated.mockImplementationOnce((req, res) => res.status(401).send('Unauthorized'));
+
+    const response = await withTrustedOrigin(request(app)
+      .put('/players/12'))
+      .send({
+        email: 'ace@example.com',
+        first_name: 'Ace',
+        last_name: 'Lee',
+        position: 'Catcher'
+      })
+      .expect(401);
+
+    expect(response.text).toBe('Unauthorized');
+    expect(Player.where).not.toHaveBeenCalled();
+  });
+
+  it('POST /players/:player_id/stats/:stat_catalog_id allows assistant collaborators to create stats', async () => {
+    ensureAuthenticated.mockImplementationOnce((req, res, next) => {
+      req.authenticatedCoachId = 2;
+      req.session.coachId = 2;
+      next();
+    });
+    Player.where.mockReturnValue({
+      fetch: jest.fn().mockResolvedValue({
+        toJSON: () => ({
+          id: 12,
+          teams: [
+            {
+              id: 50,
+              coach: [{ id: 1, _pivot_role: 'owner' }, { id: 2, _pivot_role: 'assistant' }]
+            }
+          ]
+        })
+      })
+    });
+    mockPlayerStatForge.mockReturnValue({
+      save: jest.fn().mockResolvedValue({ id: 88, how_many: 3 })
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .post('/players/12/stats/5'))
+      .send({
+        how_many: 3
+      })
+      .expect(200);
+
+    expect(PlayerStat.forge).toHaveBeenCalledWith({
+      player_id: 12,
+      stat_catalog_id: 5,
+      how_many: 3
+    });
+    expect(response.body.id).toBe(88);
+  });
+
+  it('PUT /players/:player_id/stats/:stat_catalog_id allows assistant collaborators to update stats', async () => {
+    ensureAuthenticated.mockImplementationOnce((req, res, next) => {
+      req.authenticatedCoachId = 2;
+      req.session.coachId = 2;
+      next();
+    });
+    const save = jest.fn().mockResolvedValue({ id: 89, how_many: 4 });
+
+    Player.where.mockReturnValue({
+      fetch: jest.fn().mockResolvedValue({
+        toJSON: () => ({
+          id: 12,
+          teams: [
+            {
+              id: 50,
+              coach: [{ id: 1, _pivot_role: 'owner' }, { id: 2, _pivot_role: 'assistant' }]
+            }
+          ]
+        })
+      })
+    });
+    mockPlayerStatFetch.mockResolvedValue({
+      save
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .put('/players/12/stats/5'))
+      .send({
+        how_many: 4
+      })
+      .expect(200);
+
+    expect(PlayerStat.where).toHaveBeenCalledWith({
+      player_id: '12',
+      stat_catalog_id: '5'
+    });
+    expect(save).toHaveBeenCalledWith({
+      how_many: 4
+    });
+    expect(response.body.id).toBe(89);
+  });
+
+  it('DELETE /players/:id allows assistant collaborators to delete players', async () => {
+    ensureAuthenticated.mockImplementationOnce((req, res, next) => {
+      req.authenticatedCoachId = 2;
+      req.session.coachId = 2;
+      next();
+    });
+    const destroy = jest.fn().mockResolvedValue(undefined);
+
+    Player.where.mockReturnValue({
+      fetch: jest.fn().mockResolvedValue({
+        toJSON: () => ({
+          id: 12,
+          teams: [
+            {
+              id: 50,
+              coach: [{ id: 1, _pivot_role: 'owner' }, { id: 2, _pivot_role: 'assistant' }]
+            }
+          ]
+        }),
+        destroy
+      })
+    });
+
+    await withTrustedOrigin(request(app)
+      .delete('/players/12'))
+      .expect(200);
+
+    expect(destroy).toHaveBeenCalled();
   });
 });

@@ -14,7 +14,13 @@ const Stat_Catalog = require('../models/Stat_Catalog');
 const ensureAuthenticated = require('../middleware/ensureAuthenticated');
 const requireTrustedOrigin = require('../middleware/requireTrustedOrigin');
 const { addDerivedStatsToPlayers } = require('../utils/playerAnalytics');
-const { getAuthenticatedCoachId, coachOwnsTeam } = require('../utils/authorization');
+const {
+	getAuthenticatedCoachId,
+	coachBelongsToTeam,
+	coachIsTeamOwner,
+	canSafelyRemoveCoachFromTeam,
+	getCoachTeamRole
+} = require('../utils/authorization');
 const {
 	parseRequestedSeason,
 	parseOptionalFilterText,
@@ -22,6 +28,8 @@ const {
 	matchesOptionalPositionFilter,
 	buildPlayerSearchText
 } = require('../utils/filterQuery');
+
+const ALLOWED_COACH_TEAM_ROLES = ['owner', 'assistant'];
 
 router.use(bodyParser.urlencoded({extended: true}));
 router.use(jsonParser);
@@ -164,11 +172,211 @@ function collectGameStatRows(playerStats) {
 	return statRows;
 }
 
+function parseCoachTeamRole(value) {
+	if (typeof value !== 'string') {
+		return null;
+	}
+
+	const trimmedValue = value.trim();
+	if (ALLOWED_COACH_TEAM_ROLES.indexOf(trimmedValue) === -1) {
+		return null;
+	}
+
+	return trimmedValue;
+}
+
+function sanitizeCollaborator(coach) {
+	return {
+		id: coach.id,
+		email: coach.email,
+		first_name: coach.first_name,
+		last_name: coach.last_name,
+		role: coach.role || coach._pivot_role || null
+	};
+}
+
+function addCollaborationMetadata(teamPayload, authenticatedCoachId) {
+	teamPayload.collaborators = (teamPayload.coach || []).map(sanitizeCollaborator);
+	teamPayload.currentCoachRole = getCoachTeamRole(teamPayload, authenticatedCoachId);
+	return teamPayload;
+}
+
 router.get('/', function(req, res) {
 	Team
 		.fetchAll()
 		.then(function(teams) {
 			res.json(teams);
+		});
+});
+
+router.get('/:id/coaches', ensureAuthenticated, function(req, res, next) {
+	const authenticatedCoachId = getAuthenticatedCoachId(req);
+
+	Team
+		.where({ id: req.params.id })
+		.fetch({ withRelated: ['coach'] })
+		.then(function(team) {
+			if (!team || !coachBelongsToTeam(team, authenticatedCoachId)) {
+				return res.status(403).send('Unauthorized');
+			}
+
+			const teamPayload = team.toJSON();
+			return res.json((teamPayload.coach || []).map(sanitizeCollaborator));
+		})
+		.catch(function(err) {
+			return next(err);
+		});
+});
+
+router.post('/:id/coaches', ensureAuthenticated, requireTrustedOrigin, function(req, res, next) {
+	const authenticatedCoachId = getAuthenticatedCoachId(req);
+	const postParams = ['coachId', 'role'];
+	for (var i = 0; i < postParams.length; i++) {
+		const requiredParam = postParams[i];
+		if (!(requiredParam in req.body)) {
+			const errorMessage = `Sorry your missing ${requiredParam} please try again`;
+			console.error(errorMessage);
+			return res.status(400).send(errorMessage);
+		}
+	}
+
+	const targetCoachId = Number(req.body.coachId);
+	if (!Number.isInteger(targetCoachId)) {
+		return res.status(400).send('Sorry your coachId is invalid please try again');
+	}
+
+	const role = parseCoachTeamRole(req.body.role);
+	if (role === null) {
+		return res.status(400).send('Sorry your role is invalid please try again');
+	}
+
+	Team
+		.where({ id: req.params.id })
+		.fetch({ withRelated: ['coach'] })
+		.then(function(team) {
+			if (!team || !coachIsTeamOwner(team, authenticatedCoachId)) {
+				return res.status(403).send('Unauthorized');
+			}
+
+			const teamPayload = team.toJSON();
+			const collaborators = teamPayload.coach || [];
+			const alreadyAttached = collaborators.some(function(coach) {
+				return Number(coach && coach.id) === targetCoachId;
+			});
+			if (alreadyAttached) {
+				return res.status(400).send('Sorry this coach is already assigned to the team');
+			}
+
+			return Coaches
+				.where({ id: targetCoachId })
+				.fetch()
+				.then(function(coach) {
+					if (!coach) {
+						return res.status(400).send('Sorry your coachId is invalid please try again');
+					}
+
+					const relation = team.coach();
+					return relation
+						.attach({
+							coach_id: targetCoachId,
+							role: role
+						})
+						.then(function() {
+							const coachPayload = typeof coach.toJSON === 'function' ? coach.toJSON() : coach;
+							return res.status(201).json(sanitizeCollaborator(Object.assign({}, coachPayload, {
+								role: role
+							})));
+						});
+				});
+		})
+		.catch(function(err) {
+			return next(err);
+		});
+});
+
+router.put('/:id/coaches/:coachId', ensureAuthenticated, requireTrustedOrigin, function(req, res, next) {
+	const authenticatedCoachId = getAuthenticatedCoachId(req);
+	if (!('role' in req.body)) {
+		return res.status(400).send('Sorry your missing role please try again');
+	}
+
+	const targetCoachId = Number(req.params.coachId);
+	if (!Number.isInteger(targetCoachId)) {
+		return res.status(400).send('Sorry your coachId is invalid please try again');
+	}
+
+	const role = parseCoachTeamRole(req.body.role);
+	if (role === null) {
+		return res.status(400).send('Sorry your role is invalid please try again');
+	}
+
+	Team
+		.where({ id: req.params.id })
+		.fetch({ withRelated: ['coach'] })
+		.then(function(team) {
+			if (!team || !coachIsTeamOwner(team, authenticatedCoachId)) {
+				return res.status(403).send('Unauthorized');
+			}
+
+			const teamPayload = team.toJSON();
+			const collaborators = teamPayload.coach || [];
+			const targetCoach = collaborators.find(function(coach) {
+				return Number(coach && coach.id) === targetCoachId;
+			});
+			if (!targetCoach) {
+				return res.status(400).send('Sorry your coachId is invalid please try again');
+			}
+
+			return team.coach()
+				.updatePivot(
+					{ role: role },
+					{ query: { coach_id: targetCoachId }, require: true }
+				)
+				.then(function() {
+					return res.status(200).json(sanitizeCollaborator(Object.assign({}, targetCoach, {
+						role: role
+					})));
+				});
+		})
+		.catch(function(err) {
+			return next(err);
+		});
+});
+
+router.delete('/:id/coaches/:coachId', ensureAuthenticated, requireTrustedOrigin, function(req, res, next) {
+	const authenticatedCoachId = getAuthenticatedCoachId(req);
+	const targetCoachId = Number(req.params.coachId);
+	if (!Number.isInteger(targetCoachId)) {
+		return res.status(400).send('Sorry your coachId is invalid please try again');
+	}
+
+	Team
+		.where({ id: req.params.id })
+		.fetch({ withRelated: ['coach'] })
+		.then(function(team) {
+			if (!team || !coachIsTeamOwner(team, authenticatedCoachId)) {
+				return res.status(403).send('Unauthorized');
+			}
+
+			const teamPayload = team.toJSON();
+			const targetCoach = (teamPayload.coach || []).find(function(coach) {
+				return Number(coach && coach.id) === targetCoachId;
+			});
+			if (!targetCoach) {
+				return res.status(400).send('Sorry your coachId is invalid please try again');
+			}
+			if (!canSafelyRemoveCoachFromTeam(teamPayload, targetCoachId)) {
+				return res.status(400).send('Sorry this coach cannot be removed from the team');
+			}
+
+			return team.coach()
+				.detach([targetCoachId])
+				.then(function() {
+					return res.sendStatus(204);
+				});
+		})
+		.catch(function(err) {
+			return next(err);
 		});
 });
 
@@ -226,6 +434,7 @@ router.get('/:id', ensureAuthenticated, function(req, res, next) {
                                                 return teamFilters.matchesPlayer(player) &&
                                                         teamFilters.matchesPosition(player);
                                         });
+                                addCollaborationMetadata(teamPayload, authenticatedCoachId);
                                 teamPayload.availableSeasons = availableSeasons;
                                 teamPayload.activeSeason = activeSeason;
                                 return res.json(teamPayload);
@@ -251,6 +460,7 @@ router.get('/:id', ensureAuthenticated, function(req, res, next) {
                                                         return teamFilters.matchesPlayer(player) &&
                                                                 teamFilters.matchesPosition(player);
                                                 });
+                                        addCollaborationMetadata(teamPayload, authenticatedCoachId);
                                         teamPayload.availableSeasons = availableSeasons;
                                         teamPayload.activeSeason = activeSeason;
 
@@ -284,7 +494,7 @@ router.put('/:id', ensureAuthenticated, requireTrustedOrigin, function(req, res,
 		.where({id: req.params.id})
 		.fetch({ withRelated: ['coach'] })
 		.then(function(team) {
-			if (!team || !coachOwnsTeam(team, authenticatedCoachId)) {
+			if (!team || !coachBelongsToTeam(team, authenticatedCoachId)) {
 				return res.status(403).send('Unauthorized');
 			}
 			return team.save({
@@ -349,7 +559,10 @@ router.post('/', ensureAuthenticated, requireTrustedOrigin, function(req, res, n
                                 })
                                 .save()
                                 .then(function(team) {
-                                        return team.coach().attach(req.body.coachId)
+                                        return team.coach().attach({
+                                                coach_id: Number(req.body.coachId),
+                                                role: 'owner'
+                                        })
                                                 .then(function() {
                                                         return team;
                                                 });
@@ -410,7 +623,7 @@ router.post('/:id/games', ensureAuthenticated, requireTrustedOrigin, function(re
 				console.error(errorMessage);
 				return res.status(400).send(errorMessage);
 			}
-			if (!coachOwnsTeam(team, authenticatedCoachId)) {
+			if (!coachBelongsToTeam(team, authenticatedCoachId)) {
 				return res.status(403).send('Unauthorized');
 			}
 
@@ -516,7 +729,7 @@ router.post('/:id/player', ensureAuthenticated, requireTrustedOrigin, function(r
   .where({ id: req.params.id })
   .fetch({ withRelated: ['coach'] })
   .then(function(team) {
-    if (!team || !coachOwnsTeam(team, authenticatedCoachId)) {
+    if (!team || !coachBelongsToTeam(team, authenticatedCoachId)) {
       return res.status(403).send('Unauthorized');
     }
 

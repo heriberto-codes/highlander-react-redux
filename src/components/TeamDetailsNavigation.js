@@ -5,8 +5,15 @@ import 'bulma/css/bulma.css';
 import '../css/style.css';
 
 export default function TeamDetailsNavigation(props) {
+	const formatRole = role => {
+		if (!role) {
+			return '';
+		}
 
-        const {
+		return role.charAt(0).toUpperCase() + role.slice(1);
+	};
+
+	const {
 		name,
 		city: location,
 		first_name: firstName,
@@ -14,6 +21,7 @@ export default function TeamDetailsNavigation(props) {
 		email,
 		activeSeason,
 		availableSeasons,
+		currentCoachRole,
 		playerSearch,
 		position,
 		onSeasonChange,
@@ -70,6 +78,11 @@ export default function TeamDetailsNavigation(props) {
 								{activeSeason !== null && activeSeason !== undefined ? (
 									<p className="profile-metadata">
                   Active Season: {activeSeason}
+									</p>
+								) : null}
+								{currentCoachRole ? (
+									<p className="profile-metadata">
+                  Collaboration Role: {formatRole(currentCoachRole)}
 									</p>
 								) : null}
 							</div>

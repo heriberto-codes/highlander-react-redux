@@ -1,7 +1,16 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 
-import { createTeam, createGameEntry, getTeamProfile, hideModal, addNewPlayer } from '../actions/teamAction';
+import {
+	createTeam,
+	createGameEntry,
+	getTeamProfile,
+	hideModal,
+	addNewPlayer,
+	addTeamCollaborator,
+	updateTeamCollaborator,
+	removeTeamCollaborator
+} from '../actions/teamAction';
 
 import { teamReducer } from '../reducers/teamReducer';
 
@@ -102,6 +111,21 @@ export class TeamDetails extends Component {
 		this.props.dispatch(createGameEntry(id, payload));
 	}
 
+	addCollaborator(coachId, role) {
+		const { id } = this.props.match.params;
+		this.props.dispatch(addTeamCollaborator(id, coachId, role));
+	}
+
+	updateCollaborator(coachId, role) {
+		const { id } = this.props.match.params;
+		this.props.dispatch(updateTeamCollaborator(id, coachId, role));
+	}
+
+	removeCollaborator(coachId) {
+		const { id } = this.props.match.params;
+		this.props.dispatch(removeTeamCollaborator(id, coachId));
+	}
+
 	render() {
 		let teamModal;
 		if(this.props.showModal === true){
@@ -126,6 +150,7 @@ export class TeamDetails extends Component {
 					first_name={this.props.first_name}
 					last_name={this.props.last_name}
 					email={this.props.email}
+					currentCoachRole={this.props.currentCoachRole}
 					onSeasonChange={season => this.handleSeasonChange(season)}
 					onFilterChange={(field, value) => this.handleFilterChange(field, value)}
 					onApplyFilters={() => this.applyFilters()}
@@ -136,9 +161,23 @@ export class TeamDetails extends Component {
 					players={this.props.players}
 					filters={this.props.filters}
 					activeSeason={this.props.activeSeason}
+					collaborators={this.props.collaborators}
+					currentCoachRole={this.props.currentCoachRole}
 					showGameEntryForm={this.state.showGameEntryForm}
 					onCancelGameEntry={() => this.hideGameEntryForm()}
 					onSubmitGameEntry={payload => this.submitGameEntry(payload)}
+					onAddCollaborator={(coachId, role) => this.addCollaborator(coachId, role)}
+					onUpdateCollaborator={(coachId, role) => this.updateCollaborator(coachId, role)}
+					onRemoveCollaborator={coachId => this.removeCollaborator(coachId)}
+					isAddingCollaborator={this.props.isAddingCollaborator}
+					addCollaboratorSuccess={this.props.addCollaboratorSuccess}
+					addCollaboratorError={this.props.addCollaboratorError}
+					isUpdatingCollaborator={this.props.isUpdatingCollaborator}
+					updateCollaboratorSuccess={this.props.updateCollaboratorSuccess}
+					updateCollaboratorError={this.props.updateCollaboratorError}
+					isRemovingCollaborator={this.props.isRemovingCollaborator}
+					removeCollaboratorSuccess={this.props.removeCollaboratorSuccess}
+					removeCollaboratorError={this.props.removeCollaboratorError}
 					isSubmittingGame={this.props.isSubmittingGame}
 					gameSubmissionSuccess={this.props.gameSubmissionSuccess}
 					lastCreatedGame={this.props.lastCreatedGame}
@@ -160,6 +199,17 @@ const mapStateToProps = state => ({
 	last_name: state.teamReducer.coach.last_name,
 	email: state.teamReducer.coach.email,
 	players: state.teamReducer.players,
+	collaborators: state.teamReducer.collaborators,
+	currentCoachRole: state.teamReducer.currentCoachRole,
+	isAddingCollaborator: state.teamReducer.isAddingCollaborator,
+	addCollaboratorSuccess: state.teamReducer.addCollaboratorSuccess,
+	addCollaboratorError: state.teamReducer.addCollaboratorError,
+	isUpdatingCollaborator: state.teamReducer.isUpdatingCollaborator,
+	updateCollaboratorSuccess: state.teamReducer.updateCollaboratorSuccess,
+	updateCollaboratorError: state.teamReducer.updateCollaboratorError,
+	isRemovingCollaborator: state.teamReducer.isRemovingCollaborator,
+	removeCollaboratorSuccess: state.teamReducer.removeCollaboratorSuccess,
+	removeCollaboratorError: state.teamReducer.removeCollaboratorError,
 	isSubmittingGame: state.teamReducer.isSubmittingGame,
 	gameSubmissionSuccess: state.teamReducer.gameSubmissionSuccess,
 	lastCreatedGame: state.teamReducer.lastCreatedGame,

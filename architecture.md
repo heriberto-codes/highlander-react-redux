@@ -1,206 +1,333 @@
 # Architecture
 
 ## Overview
-Highlander is a monolithic Node/Express application with a React/Redux client. The server exposes a REST API and serves the built client from `build/` for production. The client can also run via the React dev server for local development.
+- Highlander is a monolithic web application for coaches to manage teams, rosters, and softball/baseball-style player stats.
+- Primary users are coaches logging into a dashboard, reviewing teams, viewing roster data, and entering stats.
+- Main business purpose is team/roster management plus stat tracking, including newer season-aware views and game-based stat entry.
+
+## System Boundaries
+- Inside the system:
+  - React client in `src/`
+  - Express server in `server.js`
+  - PostgreSQL schema managed through Knex migrations/seeds
+  - Session-backed authentication and authorization checks
+- Outside the system:
+  - Browser runtime
+  - Deployment platform / reverse proxy
+  - PostgreSQL instance hosting
+- External services and APIs:
+  - No third-party business APIs are integrated in the repository.
+- Third-party integrations:
+  - PostgreSQL via `pg`
+  - Session persistence via `connect-pg-simple`
+
+## Architectural Principles
+- Prefer simple route-level implementations over additional abstraction layers.
+- Keep API changes additive where possible; recent work extends existing endpoints instead of creating parallel APIs.
+- Preserve current payload shapes when adding new fields such as `derivedStats`, `availableSeasons`, and `activeSeason`.
+- Prefer server-enforced ownership checks for team/player access.
+- Avoid premature service-layer indirection; most business logic currently lives close to routes and utilities.
+
+## Constraints and Non-Goals
+- Technical constraints:
+  - Express 4 + Bookshelf/Knex + React 17 + Redux architecture is the current stack.
+  - Session auth depends on `CLIENT_ORIGIN`, `SECRET`, and `DATABASE_URL`.
+  - API routes are mounted without an `/api` prefix.
+- Product constraints:
+  - Current stat analytics only support metrics derivable from the existing stat catalog.
+  - Team season views are constrained by current schema and legacy stat rows.
+- Explicit non-goals:
+  - No microservice split.
+  - No background job system.
+  - No public API versioning strategy is implemented.
+- Framework/tooling limits:
+  - Client is built with `react-scripts`.
+  - Bookshelf models expose basic relations; route handlers still own most orchestration.
 
 ## Runtime Components
-- **Server**: Express app in `server.js`, API routes in `api/routes/`
-- **Client**: React app in `src/`, bundled by `react-scripts`
-- **Database**: PostgreSQL accessed via Knex + Bookshelf
-
-## Key Dependencies
-- **Server Framework**: `express`, `body-parser`, `cors`, `helmet`, `morgan`
-- **Authentication/Session**: `express-session`, `connect-pg-simple`, `bcrypt`
-- **Database/ORM**: `pg`, `knex`, `bookshelf`
-- **Client Framework**: `react`, `react-dom`, `react-scripts`
-- **State Management**: `redux`, `react-redux`, `redux-thunk`, `redux-form`, `redux-logger`
-- **Routing and HTTP**: `react-router-dom`, `axios`
+- Express application in `server.js`
+- React SPA in `src/`, served from `build/` in production
+- PostgreSQL database
+- Session store:
+  - `MemoryStore` in test environments
+  - `connect-pg-simple` in non-test environments
 
 ## Request Flow
-1. Browser requests pages or API.
-2. Express serves static assets from `public/` and `build/`.
-3. API routes handle `/players`, `/teams`, `/coaches`, `/stats`, `/sessions` and perform DB operations.
-4. Client uses Axios to call API endpoints and updates Redux store.
+1. Browser requests a page or API route.
+2. Express applies `helmet`, `morgan`, session middleware, JSON parsing, static asset serving, and CORS.
+3. For protected routes, `ensureAuthenticated` verifies `req.session.coachId`.
+4. For state-changing routes, `requireTrustedOrigin` validates `Origin` or `Referer` against `CLIENT_ORIGIN`.
+5. Route handlers in `api/routes/` validate request shape manually.
+6. Route handlers use Bookshelf models and, in one case, a transaction for multi-row game/stat writes.
+7. Responses are returned as JSON; non-API GETs fall back to `build/index.html`.
+8. Unhandled server errors reach the final error middleware and return HTTP 500 JSON.
 
 ## Data Flow
-React client → Express API → PostgreSQL
+React + Redux + Axios → Express routes → Bookshelf/Knex → PostgreSQL
 
 Additional flows:
-- React dev server → Express API → PostgreSQL (local development)
-- Express → static assets (`public/`, `build/`) → Browser
+- React dev server → Express API → PostgreSQL during local development
+- Express static file serving → Browser for `public/` and `build/` assets
+- Team game entry write flow:
+  - React form → `POST /teams/:id/games` → transaction creating `games` row and related `players_stat_catalogs` rows
 
 ## Data Layer
-- **Knex** handles migrations and query building.
-- **Bookshelf** is the ORM on top of Knex.
-- Migrations: `data/migrations/`
-- Seeds: `data/seeds/`
+- Primary database:
+  - PostgreSQL
+- ORM/query layer:
+  - Bookshelf models on top of Knex
+- Migrations approach:
+  - Schema changes live in `data/migrations/`
+  - Seed data lives in `data/seeds/` and `data/prod_seeds/`
+- Transactional boundaries:
+  - `POST /teams/:id/games` uses a Bookshelf/Knex transaction to create one game and its stat rows together
+  - Most other writes are single-model saves without explicit transactions
+
+## Database Schema (High Level)
+- Core entities:
+  - `coaches`
+  - `teams`
+  - `players`
+  - `stat_catalogs`
+  - `games`
+  - `players_stat_catalogs`
+- Important relationships:
+  - coaches ↔ teams via `coaches_teams`
+  - players ↔ teams via `players_teams`
+  - players ↔ stat catalogs via `players_stat_catalogs`
+  - teams → games via `games.team_id`
+  - game-based stat rows optionally link through `players_stat_catalogs.game_id`
+- Ownership boundaries:
+  - Coaches own access indirectly through associated teams
+  - Team and player authorization is checked by walking team/coach relationships
 
 ## Client Architecture
-- **State**: Redux store in `src/store.js`
-- **Reducers**: `src/reducers/`
-- **Actions**: `src/actions/`
-- **Pages**: `src/pages/`
-- **Shared Components**: `src/components/`
+- UI structure:
+  - Route-level pages in `src/pages/`
+  - Shared/presentational components in `src/components/`
+- State management approach:
+  - Central Redux store in `src/store.js`
+  - Async action creators use `redux-thunk`
+  - Forms use `redux-form`
+- Rendering strategy:
+  - Client-rendered SPA
+  - Production build served by Express
+- Routing approach:
+  - `react-router-dom` routes are defined in `src/container/App.js`
 
 ## Server Architecture
-- **Entry**: `server.js`
-- **Routes**: `api/routes/*Router.js`
-- **Config**: `config.js`, `knexfile.js`
+- Route/controller/service boundaries:
+  - Route files act as both routing and controller layer
+  - There is no separate service layer in the repository
+- Business logic location:
+  - Mostly in route handlers
+  - Shared auth/filter/analytics logic in `api/utils/`
+- Validation strategy:
+  - Manual per-route field checks
+  - Ownership checks via `api/utils/authorization.js`
+  - Request origin checks via `api/middleware/requireTrustedOrigin.js`
+- Error handling approach:
+  - Route handlers usually call `next(err)`
+  - Final middleware returns `{ error: 'Internal server error' }`
 
 ## API Structure
-Base paths are mounted in `server.js` (no `/api` prefix):
-- `POST /sessions/login` (login)
-- `DELETE /sessions` (logout)
-- `GET /coaches` (list coaches, requires session)
-- `GET /coaches/:id` (coach by id; includes additive player analytics and season metadata)
-- `POST /coaches` (create coach, auth required)
-- `PUT /coaches/:id` (update coach, auth required)
-- `GET /teams` (list teams)
-- `GET /teams/:id` (team by id, includes coach, players, additive player analytics, and season metadata)
-- `POST /teams` (create team, auth required, requires `season`)
-- `PUT /teams/:id` (update team, auth required, requires `season`)
-- `POST /teams/:id/player` (add player to team, auth required)
-- `POST /teams/:id/games` (auth required; create-only game-based stat entry for one team)
-- `GET /players` (list players)
-- `GET /players/:id` (player by id)
-- `GET /players/:id/stats` (player stats)
-- `POST /players` (create player, auth required)
-- `PUT /players/:id` (update player, auth required)
-- `POST /players/:player_id/stats/:stat_catalog_id` (legacy direct stat write; auth required)
-- `PUT /players/:player_id/stats/:stat_catalog_id` (update stat, auth required)
-- `DELETE /players/:id` (delete player, auth required)
-- `GET /stats` (list stat catalog)
-- `GET /stats/:id` (stat catalog by id)
-
-### Player Analytics Contract
-- `GET /coaches/:id` remains the dashboard data source and includes `player.derivedStats`
-- `GET /teams/:id` exposes the same additive `player.derivedStats` shape
-- both endpoints support season-aware stat shaping:
-  - `GET /coaches/:id?season=<year>`
-  - `GET /teams/:id?season=<year>`
-- dashboard/team payloads may include:
-  - `availableSeasons`
-  - `activeSeason`
-- season-scoped stat filtering uses `players_stat_catalogs.game_date` year
-- additive `derivedStats` fields:
-  - `battingAverage`
-  - `homeRunRate`
-  - `era`
-  - `strikeoutsPerInning`
-- values are numeric or `null` when missing data or zero denominators prevent valid calculation
-- excluded from v1 due to current stat catalog limits:
-  - `onBasePercentage`
-  - `sluggingPercentage`
-  - `ops`
-  - walks-based metrics
-  - doubles/triples-based metrics
-  - team leaderboards or rankings
-
-### Team Season Views Contract
-- `teams.season` is the persisted season/year source of truth for team membership and team browsing
-- `GET /coaches/:id` may return season-filtered teams plus `availableSeasons` and `activeSeason`
-- `GET /teams/:id` may return team `season` plus `availableSeasons` and `activeSeason`
-- current season-family heuristic for team details uses same `team.name` within the coach's teams
-- known limitation:
-  - player stats are dated, but not linked to `team_id`
-  - if a player changes teams within the same season, season-filtered stats cannot be perfectly attributed to one team
-
-### Search And Filtering Contract
-- v1 extends existing read endpoints; it does not add new endpoints
-- shipped filter surface:
-  - `GET /coaches/:id?season=<year>&teamSearch=<text>&playerSearch=<text>&position=<text>`
-  - `GET /teams/:id?season=<year>&playerSearch=<text>&position=<text>`
-- supported filter semantics:
-  - `season` continues to select the active season view
-  - `teamSearch` narrows dashboard teams by case-insensitive text match
-  - `playerSearch` narrows returned players by case-insensitive text match
-  - `position` narrows returned players using current free-text `players.position`
-- normalization rules:
-  - trim leading/trailing whitespace for text filters
-  - omit filtering for missing or empty values
-  - preserve existing payload shape and existing auth behavior
-- validation rules:
-  - invalid filter format may return `400`
-  - valid filters with no matches return `200` with empty result collections
-- response invariants:
-  - keep top-level coach/team fields unchanged
-  - keep additive `derivedStats` contract unchanged
-  - keep `availableSeasons` and `activeSeason` contract unchanged
-  - only narrow the returned teams/players/stats for the current payload
-- implementation note:
-  - prefer additive query params and small route/controller changes over new endpoints, new frameworks, or schema work
-- rollout note:
-  - no database schema change was required for v1
-  - filtering is applied in existing route/controller response shaping
-
-### Game-based Stat Entry Contract
-- v1 adds `games` as a first-class persisted record
-- current `games` fields:
-  - `id`
-  - `team_id`
-  - `opponent`
-  - `game_date`
-- v1 write path is create-only and team-scoped:
-  - `POST /teams/:id/games`
-- request body:
-  - `opponent`
-  - `game_date`
-  - `playerStats: [{ playerId, stats: [{ statCatalogId, howMany }] }]`
-- current server behavior:
-  - validate authenticated access
-  - validate target team exists
-  - validate each submitted player belongs to that team
-  - validate each submitted `statCatalogId` exists
-  - create one game row
-  - create one stat row per non-zero submitted stat
-- current persistence rules:
-  - each created stat row links to the created game via `game_id`
-  - each created stat row also stores `game_date`
-  - legacy stat rows may remain without `game_id`
-- v1 entry surface is the team details page for an existing roster
-- existing direct stat routes remain supported for backward compatibility, but are not the primary v1 entry path
-- current known limitations:
-  - route protection exists, but team ownership is not yet verified on `POST /teams/:id/games`
-  - team details page still depends on legacy routing assumptions outside this contract
+- API style:
+  - JSON-over-HTTP REST-style routes
+- Route organization:
+  - `api/routes/playerRouter.js`
+  - `api/routes/coachRouter.js`
+  - `api/routes/teamRouter.js`
+  - `api/routes/statRouter.js`
+  - `api/routes/sessionRouter.js`
+- Versioning strategy:
+  - No explicit API versioning
+- Response conventions:
+  - JSON payloads for success cases
+  - Plain string messages in many validation/auth failure cases
+  - Additive response enrichment for derived stats and season metadata
 
 ## Authentication
-- Session-based auth via `express-session`, stored in Postgres with `connect-pg-simple`.
-- Login: `POST /sessions/login` creates a session; logout: `DELETE /sessions` destroys it.
-- Protected routes use `ensureAuthenticated` middleware.
+- Identity/authentication mechanism:
+  - Coach email/password login
+- Session/token approach:
+  - Session-based auth with `express-session`
+  - Session data stored in Postgres outside tests
+  - Login endpoint is `POST /sessions/login`
+  - Logout endpoint is `DELETE /sessions`
+
+## Authorization
+- Roles/permissions:
+  - Collaboration is team-scoped and additive on top of `coaches_teams`
+  - Implemented roles:
+    - `owner`
+    - `assistant`
+- Resource access rules:
+  - Coaches can access teams/players associated to their coach account
+  - `GET /coaches/:id` also requires the path id to match the authenticated coach id
+  - Collaboration read rule:
+    - any coach attached to a team may read collaborator data for that team
+  - Collaboration mutate rule:
+    - only `owner` may add collaborators, change collaborator role, or remove collaborators
+  - Implemented privilege boundaries:
+    - `assistant` cannot promote self
+    - `assistant` cannot remove an `owner`
+    - `owner` cannot remove the last `owner` without first assigning another `owner`
+    - collaborator removal rules prevent removal of the last `owner`
+  - Implemented ordinary write rule:
+    - both `owner` and `assistant` may perform existing team/player/stat write operations guarded by team membership
+- Protected operations:
+  - Coach profile reads/updates
+  - Team detail reads and writes
+  - Player reads and writes
+  - Logout
+  - Collaboration-protected operations:
+    - `GET /teams/:id/coaches` requires team membership
+    - `POST /teams/:id/coaches` requires `owner`
+    - `PUT /teams/:id/coaches/:coachId` requires `owner`
+    - `DELETE /teams/:id/coaches/:coachId` requires `owner`
+
+## Security Model
+- Input validation:
+  - Manual required-field and type checks in route handlers
+  - Some query validation helpers in `api/utils/filterQuery.js`
+  - Collaboration routes validate target coach id, role, duplicate association, and last-owner removal server-side
+- Secrets handling:
+  - `DATABASE_URL`, `CLIENT_ORIGIN`, and `SECRET` come from environment variables
+- Data protection considerations:
+  - Cookies are `httpOnly`
+  - `secure` is enabled in production
+  - `sameSite` is set to `strict`
+- File upload/storage constraints:
+  - No file upload pipeline is implemented
+- Abuse/rate-limit considerations:
+  - Login endpoint has in-memory attempt limiting by `ip + email`
+  - No generalized API rate limiting is present
 
 ## Background Tasks
-- No dedicated background jobs or workers are defined.
-- All work is request/response driven.
+- No jobs, workers, or schedulers are defined in the repository.
+- All current work is request/response driven.
+- No retry framework or dead-letter behavior exists.
+
+## Performance Considerations
+- Caching strategy:
+  - No explicit cache layer is implemented
+- Pagination/search expectations:
+  - Search/filtering exists on coach/team read endpoints through query params
+  - No pagination exists on list endpoints
+- Query efficiency concerns:
+  - Nested `withRelated` fetches can produce heavier payloads
+  - Some authorization checks require loading related teams/coaches
+  - Stat catalog validation for game entry performs one fetch per distinct stat id
+- Payload size concerns:
+  - Dashboard and team detail endpoints can return nested teams, players, stats, derived stats, and season metadata
+
+## Observability and Operations
+- Logging:
+  - HTTP logging via `morgan('common')`
+  - Server errors are printed with `console.error`
+- Monitoring:
+  - Not implemented in the repository
+- Alerting:
+  - Not implemented in the repository
+- Health checks:
+  - No dedicated health-check endpoint is defined
 
 ## Build and Run
-- **Install**: `npm install`
-- **Build**: `npm run build` (creates `build/`)
-- **Server**: `npm start` (Express + static client)
-- **Client Dev**: `npm run client` (hot reload)
-- **DB Migrate**: `npm run migrate`
-- **DB Seed**: `npm run seed`
+- Local development workflow:
+  - `npm install`
+  - `npm run client` for React dev server
+  - `npm start` for Express server
+  - `npm run migrate`
+  - `npm run seed`
+- Build steps:
+  - `npm run build`
+- Test commands:
+  - `npm test`
+  - `npm run lint`
+- Run commands:
+  - `npm start`
+  - `npm run client`
 
 ## Environment Configuration
 Required variables (see `.env.example`):
-- `DATABASE_URL`
-- `CLIENT_ORIGIN`
-- `SECRET`
-- `PORT`
+- `DATABASE_URL`: PostgreSQL connection string
+- `CLIENT_ORIGIN`: allowed browser origin for CORS and trusted-origin enforcement
+- `SECRET`: session secret
+- `PORT`: Express listen port
 
-## Database Schema (High Level)
-- `coaches`
-- `teams`
-  - includes persisted `season`
-- `games`
-  - stores `team_id`, `opponent`, `game_date`
-- `players`
-- `stat_catalogs`
-- `players_stat_catalogs`
-  - may include nullable `game_id`
-- `players_teams`
-- `coaches_teams`
+Local vs production differences:
+- Production cookies are marked `secure`
+- Tests use in-memory session storage instead of Postgres-backed sessions
+- Production build is served from `build/`
 
 ## Deployment
-- Build client: `npm run build`
-- Run server with env vars set
-- Express serves `build/` in production
+- Hosting/platform:
+  - The repo includes a `Procfile`, suggesting process-based hosting such as Heroku-style deployment
+- CI/CD flow:
+  - Not defined in the repository
+- Rollout expectations:
+  - Build client, provide env vars, run `node server.js`
+- Rollback approach:
+  - Not documented in the repository
+
+## Key Dependencies
+
+### Frontend
+- `react`
+- `react-dom`
+- `react-router-dom`
+- `redux`
+- `react-redux`
+- `redux-thunk`
+- `redux-form`
+- `redux-logger`
+- `axios`
+- `bulma`
+- `react-scripts`
+
+### Backend
+- `express`
+- `body-parser`
+- `cors`
+- `helmet`
+- `morgan`
+- `express-session`
+- `connect-pg-simple`
+- `bcrypt`
+
+### Database
+- `pg`
+- `knex`
+- `bookshelf`
+
+### Infrastructure
+- `dotenv`
+- `nodemon`
+- `eslint`
+- `supertest`
+- `mocha`
+- `chai`
+
+## Known Risks
+- `src/pages/TeamDetails.js` expects `this.props.match.params`, but routing is configured with React Router v6 elements; this may indicate an incomplete migration.
+- Client actions hard-code `http://localhost:8080`, which is brittle outside local development.
+- `highlander-react-redux-db.sql` appears older than current migrations and should not be treated as the current schema source of truth.
+- Seed passwords are plain text even though runtime authentication uses bcrypt.
+- Validation is route-local and duplicated rather than centralized.
+- Login throttling is per-process memory only.
+- Season-scoped stat attribution still depends on `game_date` and legacy rows may not have `game_id`.
+- Team details collaborator add UI still has a known client-side validation gap: empty coach id input is coerced to `0`; server-side validation still rejects it.
+
+## Extension Points
+- Expand derived analytics in `api/utils/playerAnalytics.js`
+- Add richer search/filtering to existing team/coach payloads
+- Add additional game lifecycle operations beyond create-only game entry
+- Introduce a service layer if route logic grows further
+- Replace hard-coded client API endpoints with environment-aware configuration
+
+## Open Questions
+- Is the React Router v6 migration intentionally partial, or is `TeamDetails` currently broken in runtime?
+- Should login/register/session flows be expanded beyond coach accounts?
+- Should stat writes eventually require all rows to attach to `games` and deprecate legacy direct stat endpoints?
+- What deployment environment is the canonical target beyond the presence of `Procfile`?
+- Is the older SQL dump still needed, or should migrations be treated as the only schema source of truth?

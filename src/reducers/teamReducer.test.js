@@ -7,7 +7,19 @@ import { teamReducer } from './teamReducer';
 import {
   GET_TEAM_PROFILE,
   GET_TEAM_PROFILE_SUCCESS,
+  GET_TEAM_COLLABORATORS,
+  GET_TEAM_COLLABORATORS_SUCCESS,
+  GET_TEAM_COLLABORATORS_ERROR,
   ADD_PLAYER,
+  ADD_TEAM_COLLABORATOR,
+  ADD_TEAM_COLLABORATOR_SUCCESS,
+  ADD_TEAM_COLLABORATOR_ERROR,
+  UPDATE_TEAM_COLLABORATOR,
+  UPDATE_TEAM_COLLABORATOR_SUCCESS,
+  UPDATE_TEAM_COLLABORATOR_ERROR,
+  REMOVE_TEAM_COLLABORATOR,
+  REMOVE_TEAM_COLLABORATOR_SUCCESS,
+  REMOVE_TEAM_COLLABORATOR_ERROR,
   CREATE_TEAM,
   HIDE_MODAL,
   CREATE_GAME_ENTRY,
@@ -30,6 +42,11 @@ describe('teamReducer', () => {
           players: [
             { id: 7, first_name: 'P', last_name: 'L', email: 'e', position: 'p' }
           ],
+          collaborators: [
+            { id: 1, first_name: 'C', last_name: 'L', email: 'c', role: 'owner' },
+            { id: 2, first_name: 'A', last_name: 'S', email: 'a', role: 'assistant' }
+          ],
+          currentCoachRole: 'owner',
           coach: [
             { first_name: 'C', last_name: 'L', email: 'c' }
           ]
@@ -52,6 +69,22 @@ describe('teamReducer', () => {
         { id: 7, first_name: 'P', last_name: 'L', email: 'e', position: 'p' }
       ],
       coach: { first_name: 'C', last_name: 'L', email: 'c' },
+      collaborators: [
+        { id: 1, first_name: 'C', last_name: 'L', email: 'c', role: 'owner' },
+        { id: 2, first_name: 'A', last_name: 'S', email: 'a', role: 'assistant' }
+      ],
+      currentCoachRole: 'owner',
+      isLoadingCollaborators: false,
+      collaboratorLoadError: null,
+      isAddingCollaborator: false,
+      addCollaboratorSuccess: false,
+      addCollaboratorError: null,
+      isUpdatingCollaborator: false,
+      updateCollaboratorSuccess: false,
+      updateCollaboratorError: null,
+      isRemovingCollaborator: false,
+      removeCollaboratorSuccess: false,
+      removeCollaboratorError: null,
       isSubmittingGame: false,
       gameSubmissionSuccess: false,
       lastCreatedGame: null,
@@ -103,6 +136,8 @@ describe('teamReducer', () => {
     expect(state.season).toBe(null);
     expect(state.activeSeason).toBe(null);
     expect(state.availableSeasons).toEqual([]);
+    expect(state.collaborators).toEqual([]);
+    expect(state.currentCoachRole).toBe(null);
     expect(state.filters).toEqual({
       playerSearch: '',
       position: ''
@@ -249,6 +284,242 @@ describe('teamReducer', () => {
     expect(state.gameSubmissionSuccess).toBe(false);
     expect(state.lastCreatedGame).toBe(null);
     expect(state.gameSubmissionError).toBe(null);
+  });
+
+  it('should track collaborator fetch loading and success state', () => {
+    const loadingState = teamReducer(undefined, {
+      type: GET_TEAM_COLLABORATORS,
+      id: 50
+    });
+
+    expect(loadingState.isLoadingCollaborators).toBe(true);
+    expect(loadingState.collaboratorLoadError).toBe(null);
+
+    const state = teamReducer(loadingState, {
+      type: GET_TEAM_COLLABORATORS_SUCCESS,
+      response: {
+        data: [
+          { id: 1, first_name: 'Owner', last_name: 'One', email: 'owner@example.com', role: 'owner' },
+          { id: 2, first_name: 'Assist', last_name: 'Two', email: 'assist@example.com', role: 'assistant' }
+        ]
+      }
+    });
+
+    expect(state.isLoadingCollaborators).toBe(false);
+    expect(state.collaboratorLoadError).toBe(null);
+    expect(state.collaborators).toEqual([
+      { id: 1, first_name: 'Owner', last_name: 'One', email: 'owner@example.com', role: 'owner' },
+      { id: 2, first_name: 'Assist', last_name: 'Two', email: 'assist@example.com', role: 'assistant' }
+    ]);
+  });
+
+  it('should store collaborator fetch errors', () => {
+    const loadingState = teamReducer(undefined, {
+      type: GET_TEAM_COLLABORATORS,
+      id: 50
+    });
+    const error = { message: 'fetch failed' };
+
+    const state = teamReducer(loadingState, {
+      type: GET_TEAM_COLLABORATORS_ERROR,
+      response: error
+    });
+
+    expect(state.isLoadingCollaborators).toBe(false);
+    expect(state.collaboratorLoadError).toBe(error);
+  });
+
+  it('should track collaborator add request and success state', () => {
+    const loadingState = teamReducer(undefined, {
+      type: ADD_TEAM_COLLABORATOR,
+      id: 50,
+      coachId: 2,
+      role: 'assistant'
+    });
+
+    expect(loadingState.isAddingCollaborator).toBe(true);
+    expect(loadingState.addCollaboratorSuccess).toBe(false);
+    expect(loadingState.addCollaboratorError).toBe(null);
+
+    const state = teamReducer(loadingState, {
+      type: ADD_TEAM_COLLABORATOR_SUCCESS,
+      response: {
+        data: { id: 2, first_name: 'Assist', last_name: 'Two', email: 'assist@example.com', role: 'assistant' }
+      }
+    });
+
+    expect(state.isAddingCollaborator).toBe(false);
+    expect(state.addCollaboratorSuccess).toBe(true);
+    expect(state.addCollaboratorError).toBe(null);
+    expect(state.collaborators).toEqual([
+      { id: 2, first_name: 'Assist', last_name: 'Two', email: 'assist@example.com', role: 'assistant' }
+    ]);
+  });
+
+  it('should store collaborator add errors', () => {
+    const loadingState = teamReducer(undefined, {
+      type: ADD_TEAM_COLLABORATOR,
+      id: 50,
+      coachId: 2,
+      role: 'assistant'
+    });
+    const error = { message: 'create failed' };
+
+    const state = teamReducer(loadingState, {
+      type: ADD_TEAM_COLLABORATOR_ERROR,
+      response: error
+    });
+
+    expect(state.isAddingCollaborator).toBe(false);
+    expect(state.addCollaboratorSuccess).toBe(false);
+    expect(state.addCollaboratorError).toBe(error);
+  });
+
+  it('should track collaborator update request and success state', () => {
+    const previousState = {
+      ...teamReducer(undefined, { type: '@@INIT' }),
+      collaborators: [
+        { id: 1, first_name: 'Owner', last_name: 'One', email: 'owner@example.com', role: 'owner' },
+        { id: 2, first_name: 'Assist', last_name: 'Two', email: 'assist@example.com', role: 'assistant' }
+      ]
+    };
+
+    const loadingState = teamReducer(previousState, {
+      type: UPDATE_TEAM_COLLABORATOR,
+      id: 50,
+      coachId: 2,
+      role: 'owner'
+    });
+
+    expect(loadingState.isUpdatingCollaborator).toBe(true);
+    expect(loadingState.updateCollaboratorSuccess).toBe(false);
+    expect(loadingState.updateCollaboratorError).toBe(null);
+
+    const state = teamReducer(loadingState, {
+      type: UPDATE_TEAM_COLLABORATOR_SUCCESS,
+      response: {
+        data: { id: 2, first_name: 'Assist', last_name: 'Two', email: 'assist@example.com', role: 'owner' }
+      }
+    });
+
+    expect(state.isUpdatingCollaborator).toBe(false);
+    expect(state.updateCollaboratorSuccess).toBe(true);
+    expect(state.updateCollaboratorError).toBe(null);
+    expect(state.collaborators).toEqual([
+      { id: 1, first_name: 'Owner', last_name: 'One', email: 'owner@example.com', role: 'owner' },
+      { id: 2, first_name: 'Assist', last_name: 'Two', email: 'assist@example.com', role: 'owner' }
+    ]);
+  });
+
+  it('should store collaborator update errors', () => {
+    const loadingState = teamReducer(undefined, {
+      type: UPDATE_TEAM_COLLABORATOR,
+      id: 50,
+      coachId: 2,
+      role: 'owner'
+    });
+    const error = { message: 'update failed' };
+
+    const state = teamReducer(loadingState, {
+      type: UPDATE_TEAM_COLLABORATOR_ERROR,
+      response: error
+    });
+
+    expect(state.isUpdatingCollaborator).toBe(false);
+    expect(state.updateCollaboratorSuccess).toBe(false);
+    expect(state.updateCollaboratorError).toBe(error);
+  });
+
+  it('should track collaborator removal request and success state', () => {
+    const previousState = {
+      ...teamReducer(undefined, { type: '@@INIT' }),
+      collaborators: [
+        { id: 1, first_name: 'Owner', last_name: 'One', email: 'owner@example.com', role: 'owner' },
+        { id: 2, first_name: 'Assist', last_name: 'Two', email: 'assist@example.com', role: 'assistant' }
+      ]
+    };
+
+    const loadingState = teamReducer(previousState, {
+      type: REMOVE_TEAM_COLLABORATOR,
+      id: 50,
+      coachId: 2
+    });
+
+    expect(loadingState.isRemovingCollaborator).toBe(true);
+    expect(loadingState.removeCollaboratorSuccess).toBe(false);
+    expect(loadingState.removeCollaboratorError).toBe(null);
+
+    const state = teamReducer(loadingState, {
+      type: REMOVE_TEAM_COLLABORATOR_SUCCESS,
+      id: 50,
+      coachId: 2
+    });
+
+    expect(state.isRemovingCollaborator).toBe(false);
+    expect(state.removeCollaboratorSuccess).toBe(true);
+    expect(state.removeCollaboratorError).toBe(null);
+    expect(state.collaborators).toEqual([
+      { id: 1, first_name: 'Owner', last_name: 'One', email: 'owner@example.com', role: 'owner' }
+    ]);
+  });
+
+  it('should store collaborator removal errors', () => {
+    const loadingState = teamReducer(undefined, {
+      type: REMOVE_TEAM_COLLABORATOR,
+      id: 50,
+      coachId: 2
+    });
+    const error = { message: 'delete failed' };
+
+    const state = teamReducer(loadingState, {
+      type: REMOVE_TEAM_COLLABORATOR_ERROR,
+      response: error
+    });
+
+    expect(state.isRemovingCollaborator).toBe(false);
+    expect(state.removeCollaboratorSuccess).toBe(false);
+    expect(state.removeCollaboratorError).toBe(error);
+  });
+
+  it('should clear stale collaborator mutation state on team profile and collaborator reloads', () => {
+    const previousState = {
+      ...teamReducer(undefined, { type: '@@INIT' }),
+      isAddingCollaborator: false,
+      addCollaboratorSuccess: true,
+      addCollaboratorError: { message: 'old add error' },
+      isUpdatingCollaborator: false,
+      updateCollaboratorSuccess: true,
+      updateCollaboratorError: { message: 'old update error' },
+      isRemovingCollaborator: false,
+      removeCollaboratorSuccess: true,
+      removeCollaboratorError: { message: 'old remove error' }
+    };
+
+    const loadingProfileState = teamReducer(previousState, {
+      type: GET_TEAM_PROFILE,
+      id: 9,
+      season: 2026,
+      filters: {}
+    });
+
+    expect(loadingProfileState.addCollaboratorSuccess).toBe(false);
+    expect(loadingProfileState.addCollaboratorError).toBe(null);
+    expect(loadingProfileState.updateCollaboratorSuccess).toBe(false);
+    expect(loadingProfileState.updateCollaboratorError).toBe(null);
+    expect(loadingProfileState.removeCollaboratorSuccess).toBe(false);
+    expect(loadingProfileState.removeCollaboratorError).toBe(null);
+
+    const loadingCollaboratorsState = teamReducer(previousState, {
+      type: GET_TEAM_COLLABORATORS,
+      id: 9
+    });
+
+    expect(loadingCollaboratorsState.addCollaboratorSuccess).toBe(false);
+    expect(loadingCollaboratorsState.addCollaboratorError).toBe(null);
+    expect(loadingCollaboratorsState.updateCollaboratorSuccess).toBe(false);
+    expect(loadingCollaboratorsState.updateCollaboratorError).toBe(null);
+    expect(loadingCollaboratorsState.removeCollaboratorSuccess).toBe(false);
+    expect(loadingCollaboratorsState.removeCollaboratorError).toBe(null);
   });
 
   it('should store a successful created game response', () => {

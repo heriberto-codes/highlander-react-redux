@@ -29,6 +29,7 @@ describe('TeamDetailsNavigation', () => {
           email="coach@example.com"
           activeSeason={2026}
           availableSeasons={[2026, 2025]}
+          currentCoachRole="owner"
           onSeasonChange={() => {}}
           showModal={() => {}}
           showGameEntryForm={() => {}}
@@ -38,6 +39,7 @@ describe('TeamDetailsNavigation', () => {
     );
 
     expect(div.textContent).toContain('Active Season: 2026');
+    expect(div.textContent).toContain('Collaboration Role: Owner');
     const select = div.querySelector('#team-details-season-select');
     expect(select).not.toBeNull();
     expect(select.value).toBe('2026');
