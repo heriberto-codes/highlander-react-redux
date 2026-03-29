@@ -7,7 +7,7 @@
 - [x] Game-based stat entry
 - [x] Search and filtering
 - [x] Coach collaboration and permissions
-- [ ] Notifications and reminders
+- [x] Notifications and reminders
 
 ## Architecture Improvements
 

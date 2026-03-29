@@ -7,7 +7,8 @@ const {
   getCoachTeamRole,
   coachIsTeamOwner,
   canSafelyRemoveCoachFromTeam,
-  coachOwnsTeam
+  coachOwnsTeam,
+  coachOwnsNotification
 } = require('../api/utils/authorization');
 
 describe('authorization helpers', () => {
@@ -149,5 +150,31 @@ describe('authorization helpers', () => {
 
     expect(canSafelyRemoveCoachFromTeam(team, 2)).toBe(true);
     expect(canSafelyRemoveCoachFromTeam(team, 99)).toBe(false);
+  });
+
+  it('coachOwnsNotification matches direct coach_id ownership', () => {
+    expect(coachOwnsNotification({ coach_id: 5 }, 5)).toBe(true);
+    expect(coachOwnsNotification({ coach_id: 5 }, 6)).toBe(false);
+  });
+
+  it('coachOwnsNotification also supports nested coach ownership payloads', () => {
+    const notificationModelLike = {
+      toJSON: () => ({
+        coach: { id: 9 }
+      })
+    };
+
+    expect(coachOwnsNotification(notificationModelLike, 9)).toBe(true);
+    expect(coachOwnsNotification(notificationModelLike, 4)).toBe(false);
+    expect(coachOwnsNotification({}, 9)).toBe(false);
+  });
+
+  it('coachOwnsNotification supports serialized coach relation arrays', () => {
+    const notificationPayload = {
+      coach: [{ id: 11 }]
+    };
+
+    expect(coachOwnsNotification(notificationPayload, 11)).toBe(true);
+    expect(coachOwnsNotification(notificationPayload, 5)).toBe(false);
   });
 });

@@ -140,6 +140,32 @@ function coachOwnsPlayer(playerOrPayload, authenticatedCoachId) {
   });
 }
 
+function coachOwnsNotification(notificationOrPayload, authenticatedCoachId) {
+  const notificationPayload = getSerializablePayload(notificationOrPayload);
+  const normalizedCoachId = normalizeCoachId(authenticatedCoachId);
+
+  if (normalizedCoachId === null || !notificationPayload) {
+    return false;
+  }
+
+  const directCoachId = normalizeCoachId(notificationPayload.coach_id);
+  if (directCoachId !== null) {
+    return directCoachId === normalizedCoachId;
+  }
+
+  if (Array.isArray(notificationPayload.coach)) {
+    return notificationPayload.coach.some(function(coach) {
+      return normalizeCoachId(coach && coach.id) === normalizedCoachId;
+    });
+  }
+
+  const relatedCoachId = normalizeCoachId(
+    notificationPayload.coach && notificationPayload.coach.id
+  );
+
+  return relatedCoachId === normalizedCoachId;
+}
+
 module.exports = {
   getAuthenticatedCoachId,
   coachBelongsToTeam,
@@ -147,5 +173,6 @@ module.exports = {
   coachIsTeamOwner,
   canSafelyRemoveCoachFromTeam,
   coachOwnsTeam,
-  coachOwnsPlayer
+  coachOwnsPlayer,
+  coachOwnsNotification
 };

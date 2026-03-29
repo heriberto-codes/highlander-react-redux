@@ -4,11 +4,15 @@ const saltRounds = 10;
 
 require('./Team');
 require('./Player');
+require('./Notification');
 
 const CoachSchema = Bookshelf.Model.extend({
 	tableName: 'coaches',
 	teams: function() {
 		return this.belongsToMany('Team').withPivot(['role']);
+	},
+	notifications: function() {
+		return this.hasMany('Notification');
 	}
 },
 {

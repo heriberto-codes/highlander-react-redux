@@ -2,6 +2,7 @@ const Bookshelf = require('../config/bookshelf.config');
 
 require('./Team');
 require('./PlayerStat');
+require('./Notification');
 
 const GameSchema = Bookshelf.Model.extend({
   tableName: 'games',
@@ -10,6 +11,9 @@ const GameSchema = Bookshelf.Model.extend({
   },
   playerStats: function() {
     return this.hasMany('PlayerStat');
+  },
+  notifications: function() {
+    return this.hasMany('Notification');
   }
 });
 

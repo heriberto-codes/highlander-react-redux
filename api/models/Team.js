@@ -3,6 +3,7 @@ const Bookshelf = require('../config/bookshelf.config');
 require('./Coach');
 require('./Player');
 require('./Game');
+require('./Notification');
 
 const TeamSchema = Bookshelf.Model.extend({
   tableName: 'teams',
@@ -14,6 +15,9 @@ const TeamSchema = Bookshelf.Model.extend({
   },
   games: function() {
     return this.hasMany('Game');
+  },
+  notifications: function() {
+    return this.hasMany('Notification');
   }
 });
 module.exports = Bookshelf.model('Team', TeamSchema);

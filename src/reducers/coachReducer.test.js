@@ -381,4 +381,5 @@ describe('coachReducer', () => {
       position: ''
     });
   });
+
 });

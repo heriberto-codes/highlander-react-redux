@@ -17,6 +17,7 @@ const mockStatCatalogFetch = jest.fn();
 const mockGameForge = jest.fn();
 const mockPlayerStatForge = jest.fn();
 const mockPlayerStatFetch = jest.fn();
+const mockNotificationForge = jest.fn();
 const mockTransaction = jest.fn();
 const mockTeamCoachAttach = jest.fn();
 const mockTeamCoachUpdatePivot = jest.fn();
@@ -47,6 +48,10 @@ jest.mock('../api/models/PlayerStat', () => ({
   where: jest.fn()
 }));
 
+jest.mock('../api/models/Notification', () => ({
+  forge: jest.fn()
+}));
+
 jest.mock('../api/models/Stat_Catalog', () => ({
   where: jest.fn()
 }));
@@ -67,6 +72,7 @@ const Team = require('../api/models/Team');
 const Player = require('../api/models/Player');
 const Game = require('../api/models/Game');
 const PlayerStat = require('../api/models/PlayerStat');
+const Notification = require('../api/models/Notification');
 const Stat_Catalog = require('../api/models/Stat_Catalog');
 const Bookshelf = require('../api/config/bookshelf.config');
 const ensureAuthenticated = require('../api/middleware/ensureAuthenticated');
@@ -86,6 +92,7 @@ describe('server routes', () => {
     mockGameForge.mockReset();
     mockPlayerStatForge.mockReset();
     mockPlayerStatFetch.mockReset();
+    mockNotificationForge.mockReset();
     mockTransaction.mockReset();
     mockTeamCoachAttach.mockReset();
     mockTeamCoachUpdatePivot.mockReset();
@@ -119,6 +126,7 @@ describe('server routes', () => {
     });
     Game.forge.mockImplementation(mockGameForge);
     PlayerStat.forge.mockImplementation(mockPlayerStatForge);
+    Notification.forge.mockImplementation(mockNotificationForge);
     PlayerStat.where.mockReturnValue({
       fetch: mockPlayerStatFetch
     });
@@ -136,6 +144,10 @@ describe('server routes', () => {
       req.session.coachId = authenticatedCoachId;
       next();
     });
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('GET /coaches/:id adds derived stats from related player stats and sums duplicate rows', async () => {
@@ -178,6 +190,238 @@ describe('server routes', () => {
       era: 4.5,
       strikeoutsPerInning: 1.25
     });
+  });
+
+  it('GET /coaches/:id returns additive notifications and unreadNotificationCount', async () => {
+    mockFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 10,
+        first_name: 'Test',
+        last_name: 'Coach',
+        teams: [
+          {
+            id: 20,
+            name: 'Highlander',
+            season: 2026,
+            players: [],
+            games: [
+              {
+                id: 21,
+                opponent: 'Rivals',
+                game_date: '2026-03-27T08:00:00.000Z'
+              }
+            ]
+          }
+        ],
+        notifications: [
+          {
+            id: 7,
+            coach_id: 10,
+            team_id: 20,
+            game_id: 22,
+            kind: 'upcoming_game',
+            message: 'Existing reminder',
+            scheduled_for: '2026-03-27T06:00:00.000Z',
+            read_at: null,
+            dismissed_at: null,
+            created_at: '2026-03-26T12:00:00.000Z',
+            idempotency_key: 'upcoming_game:10:20:22'
+          }
+        ]
+      })
+    });
+
+    jest.useFakeTimers().setSystemTime(new Date('2026-03-26T12:00:00.000Z'));
+
+    const response = await request(app).get('/coaches/10').expect(200);
+
+    expect(response.body.notifications).toHaveLength(2);
+    expect(response.body.unreadNotificationCount).toBe(2);
+    expect(response.body.notifications[0].idempotency_key).toBe('upcoming_game:10:20:21');
+    expect(response.body.notifications[1].idempotency_key).toBe('upcoming_game:10:20:22');
+    expect(mockNotificationForge).not.toHaveBeenCalled();
+  });
+
+  it('GET /coaches/:id does not create a duplicate reminder when the idempotency key already exists', async () => {
+    mockFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 10,
+        first_name: 'Test',
+        last_name: 'Coach',
+        teams: [
+          {
+            id: 20,
+            name: 'Highlander',
+            season: 2026,
+            players: [],
+            games: [
+              {
+                id: 21,
+                opponent: 'Rivals',
+                game_date: '2026-03-27T08:00:00.000Z'
+              }
+            ]
+          }
+        ],
+        notifications: [
+          {
+            id: 7,
+            coach_id: 10,
+            team_id: 20,
+            game_id: 21,
+            kind: 'upcoming_game',
+            message: 'Existing reminder',
+            scheduled_for: '2026-03-27T08:00:00.000Z',
+            read_at: null,
+            dismissed_at: null,
+            created_at: '2026-03-26T12:00:00.000Z',
+            idempotency_key: 'upcoming_game:10:20:21'
+          }
+        ]
+      })
+    });
+
+    jest.useFakeTimers().setSystemTime(new Date('2026-03-26T12:00:00.000Z'));
+
+    const response = await request(app).get('/coaches/10').expect(200);
+
+    expect(response.body.notifications).toHaveLength(1);
+    expect(response.body.unreadNotificationCount).toBe(1);
+    expect(mockNotificationForge).not.toHaveBeenCalled();
+  });
+
+  it('GET /coaches/:id excludes dismissed notifications from the dashboard payload', async () => {
+    mockFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 10,
+        first_name: 'Test',
+        last_name: 'Coach',
+        teams: [],
+        notifications: [
+          {
+            id: 7,
+            coach_id: 10,
+            kind: 'upcoming_game',
+            message: 'Dismissed reminder',
+            scheduled_for: '2026-03-27T08:00:00.000Z',
+            read_at: null,
+            dismissed_at: '2026-03-26T12:30:00.000Z',
+            created_at: '2026-03-26T12:00:00.000Z',
+            idempotency_key: 'upcoming_game:10:20:21'
+          },
+          {
+            id: 8,
+            coach_id: 10,
+            kind: 'upcoming_game',
+            message: 'Visible reminder',
+            scheduled_for: '2026-03-27T07:00:00.000Z',
+            read_at: null,
+            dismissed_at: null,
+            created_at: '2026-03-26T11:00:00.000Z',
+            idempotency_key: 'upcoming_game:10:20:22'
+          }
+        ]
+      })
+    });
+
+    const response = await request(app).get('/coaches/10').expect(200);
+
+    expect(response.body.notifications).toEqual([
+      expect.objectContaining({
+        idempotency_key: 'upcoming_game:10:20:22'
+      })
+    ]);
+    expect(response.body.unreadNotificationCount).toBe(1);
+  });
+
+  it('GET /coaches/:id returns notifications newest-first by scheduled_for', async () => {
+    mockFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 10,
+        first_name: 'Test',
+        last_name: 'Coach',
+        teams: [],
+        notifications: [
+          {
+            id: 7,
+            coach_id: 10,
+            kind: 'upcoming_game',
+            message: 'Older reminder',
+            scheduled_for: '2026-03-27T07:00:00.000Z',
+            read_at: null,
+            dismissed_at: null,
+            created_at: '2026-03-26T10:00:00.000Z',
+            idempotency_key: 'upcoming_game:10:20:21'
+          },
+          {
+            id: 8,
+            coach_id: 10,
+            kind: 'upcoming_game',
+            message: 'Newer reminder',
+            scheduled_for: '2026-03-27T09:00:00.000Z',
+            read_at: null,
+            dismissed_at: null,
+            created_at: '2026-03-26T11:00:00.000Z',
+            idempotency_key: 'upcoming_game:10:20:22'
+          }
+        ]
+      })
+    });
+
+    const response = await request(app).get('/coaches/10').expect(200);
+
+    expect(response.body.notifications.map(notification => notification.idempotency_key)).toEqual([
+      'upcoming_game:10:20:22',
+      'upcoming_game:10:20:21'
+    ]);
+  });
+
+  it('GET /coaches/:id does not show the same persisted and computed reminder twice when idempotency_key matches', async () => {
+    mockFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 10,
+        first_name: 'Test',
+        last_name: 'Coach',
+        teams: [
+          {
+            id: 20,
+            name: 'Highlander',
+            season: 2026,
+            players: [],
+            games: [
+              {
+                id: 21,
+                opponent: 'Rivals',
+                game_date: '2026-03-28T08:00:00.000Z'
+              }
+            ]
+          }
+        ],
+        notifications: [
+          {
+            id: 7,
+            coach_id: 10,
+            team_id: 20,
+            game_id: 21,
+            kind: 'upcoming_game',
+            message: 'Persisted reminder',
+            scheduled_for: '2026-03-28T08:00:00.000Z',
+            read_at: null,
+            dismissed_at: null,
+            created_at: '2026-03-27T12:00:00.000Z',
+            idempotency_key: 'upcoming_game:10:20:21'
+          }
+        ]
+      })
+    });
+
+    jest.useFakeTimers().setSystemTime(new Date('2026-03-27T12:00:00.000Z'));
+
+    const response = await request(app).get('/coaches/10').expect(200);
+
+    expect(response.body.notifications).toHaveLength(1);
+    expect(response.body.notifications[0].idempotency_key).toBe('upcoming_game:10:20:21');
+    expect(mockNotificationForge).not.toHaveBeenCalled();
   });
 
   it('GET /coaches/:id rejects access to another coach profile', async () => {

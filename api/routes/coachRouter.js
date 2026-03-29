@@ -11,6 +11,10 @@ const requireTrustedOrigin = require('../middleware/requireTrustedOrigin');
 const { addDerivedStatsToCoachPayload, addDerivedStatsToPlayers } = require('../utils/playerAnalytics');
 const { getAuthenticatedCoachId } = require('../utils/authorization');
 const {
+	normalizeNotificationPayload,
+	buildDueUpcomingGameNotifications
+} = require('../utils/notifications');
+const {
 	parseRequestedSeason,
 	parseOptionalFilterText,
 	matchesCaseInsensitiveFilter,
@@ -79,6 +83,15 @@ function getAvailableSeasons(teams) {
 	});
 }
 
+function sortDashboardNotifications(notifications) {
+	return (notifications || []).slice().sort(function(left, right) {
+		const leftDate = left && left.scheduled_for ? new Date(left.scheduled_for).getTime() : 0;
+		const rightDate = right && right.scheduled_for ? new Date(right.scheduled_for).getTime() : 0;
+
+		return rightDate - leftDate;
+	});
+}
+
 router.get('/', ensureAuthenticated, function(req, res, next) {
 	const authenticatedCoachId = getAuthenticatedCoachId(req);
 
@@ -135,6 +148,29 @@ router.get('/:id', ensureAuthenticated, function(req, res, next) {
          *   - preserve availableSeasons and activeSeason contract
          *   - only narrow teams/players/stats returned for this payload
          *   - do not change auth requirements
+         *
+         * Planned notifications/reminders contract for coach-owned resources:
+         * - v1 is in-app only; no email, SMS, push, cron, or worker delivery
+         * - planned additive read contract on GET /coaches/:id:
+         *   - notifications
+         *   - unreadNotificationCount
+         * - planned dedicated routes:
+         *   - GET /coaches/:id/notifications
+         *   - PUT /coaches/:id/notifications/:notificationId
+         * - ownership rules:
+         *   - authenticated coach id must match req.params.id
+         *   - coach may read/mutate only own notifications
+         * - planned state model:
+         *   - unread
+         *   - read
+         *   - dismissed
+         * - planned reminder source:
+         *   - existing games.game_date only
+         *   - upcoming-game reminders only in v1
+         * - generation rules:
+         *   - request-driven, not background scheduled
+         *   - additive to current payload shape
+         *   - idempotent for the same coach/team/game/reminder window
          */
         const parsedFilters = parseDashboardFilters(req.query);
         if (parsedFilters.error) {
@@ -147,9 +183,22 @@ router.get('/:id', ensureAuthenticated, function(req, res, next) {
 
         Coach
                 .where({id: req.params.id})
-                .fetch({withRelated: ['teams', 'teams.players', 'teams.players.stats']})
+                .fetch({withRelated: ['teams', 'teams.players', 'teams.players.stats', 'teams.games', 'notifications']})
                 .then(function(coaches) {
                         const coachPayload = addDerivedStatsToCoachPayload(coaches);
+                        const existingNotifications = (coachPayload.notifications || [])
+                                .map(normalizeNotificationPayload)
+                                .filter(Boolean);
+                        const existingNotificationKeys = new Set(
+                                existingNotifications
+                                        .map(function(notification) {
+                                                return notification.idempotency_key;
+                                        })
+                                        .filter(Boolean)
+                        );
+                        const dueNotifications = buildDueUpcomingGameNotifications(coachPayload).filter(function(notification) {
+                                return !existingNotificationKeys.has(notification.idempotency_key);
+                        });
                         const availableSeasons = getAvailableSeasons(coachPayload.teams);
                         const requestedSeason = parsedFilters.value.season;
                         const dashboardFilters = parsedFilters.value;
@@ -164,6 +213,13 @@ router.get('/:id', ensureAuthenticated, function(req, res, next) {
                                         : (coachPayload.teams || []).filter(function(team) {
                                                 return team.season === activeSeason;
                                         });
+                        const notifications = sortDashboardNotifications(
+                                existingNotifications
+                                        .concat(dueNotifications)
+                                        .filter(function(notification) {
+                                                return !notification.dismissed_at;
+                                        })
+                        );
 
                         coachPayload.teams = teams
                                 .filter(function(team) {
@@ -182,6 +238,10 @@ router.get('/:id', ensureAuthenticated, function(req, res, next) {
                                 });
                         coachPayload.availableSeasons = availableSeasons;
                         coachPayload.activeSeason = activeSeason;
+                        coachPayload.notifications = notifications.slice(0, 10);
+                        coachPayload.unreadNotificationCount = notifications.filter(function(notification) {
+                                return !notification.read_at && !notification.dismissed_at;
+                        }).length;
 
                         res.json(coachPayload);
                 })

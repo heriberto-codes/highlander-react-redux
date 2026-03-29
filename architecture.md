@@ -177,6 +177,7 @@ Additional flows:
     - both `owner` and `assistant` may perform existing team/player/stat write operations guarded by team membership
 - Protected operations:
   - Coach profile reads/updates
+  - Coach notification reads/mutations are planned as coach-owned resources only
   - Team detail reads and writes
   - Player reads and writes
   - Logout
@@ -191,6 +192,7 @@ Additional flows:
   - Manual required-field and type checks in route handlers
   - Some query validation helpers in `api/utils/filterQuery.js`
   - Collaboration routes validate target coach id, role, duplicate association, and last-owner removal server-side
+  - Planned notification routes should accept only explicit read/dismiss state transitions and must derive coach ownership from the authenticated session
 - Secrets handling:
   - `DATABASE_URL`, `CLIENT_ORIGIN`, and `SECRET` come from environment variables
 - Data protection considerations:
@@ -207,6 +209,31 @@ Additional flows:
 - No jobs, workers, or schedulers are defined in the repository.
 - All current work is request/response driven.
 - No retry framework or dead-letter behavior exists.
+- Planned notification/reminder contract must stay within this constraint:
+  - v1 is in-app only
+  - no email, SMS, push, or background delivery worker
+  - reminder generation should happen in request flow from existing persisted data, not from cron
+
+## Notifications And Reminders Contract
+- Planned v1 scope:
+  - in-app notifications only
+  - primary surface is the dashboard
+  - additive API enrichment on existing coach reads is preferred
+- Planned reminder source:
+  - existing `games.game_date`
+  - upcoming-game reminders only in v1
+- Planned notification ownership rules:
+  - a coach may read and mutate only that coach's notifications
+  - notification routes must keep the existing `GET /coaches/:id` path-id ownership rule
+  - mutating notification routes must preserve `requireTrustedOrigin`
+- Planned notification states:
+  - unread
+  - read
+  - dismissed
+- Planned contract limits:
+  - no delivery preferences in v1
+  - no cross-channel delivery logs in v1
+  - reminder generation must be idempotent for the same coach/team/game/window
 
 ## Performance Considerations
 - Caching strategy:
