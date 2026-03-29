@@ -1,5 +1,23 @@
+jest.mock('../actions/loginAction', () => ({
+  LOGIN_REQUEST: 'LOGIN_REQUEST',
+  LOGIN_SUCCESS: 'LOGIN_SUCCESS',
+  LOGIN_FAIL: 'LOGIN_FAIL',
+  LOGOUT: 'LOGOUT',
+  BOOTSTRAP_SESSION_REQUEST: 'BOOTSTRAP_SESSION_REQUEST',
+  BOOTSTRAP_SESSION_SUCCESS: 'BOOTSTRAP_SESSION_SUCCESS',
+  BOOTSTRAP_SESSION_FAIL: 'BOOTSTRAP_SESSION_FAIL'
+}));
+
 import { loginReducer } from './loginReducer';
-import { LOGIN_REQUEST, LOGIN_SUCCESS, LOGIN_FAIL, LOGOUT } from '../actions/loginAction';
+import {
+  LOGIN_REQUEST,
+  LOGIN_SUCCESS,
+  LOGIN_FAIL,
+  LOGOUT,
+  BOOTSTRAP_SESSION_REQUEST,
+  BOOTSTRAP_SESSION_SUCCESS,
+  BOOTSTRAP_SESSION_FAIL
+} from '../actions/loginAction';
 
 describe('loginReducer', () => {
   it('should handle LOGIN_REQUEST', () => {
@@ -7,6 +25,7 @@ describe('loginReducer', () => {
     expect(state).toEqual({
       isLoading: true,
       isloggedIn: false,
+      hasResolvedSession: false,
       shouldRedirect: false,
       errorMessage: null
     });
@@ -16,6 +35,7 @@ describe('loginReducer', () => {
     const state = loginReducer(undefined, { type: LOGIN_SUCCESS });
     expect(state.isLoading).toBe(false);
     expect(state.isloggedIn).toBe(true);
+    expect(state.hasResolvedSession).toBe(true);
     expect(state.shouldRedirect).toBe(true);
   });
 
@@ -25,6 +45,41 @@ describe('loginReducer', () => {
     expect(state).toEqual({
       isLoading: false,
       isloggedIn: false,
+      hasResolvedSession: true,
+      shouldRedirect: false,
+      errorMessage: err
+    });
+  });
+
+  it('should handle BOOTSTRAP_SESSION_REQUEST', () => {
+    const state = loginReducer(undefined, { type: BOOTSTRAP_SESSION_REQUEST });
+    expect(state).toEqual({
+      isLoading: true,
+      isloggedIn: false,
+      hasResolvedSession: false,
+      shouldRedirect: false,
+      errorMessage: null
+    });
+  });
+
+  it('should handle BOOTSTRAP_SESSION_SUCCESS', () => {
+    const state = loginReducer(undefined, { type: BOOTSTRAP_SESSION_SUCCESS });
+    expect(state).toEqual({
+      isLoading: false,
+      isloggedIn: true,
+      hasResolvedSession: true,
+      shouldRedirect: false,
+      errorMessage: null
+    });
+  });
+
+  it('should handle BOOTSTRAP_SESSION_FAIL', () => {
+    const err = 'unauthorized';
+    const state = loginReducer(undefined, { type: BOOTSTRAP_SESSION_FAIL, err });
+    expect(state).toEqual({
+      isLoading: false,
+      isloggedIn: false,
+      hasResolvedSession: true,
       shouldRedirect: false,
       errorMessage: err
     });
@@ -34,6 +89,7 @@ describe('loginReducer', () => {
     const prevState = {
       isLoading: false,
       isloggedIn: true,
+      hasResolvedSession: true,
       shouldRedirect: true,
       errorMessage: null
     };
@@ -41,6 +97,7 @@ describe('loginReducer', () => {
     expect(state).toEqual({
       isLoading: false,
       isloggedIn: false,
+      hasResolvedSession: true,
       shouldRedirect: false,
       errorMessage: null
     });

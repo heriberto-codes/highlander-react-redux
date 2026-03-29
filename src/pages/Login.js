@@ -8,11 +8,28 @@ import Nav from '../components/Nav';
 import LoginForm from '../components/LoginForm';
 import Footer from '../components/Footer';
 
-class Login extends Component {
+export class Login extends Component {
+        componentDidMount() {
+                if (this.props.hasResolvedSession && this.props.loggedIn) {
+                        setTimeout(() => {
+                                this.props.navigate('/dashboard');
+                        }, 0);
+                }
+        }
+
         componentDidUpdate(prevProps){
-                if(this.props.shouldRedirect && !prevProps.shouldRedirect) {
+                if(this.shouldNavigateToDashboard(this.props, prevProps)) {
                         this.props.navigate('/dashboard');
                 }
+        }
+
+        shouldNavigateToDashboard(props, prevProps) {
+                const isAuthenticated = props.hasResolvedSession && props.loggedIn;
+                const redirectRequested = props.hasResolvedSession && props.shouldRedirect;
+                const wasAuthenticated = prevProps.hasResolvedSession && prevProps.loggedIn;
+                const hadRedirect = prevProps.hasResolvedSession && prevProps.shouldRedirect;
+
+                return (isAuthenticated && !wasAuthenticated) || (redirectRequested && !hadRedirect);
         }
 
 	callLogin(email, pwd){
@@ -20,16 +37,16 @@ class Login extends Component {
 	}
 
 	render () {
-		const {loggedIn, error} = this.props;
+		const {loggedIn, error, hasResolvedSession} = this.props;
 		let message;
-		if(!loggedIn && error){
+		if(hasResolvedSession && !loggedIn && error){
 			message = <p className="error">{error.message}</p>;
 		}
 		return (
 			<div>
 				<Nav isLoggedIn={loggedIn} />
 				{message}
-				<LoginForm onSubmit={(email, pwd) => this.callLogin(email, pwd)} />
+				{hasResolvedSession ? <LoginForm onSubmit={(email, pwd) => this.callLogin(email, pwd)} /> : null}
 				<Footer />
 			</div>
 		);
@@ -38,6 +55,7 @@ class Login extends Component {
 
 const mapStateToProps = state => ({
         loggedIn: state.loginReducer.isloggedIn,
+        hasResolvedSession: state.loginReducer.hasResolvedSession,
         error: state.loginReducer.errorMessage,
         shouldRedirect: state.loginReducer.shouldRedirect,
 });

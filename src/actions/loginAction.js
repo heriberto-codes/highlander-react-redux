@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const url = 'http://localhost:8080/sessions/login';
+const loginUrl = 'http://localhost:8080/sessions/login';
+const bootstrapUrl = 'http://localhost:8080/sessions';
 export const LOGIN_REQUEST = 'LOGIN_REQUEST';
 export const login = (email, pwd) => dispatch => {
 	dispatch({
@@ -8,7 +9,7 @@ export const login = (email, pwd) => dispatch => {
 		email,
 		pwd
 	});
-       axios.post(url, {email, pwd}, { withCredentials: true })
+       axios.post(loginUrl, {email, pwd}, { withCredentials: true })
                .then(response => {
 			if(response.status === 200){
 				dispatch(loginSuccess(response));
@@ -37,3 +38,33 @@ export const logout = (email, pwd) => ({
 	email,
 	pwd
 });
+
+export const BOOTSTRAP_SESSION_REQUEST = 'BOOTSTRAP_SESSION_REQUEST';
+export const bootstrapSessionRequest = () => ({
+	type: BOOTSTRAP_SESSION_REQUEST
+});
+
+export const BOOTSTRAP_SESSION_SUCCESS = 'BOOTSTRAP_SESSION_SUCCESS';
+export const bootstrapSessionSuccess = (response) => ({
+	type: BOOTSTRAP_SESSION_SUCCESS,
+	response
+});
+
+export const BOOTSTRAP_SESSION_FAIL = 'BOOTSTRAP_SESSION_FAIL';
+export const bootstrapSessionFail = (err) => ({
+	type: BOOTSTRAP_SESSION_FAIL,
+	err
+});
+
+export const bootstrapSession = () => dispatch => {
+	dispatch(bootstrapSessionRequest());
+	axios.get(bootstrapUrl, { withCredentials: true })
+		.then(response => {
+			if (response.status === 200) {
+				dispatch(bootstrapSessionSuccess(response));
+			}
+		})
+		.catch(err => {
+			dispatch(bootstrapSessionFail(err));
+		});
+};

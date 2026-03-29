@@ -1,13 +1,19 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
+import { bootstrapSession } from '../actions/loginAction';
 import Home from '../pages/Home';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Dashboard from '../pages/Dashboard';
 import TeamDetails from '../pages/TeamDetails';
 
-class App extends Component {
+export class App extends Component {
+	componentDidMount() {
+		this.props.bootstrapSession();
+	}
+
 	render() {
 		return (
                         <Router>
@@ -26,4 +32,4 @@ class App extends Component {
         }
 }
 
-export default App;
+export default connect(null, { bootstrapSession })(App);

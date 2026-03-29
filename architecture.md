@@ -153,6 +153,11 @@ Additional flows:
   - Session-based auth with `express-session`
   - Session data stored in Postgres outside tests
   - Login endpoint is `POST /sessions/login`
+  - Auth bootstrap endpoint is `GET /sessions`
+  - `GET /sessions` reads only `req.session.coachId`
+  - `GET /sessions` is read-only and returns minimal coach identity data for client rehydration
+  - `GET /sessions` returns `401` when no valid authenticated session exists
+  - If `req.session.coachId` points to a missing coach, `GET /sessions` destroys the stale session before returning `401`
   - Logout endpoint is `DELETE /sessions`
 
 ## Authorization

@@ -1089,6 +1089,66 @@ describe('server routes', () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
+  it('GET /sessions returns the current authenticated coach bootstrap payload', async () => {
+    mockFetch.mockResolvedValue({
+      id: 10,
+      email: 'coach@example.com',
+      first_name: 'Test',
+      last_name: 'Coach',
+      password: 'should-not-not-be-returned'
+    });
+
+    const response = await request(app)
+      .get('/sessions')
+      .expect(200);
+
+    expect(Coach.where).toHaveBeenCalledWith({ id: 1 });
+    expect(response.body).toEqual({
+      id: 10,
+      email: 'coach@example.com',
+      first_name: 'Test',
+      last_name: 'Coach'
+    });
+    expect(response.body.password).toBeUndefined();
+  });
+
+  it('GET /sessions returns 401 when no valid authenticated session exists', async () => {
+    ensureAuthenticated.mockImplementationOnce((req, res) => {
+      res.sendStatus(401);
+    });
+
+    await request(app)
+      .get('/sessions')
+      .expect(401);
+
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('GET /sessions returns 401 when the session coach record no longer exists', async () => {
+    mockFetch.mockResolvedValue(null);
+
+    await request(app)
+      .get('/sessions')
+      .expect(401);
+  });
+
+  it('GET /sessions destroys a stale invalid session before returning 401', async () => {
+    const destroy = jest.fn((callback) => callback());
+
+    ensureAuthenticated.mockImplementationOnce((req, res, next) => {
+      req.session.coachId = 10;
+      req.session.destroy = destroy;
+      next();
+    });
+    mockFetch.mockResolvedValue(null);
+
+    await request(app)
+      .get('/sessions')
+      .expect(401);
+
+    expect(destroy).toHaveBeenCalled();
+  });
+
   it('POST /sessions/login rate limits repeated invalid credentials', async () => {
     Coach.validatePassword.mockResolvedValue(false);
     mockFetch.mockResolvedValue({

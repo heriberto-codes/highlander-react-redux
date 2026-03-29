@@ -11,7 +11,7 @@
 
 ## Architecture Improvements
 
-- [ ] Add an auth/session bootstrap endpoint
+- [x] Add an auth/session bootstrap endpoint
 - [ ] Remove hardcoded API origins
 - [ ] Introduce an `/api` namespace and versioning
 - [ ] Separate route handlers from business logic

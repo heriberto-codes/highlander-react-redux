@@ -1,8 +1,35 @@
-import { LOGIN_SUCCESS, loginSuccess, LOGIN_FAIL, loginFail, LOGOUT, logout } from './loginAction';
+jest.mock('axios', () => ({
+  get: jest.fn(() => Promise.resolve({ status: 200, data: {} })),
+  post: jest.fn(() => Promise.resolve({ status: 200, data: {} }))
+}));
 
-// Test synchronous action creators
+const flushPromises = () => new Promise(resolve => setTimeout(resolve, 0));
+
+import axios from 'axios';
+import {
+  LOGIN_SUCCESS,
+  loginSuccess,
+  LOGIN_FAIL,
+  loginFail,
+  LOGOUT,
+  logout,
+  BOOTSTRAP_SESSION_REQUEST,
+  bootstrapSessionRequest,
+  BOOTSTRAP_SESSION_SUCCESS,
+  bootstrapSessionSuccess,
+  BOOTSTRAP_SESSION_FAIL,
+  bootstrapSessionFail,
+  bootstrapSession
+} from './loginAction';
 
 describe('login actions', () => {
+  beforeEach(() => {
+    axios.get.mockReset();
+    axios.post.mockReset();
+    axios.get.mockResolvedValue({ status: 200, data: {} });
+    axios.post.mockResolvedValue({ status: 200, data: {} });
+  });
+
   it('should create an action for loginSuccess', () => {
     const response = { data: { token: '123' } };
     const expectedAction = {
@@ -30,5 +57,72 @@ describe('login actions', () => {
       pwd
     };
     expect(logout(email, pwd)).toEqual(expectedAction);
+  });
+
+  it('should create a bootstrapSessionRequest action', () => {
+    expect(bootstrapSessionRequest()).toEqual({
+      type: BOOTSTRAP_SESSION_REQUEST
+    });
+  });
+
+  it('should create a bootstrapSessionSuccess action', () => {
+    const response = { data: { id: 10 } };
+    expect(bootstrapSessionSuccess(response)).toEqual({
+      type: BOOTSTRAP_SESSION_SUCCESS,
+      response
+    });
+  });
+
+  it('should create a bootstrapSessionFail action', () => {
+    const err = new Error('unauthorized');
+    expect(bootstrapSessionFail(err)).toEqual({
+      type: BOOTSTRAP_SESSION_FAIL,
+      err
+    });
+  });
+
+  it('should request the current session bootstrap payload and dispatch success', async () => {
+    const dispatch = jest.fn();
+    const response = {
+      status: 200,
+      data: {
+        id: 10,
+        email: 'coach@example.com',
+        first_name: 'Test',
+        last_name: 'Coach'
+      }
+    };
+    axios.get.mockResolvedValueOnce(response);
+
+    bootstrapSession()(dispatch);
+    await flushPromises();
+
+    expect(dispatch).toHaveBeenNthCalledWith(1, {
+      type: BOOTSTRAP_SESSION_REQUEST
+    });
+    expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/sessions', {
+      withCredentials: true
+    });
+    expect(dispatch).toHaveBeenNthCalledWith(2, {
+      type: BOOTSTRAP_SESSION_SUCCESS,
+      response
+    });
+  });
+
+  it('should dispatch bootstrapSessionFail when bootstrap request fails', async () => {
+    const dispatch = jest.fn();
+    const error = new Error('unauthorized');
+    axios.get.mockRejectedValueOnce(error);
+
+    bootstrapSession()(dispatch);
+    await flushPromises();
+
+    expect(dispatch).toHaveBeenNthCalledWith(1, {
+      type: BOOTSTRAP_SESSION_REQUEST
+    });
+    expect(dispatch).toHaveBeenNthCalledWith(2, {
+      type: BOOTSTRAP_SESSION_FAIL,
+      err: error
+    });
   });
 });

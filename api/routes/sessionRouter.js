@@ -52,10 +52,59 @@ function clearFailedAttempts(attemptKey) {
         loginAttempts.delete(attemptKey);
 }
 
+function buildSessionBootstrapPayload(coach) {
+        const coachData = typeof coach.toJSON === 'function'
+                ? coach.toJSON()
+                : coach;
+
+        return {
+                id: coachData.id,
+                email: coachData.email,
+                first_name: coachData.first_name,
+                last_name: coachData.last_name
+        };
+}
+
 router.use(bodyParser.urlencoded({
         extended: true
 }));
 router.use(jsonParser);
+
+/*
+ * Planned session bootstrap contract
+ * Route: GET /sessions
+ * Auth source: req.session.coachId only
+ * Purpose: restore client auth state after refresh without requiring a new login
+ * Success shape: minimal current-coach identity payload only; no password or full dashboard data
+ * Failure shape: 401 when no valid authenticated session exists
+ * Side effects: none; read-only endpoint
+ */
+
+/*
+ * Read the current authenticated session for client bootstrap
+ */
+router.get('/', ensureAuthenticated, function(req, res, next) {
+        Coach
+                .where({
+                        id: req.session.coachId
+                })
+                .fetch({
+                        columns: ['id', 'email', 'first_name', 'last_name']
+                })
+                .then(function(coach) {
+                        if (!coach) {
+                                req.session.destroy(function() {
+                                        res.sendStatus(401);
+                                });
+                                return;
+                        }
+
+                        res.status(200).json(buildSessionBootstrapPayload(coach));
+                })
+                .catch(function(err) {
+                        return next(err);
+                });
+});
 
 /*
  * Login and create a new session
