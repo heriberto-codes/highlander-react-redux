@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const loginUrl = 'http://localhost:8080/sessions/login';
-const bootstrapUrl = 'http://localhost:8080/sessions';
+const loginUrl = '/sessions/login';
+const bootstrapUrl = '/sessions';
 export const LOGIN_REQUEST = 'LOGIN_REQUEST';
 export const login = (email, pwd) => dispatch => {
 	dispatch({

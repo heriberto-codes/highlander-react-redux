@@ -114,6 +114,12 @@ Additional flows:
   - Production build served by Express
 - Routing approach:
   - `react-router-dom` routes are defined in `src/container/App.js`
+- Client API URL contract:
+  - client actions should not hardcode server origins such as `http://localhost:8080`
+  - client actions should call API routes through relative URLs when the browser and API are served through the same origin
+  - local development must either preserve same-origin serving or provide an equivalent proxy/path setup before pure relative URLs are adopted everywhere
+  - route paths themselves stay unchanged, only client URL construction should change
+  - credentialed requests must continue using Axios `withCredentials: true`
 
 ## Server Architecture
 - Route/controller/service boundaries:

@@ -7,7 +7,9 @@ const flushPromises = () => new Promise(resolve => setTimeout(resolve, 0));
 
 import axios from 'axios';
 import {
+  LOGIN_REQUEST,
   LOGIN_SUCCESS,
+  login,
   loginSuccess,
   LOGIN_FAIL,
   loginFail,
@@ -81,6 +83,60 @@ describe('login actions', () => {
     });
   });
 
+  it('should post login credentials to the relative session path and dispatch success', async () => {
+    const dispatch = jest.fn();
+    const response = {
+      status: 200,
+      data: {
+        id: 10,
+        email: 'coach@example.com'
+      }
+    };
+    axios.post.mockResolvedValueOnce(response);
+
+    login('coach@example.com', 'password123')(dispatch);
+    await flushPromises();
+
+    expect(dispatch).toHaveBeenNthCalledWith(1, {
+      type: LOGIN_REQUEST,
+      email: 'coach@example.com',
+      pwd: 'password123'
+    });
+    expect(axios.post).toHaveBeenCalledWith(
+      '/sessions/login',
+      { email: 'coach@example.com', pwd: 'password123' },
+      { withCredentials: true }
+    );
+    expect(dispatch).toHaveBeenNthCalledWith(2, {
+      type: LOGIN_SUCCESS,
+      response
+    });
+  });
+
+  it('should dispatch loginFail when the login request fails', async () => {
+    const dispatch = jest.fn();
+    const error = new Error('invalid credentials');
+    axios.post.mockRejectedValueOnce(error);
+
+    login('coach@example.com', 'wrong-password')(dispatch);
+    await flushPromises();
+
+    expect(dispatch).toHaveBeenNthCalledWith(1, {
+      type: LOGIN_REQUEST,
+      email: 'coach@example.com',
+      pwd: 'wrong-password'
+    });
+    expect(axios.post).toHaveBeenCalledWith(
+      '/sessions/login',
+      { email: 'coach@example.com', pwd: 'wrong-password' },
+      { withCredentials: true }
+    );
+    expect(dispatch).toHaveBeenNthCalledWith(2, {
+      type: LOGIN_FAIL,
+      err: error
+    });
+  });
+
   it('should request the current session bootstrap payload and dispatch success', async () => {
     const dispatch = jest.fn();
     const response = {
@@ -100,7 +156,7 @@ describe('login actions', () => {
     expect(dispatch).toHaveBeenNthCalledWith(1, {
       type: BOOTSTRAP_SESSION_REQUEST
     });
-    expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/sessions', {
+    expect(axios.get).toHaveBeenCalledWith('/sessions', {
       withCredentials: true
     });
     expect(dispatch).toHaveBeenNthCalledWith(2, {
@@ -119,6 +175,9 @@ describe('login actions', () => {
 
     expect(dispatch).toHaveBeenNthCalledWith(1, {
       type: BOOTSTRAP_SESSION_REQUEST
+    });
+    expect(axios.get).toHaveBeenCalledWith('/sessions', {
+      withCredentials: true
     });
     expect(dispatch).toHaveBeenNthCalledWith(2, {
       type: BOOTSTRAP_SESSION_FAIL,
