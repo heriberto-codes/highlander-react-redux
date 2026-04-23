@@ -33,7 +33,7 @@ describe('coach actions', () => {
       season: undefined,
       filters: {}
     });
-    expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/coaches/12', {
+    expect(axios.get).toHaveBeenCalledWith('/coaches/12', {
       withCredentials: true
     });
   });
@@ -49,7 +49,7 @@ describe('coach actions', () => {
       season: 2026,
       filters: {}
     });
-    expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/coaches/12?season=2026', {
+    expect(axios.get).toHaveBeenCalledWith('/coaches/12?season=2026', {
       withCredentials: true
     });
   });
@@ -74,7 +74,7 @@ describe('coach actions', () => {
       }
     });
     expect(axios.get).toHaveBeenCalledWith(
-      'http://localhost:8080/coaches/12?season=2026&teamSearch=War&playerSearch=Ace&position=Pitcher',
+      '/coaches/12?season=2026&teamSearch=War&playerSearch=Ace&position=Pitcher',
       { withCredentials: true }
     );
   });
@@ -89,7 +89,7 @@ describe('coach actions', () => {
     })(dispatch);
 
     expect(axios.get).toHaveBeenCalledWith(
-      'http://localhost:8080/coaches/12?playerSearch=Ace',
+      '/coaches/12?playerSearch=Ace',
       { withCredentials: true }
     );
   });
@@ -104,7 +104,7 @@ describe('coach actions', () => {
     })(dispatch);
 
     expect(axios.get).toHaveBeenCalledWith(
-      'http://localhost:8080/coaches/12?season=2026&teamSearch=War&playerSearch=Ace+Slugger&position=Pitcher',
+      '/coaches/12?season=2026&teamSearch=War&playerSearch=Ace+Slugger&position=Pitcher',
       { withCredentials: true }
     );
   });
