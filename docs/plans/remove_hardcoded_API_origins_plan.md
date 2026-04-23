@@ -91,7 +91,7 @@ Changes:
 Done when:
 - login/bootstrap actions no longer contain `http://localhost:8080`
 
-- [ ] Step 3: Update login action tests
+- [x] Step 3: Update login action tests
 Goal: lock the new session/login URL contract
 Files:
 - /Users/hroman_codes/Documents/Code/highlander-react-redux/src/actions/loginAction.test.js
