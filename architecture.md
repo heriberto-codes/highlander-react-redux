@@ -120,6 +120,10 @@ Additional flows:
   - local development must either preserve same-origin serving or provide an equivalent proxy/path setup before pure relative URLs are adopted everywhere
   - route paths themselves stay unchanged, only client URL construction should change
   - credentialed requests must continue using Axios `withCredentials: true`
+  - current implementation follows this contract in:
+    - `src/actions/loginAction.js`
+    - `src/actions/coachAction.js`
+    - `src/actions/teamAction.js`
 
 ## Server Architecture
 - Route/controller/service boundaries:

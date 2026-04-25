@@ -127,7 +127,7 @@ Changes:
 Done when:
 - team actions no longer contain `http://localhost:8080`
 
-- [ ] Step 7: Update team action tests
+- [x] Step 7: Update team action tests
 Goal: lock the new team action URL contract
 Files:
 - /Users/hroman_codes/Documents/Code/highlander-react-redux/src/actions/teamAction.test.js
@@ -136,7 +136,7 @@ Changes:
 Done when:
 - team action tests pass with the new URL contract
 
-- [ ] Step 8: Document shipped behavior
+- [x] Step 8: Document shipped behavior
 Goal: record the new client API URL contract and mark backlog complete
 Files:
 - /Users/hroman_codes/Documents/Code/highlander-react-redux/architecture.md
