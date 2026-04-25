@@ -100,7 +100,7 @@ Changes:
 Done when:
 - login action tests pass with the new URL contract
 
-- [ ] Step 4: Migrate coach actions
+- [x] Step 4: Migrate coach actions
 Goal: remove hardcoded origin from coach profile client actions
 Files:
 - /Users/hroman_codes/Documents/Code/highlander-react-redux/src/actions/coachAction.js
@@ -109,7 +109,7 @@ Changes:
 Done when:
 - coach actions no longer contain `http://localhost:8080`
 
-- [ ] Step 5: Update coach action tests
+- [x] Step 5: Update coach action tests
 Goal: lock the new coach action URL contract
 Files:
 - /Users/hroman_codes/Documents/Code/highlander-react-redux/src/actions/coachAction.test.js
@@ -118,7 +118,7 @@ Changes:
 Done when:
 - coach action tests pass with the new URL contract
 
-- [ ] Step 6: Migrate team actions
+- [x] Step 6: Migrate team actions
 Goal: remove hardcoded origin from team and collaboration client actions
 Files:
 - /Users/hroman_codes/Documents/Code/highlander-react-redux/src/actions/teamAction.js

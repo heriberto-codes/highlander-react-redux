@@ -20,6 +20,8 @@ import {
   createTeam,
   HIDE_MODAL,
   hideModal,
+  ADD_TEAM_PLAYER,
+  addNewPlayer,
   ADD_PLAYER,
   addPlayer,
   ADD_PLAYER_ERROR,
@@ -82,7 +84,7 @@ describe('team actions', () => {
       season: undefined,
       filters: {}
     });
-    expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/teams/9', {
+    expect(axios.get).toHaveBeenCalledWith('/teams/9', {
       withCredentials: true
     });
   });
@@ -98,7 +100,7 @@ describe('team actions', () => {
       season: 2026,
       filters: {}
     });
-    expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/teams/9?season=2026', {
+    expect(axios.get).toHaveBeenCalledWith('/teams/9?season=2026', {
       withCredentials: true
     });
   });
@@ -121,7 +123,7 @@ describe('team actions', () => {
       }
     });
     expect(axios.get).toHaveBeenCalledWith(
-      'http://localhost:8080/teams/9?season=2026&playerSearch=Ace&position=Pitcher',
+      '/teams/9?season=2026&playerSearch=Ace&position=Pitcher',
       { withCredentials: true }
     );
   });
@@ -135,7 +137,7 @@ describe('team actions', () => {
     })(dispatch);
 
     expect(axios.get).toHaveBeenCalledWith(
-      'http://localhost:8080/teams/9?position=Pitcher',
+      '/teams/9?position=Pitcher',
       { withCredentials: true }
     );
   });
@@ -149,7 +151,7 @@ describe('team actions', () => {
     })(dispatch);
 
     expect(axios.get).toHaveBeenCalledWith(
-      'http://localhost:8080/teams/9?season=2026&playerSearch=Ace+Slugger&position=Pitcher',
+      '/teams/9?season=2026&playerSearch=Ace+Slugger&position=Pitcher',
       { withCredentials: true }
     );
   });
@@ -160,6 +162,30 @@ describe('team actions', () => {
 
   it('should create an action to hide modal', () => {
     expect(hideModal()).toEqual({ type: HIDE_MODAL });
+  });
+
+  it('should post a new player to the team player endpoint', () => {
+    const dispatch = jest.fn();
+
+    addNewPlayer(9, 'ace@example.com', 'Ace', 'Slugger', 'Pitcher')(dispatch);
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: ADD_TEAM_PLAYER,
+      emailInput: 'ace@example.com',
+      firstName: 'Ace',
+      lastName: 'Slugger',
+      position: 'Pitcher'
+    });
+    expect(axios.post).toHaveBeenCalledWith(
+      '/teams/9/player',
+      {
+        email: 'ace@example.com',
+        first_name: 'Ace',
+        last_name: 'Slugger',
+        position: 'Pitcher'
+      },
+      { withCredentials: true }
+    );
   });
 
   it('should create addPlayer action', () => {
@@ -211,7 +237,7 @@ describe('team actions', () => {
       type: GET_TEAM_COLLABORATORS,
       id: 9
     });
-    expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/teams/9/coaches', {
+    expect(axios.get).toHaveBeenCalledWith('/teams/9/coaches', {
       withCredentials: true
     });
   });
@@ -284,7 +310,7 @@ describe('team actions', () => {
       role: 'assistant'
     });
     expect(axios.post).toHaveBeenCalledWith(
-      'http://localhost:8080/teams/9/coaches',
+      '/teams/9/coaches',
       { coachId: 2, role: 'assistant' },
       { withCredentials: true }
     );
@@ -362,7 +388,7 @@ describe('team actions', () => {
       role: 'owner'
     });
     expect(axios.put).toHaveBeenCalledWith(
-      'http://localhost:8080/teams/9/coaches/2',
+      '/teams/9/coaches/2',
       { role: 'owner' },
       { withCredentials: true }
     );
@@ -439,7 +465,7 @@ describe('team actions', () => {
       coachId: 2
     });
     expect(axios.delete).toHaveBeenCalledWith(
-      'http://localhost:8080/teams/9/coaches/2',
+      '/teams/9/coaches/2',
       { withCredentials: true }
     );
   });
@@ -519,7 +545,7 @@ describe('team actions', () => {
       payload
     });
     expect(axios.post).toHaveBeenCalledWith(
-      'http://localhost:8080/teams/9/games',
+      '/teams/9/games',
       payload,
       { withCredentials: true }
     );
