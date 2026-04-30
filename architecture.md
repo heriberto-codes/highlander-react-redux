@@ -149,8 +149,19 @@ Additional flows:
   - `api/routes/teamRouter.js`
   - `api/routes/statRouter.js`
   - `api/routes/sessionRouter.js`
+- API namespace contract:
+  - the long-term public route prefix is `/api/v1`
+  - existing resource groups should be exposed under:
+    - `/api/v1/players`
+    - `/api/v1/coaches`
+    - `/api/v1/teams`
+    - `/api/v1/stats`
+    - `/api/v1/sessions`
+  - route behavior and payload shapes stay unchanged during the namespace migration
+  - compatibility mounts without the `/api/v1` prefix may remain temporarily only while the repository client and tests are being migrated
 - Versioning strategy:
-  - No explicit API versioning
+  - v1 is path-based under `/api/v1`
+  - additive migrations are preferred before removing legacy unversioned mounts
 - Response conventions:
   - JSON payloads for success cases
   - Plain string messages in many validation/auth failure cases

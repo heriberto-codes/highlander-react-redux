@@ -137,7 +137,11 @@ describe('server routes', () => {
     mockTeamCoachUpdatePivot.mockResolvedValue(undefined);
     mockTeamCoachDetach.mockResolvedValue(undefined);
     ensureAuthenticated.mockImplementation((req, res, next) => {
-      const authenticatedCoachId = req.path.indexOf('/coaches/') === 0
+      const requestPath = req.originalUrl || req.path;
+      const authenticatedCoachId = (
+        requestPath.indexOf('/coaches/') === 0 ||
+        requestPath.indexOf('/api/v1/coaches/') === 0
+      )
         ? Number(req.params.id)
         : 1;
       req.authenticatedCoachId = authenticatedCoachId;
@@ -536,6 +540,25 @@ describe('server routes', () => {
     });
 
     const response = await request(app).get('/teams/9/coaches').expect(200);
+
+    expect(response.body).toEqual([
+      { id: 1, email: 'owner@example.com', first_name: 'Owner', last_name: 'Coach', role: 'owner' },
+      { id: 2, email: 'assistant@example.com', first_name: 'Assist', last_name: 'Coach', role: 'assistant' }
+    ]);
+  });
+
+  it('GET /api/v1/teams/:id/coaches returns sanitized collaborators for a team member', async () => {
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 9,
+        coach: [
+          { id: 1, email: 'owner@example.com', first_name: 'Owner', last_name: 'Coach', _pivot_role: 'owner' },
+          { id: 2, email: 'assistant@example.com', first_name: 'Assist', last_name: 'Coach', _pivot_role: 'assistant' }
+        ]
+      })
+    });
+
+    const response = await request(app).get('/api/v1/teams/9/coaches').expect(200);
 
     expect(response.body).toEqual([
       { id: 1, email: 'owner@example.com', first_name: 'Owner', last_name: 'Coach', role: 'owner' },
@@ -1089,6 +1112,20 @@ describe('server routes', () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
+  it('POST /api/v1/sessions/login rejects requests from an untrusted origin', async () => {
+    const response = await request(app)
+      .post('/api/v1/sessions/login')
+      .set('Origin', 'http://malicious.example')
+      .send({
+        email: 'coach@example.com',
+        pwd: 'secret'
+      })
+      .expect(403);
+
+    expect(response.text).toBe('Invalid request origin');
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
   it('GET /sessions returns the current authenticated coach bootstrap payload', async () => {
     mockFetch.mockResolvedValue({
       id: 10,
@@ -1100,6 +1137,29 @@ describe('server routes', () => {
 
     const response = await request(app)
       .get('/sessions')
+      .expect(200);
+
+    expect(Coach.where).toHaveBeenCalledWith({ id: 1 });
+    expect(response.body).toEqual({
+      id: 10,
+      email: 'coach@example.com',
+      first_name: 'Test',
+      last_name: 'Coach'
+    });
+    expect(response.body.password).toBeUndefined();
+  });
+
+  it('GET /api/v1/sessions returns the current authenticated coach bootstrap payload', async () => {
+    mockFetch.mockResolvedValue({
+      id: 10,
+      email: 'coach@example.com',
+      first_name: 'Test',
+      last_name: 'Coach',
+      password: 'should-not-not-be-returned'
+    });
+
+    const response = await request(app)
+      .get('/api/v1/sessions')
       .expect(200);
 
     expect(Coach.where).toHaveBeenCalledWith({ id: 1 });
@@ -1205,6 +1265,46 @@ describe('server routes', () => {
     });
 
     const response = await request(app).get('/coaches/11').expect(200);
+    const player = response.body.teams[0].players[0];
+
+    expect(player.derivedStats).toEqual({
+      battingAverage: null,
+      homeRunRate: null,
+      era: null,
+      strikeoutsPerInning: null
+    });
+  });
+
+  it('GET /api/v1/coaches/:id returns null derived stats when denominators are missing or zero', async () => {
+    mockFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 11,
+        first_name: 'No',
+        last_name: 'Denominator',
+        teams: [
+          {
+            id: 21,
+            name: 'Highlander',
+            players: [
+              {
+                id: 31,
+                first_name: 'Utility',
+                stats: [
+                  { description: 'Hits', _pivot_how_many: 0, _pivot_game_id: 100 },
+                  { description: 'At Bats', _pivot_how_many: 0, _pivot_game_id: 100 },
+                  { description: 'Home Runs', _pivot_how_many: 0, _pivot_game_id: 100 },
+                  { description: 'Earned Runs', _pivot_how_many: 0, _pivot_game_id: 100 },
+                  { description: 'Innings Pitched', _pivot_how_many: 0, _pivot_game_id: 100 },
+                  { description: 'Strikeouts', _pivot_how_many: 0, _pivot_game_id: 100 }
+                ]
+              }
+            ]
+          }
+        ]
+      })
+    });
+
+    const response = await request(app).get('/api/v1/coaches/11').expect(200);
     const player = response.body.teams[0].players[0];
 
     expect(player.derivedStats).toEqual({
@@ -1798,6 +1898,7 @@ describe('server routes', () => {
       strikeoutsPerInning: 1.5
     });
   });
+
 
   it('GET /teams/:id defaults to the latest same-name season and returns season metadata', async () => {
     mockTeamFetch.mockResolvedValue({

@@ -55,6 +55,12 @@ app.use('/teams', teamRouter);
 app.use('/stats', statRouter);
 app.use('/sessions', sessionRouter);
 
+app.use('/api/v1/players', playerRouter);
+app.use('/api/v1/coaches', coachRouter);
+app.use('/api/v1/teams', teamRouter);
+app.use('/api/v1/stats', statRouter);
+app.use('/api/v1/sessions', sessionRouter);
+
 // Fallback to index.html so React Router can handle routing in the client
 app.get('*', (req, res) => {
         res.sendFile(path.join(__dirname, 'build', 'index.html'));
