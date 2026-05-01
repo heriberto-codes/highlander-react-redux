@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { buildRequestUrl } from './queryParams';
 
-const teamsUrl = '/teams/';
+const teamsUrl = '/api/v1/teams/';
 
 function buildTeamProfileRequestUrl(id, season, filters) {
 	return buildRequestUrl(`${teamsUrl}${id}`, {

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { buildRequestUrl } from './queryParams';
 
-const url = '/coaches/';
+const url = '/api/v1/coaches/';
 
 function buildCoachProfileRequestUrl(id, season, filters) {
 	return buildRequestUrl(`${url}${id}`, {

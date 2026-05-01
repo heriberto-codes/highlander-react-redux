@@ -138,10 +138,7 @@ describe('server routes', () => {
     mockTeamCoachDetach.mockResolvedValue(undefined);
     ensureAuthenticated.mockImplementation((req, res, next) => {
       const requestPath = req.originalUrl || req.path;
-      const authenticatedCoachId = (
-        requestPath.indexOf('/coaches/') === 0 ||
-        requestPath.indexOf('/api/v1/coaches/') === 0
-      )
+      const authenticatedCoachId = requestPath.indexOf('/api/v1/coaches/') === 0
         ? Number(req.params.id)
         : 1;
       req.authenticatedCoachId = authenticatedCoachId;
@@ -154,7 +151,7 @@ describe('server routes', () => {
     jest.useRealTimers();
   });
 
-  it('GET /coaches/:id adds derived stats from related player stats and sums duplicate rows', async () => {
+  it('GET /api/v1/coaches/:id adds derived stats from related player stats and sums duplicate rows', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 10,
@@ -185,7 +182,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/coaches/10').expect(200);
+    const response = await request(app).get('/api/v1/coaches/10').expect(200);
     const player = response.body.teams[0].players[0];
 
     expect(player.derivedStats).toEqual({
@@ -196,7 +193,7 @@ describe('server routes', () => {
     });
   });
 
-  it('GET /coaches/:id returns additive notifications and unreadNotificationCount', async () => {
+  it('GET /api/v1/coaches/:id returns additive notifications and unreadNotificationCount', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 10,
@@ -237,7 +234,7 @@ describe('server routes', () => {
 
     jest.useFakeTimers().setSystemTime(new Date('2026-03-26T12:00:00.000Z'));
 
-    const response = await request(app).get('/coaches/10').expect(200);
+    const response = await request(app).get('/api/v1/coaches/10').expect(200);
 
     expect(response.body.notifications).toHaveLength(2);
     expect(response.body.unreadNotificationCount).toBe(2);
@@ -246,7 +243,7 @@ describe('server routes', () => {
     expect(mockNotificationForge).not.toHaveBeenCalled();
   });
 
-  it('GET /coaches/:id does not create a duplicate reminder when the idempotency key already exists', async () => {
+  it('GET /api/v1/coaches/:id does not create a duplicate reminder when the idempotency key already exists', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 10,
@@ -287,14 +284,14 @@ describe('server routes', () => {
 
     jest.useFakeTimers().setSystemTime(new Date('2026-03-26T12:00:00.000Z'));
 
-    const response = await request(app).get('/coaches/10').expect(200);
+    const response = await request(app).get('/api/v1/coaches/10').expect(200);
 
     expect(response.body.notifications).toHaveLength(1);
     expect(response.body.unreadNotificationCount).toBe(1);
     expect(mockNotificationForge).not.toHaveBeenCalled();
   });
 
-  it('GET /coaches/:id excludes dismissed notifications from the dashboard payload', async () => {
+  it('GET /api/v1/coaches/:id excludes dismissed notifications from the dashboard payload', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 10,
@@ -328,7 +325,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/coaches/10').expect(200);
+    const response = await request(app).get('/api/v1/coaches/10').expect(200);
 
     expect(response.body.notifications).toEqual([
       expect.objectContaining({
@@ -338,7 +335,7 @@ describe('server routes', () => {
     expect(response.body.unreadNotificationCount).toBe(1);
   });
 
-  it('GET /coaches/:id returns notifications newest-first by scheduled_for', async () => {
+  it('GET /api/v1/coaches/:id returns notifications newest-first by scheduled_for', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 10,
@@ -372,7 +369,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/coaches/10').expect(200);
+    const response = await request(app).get('/api/v1/coaches/10').expect(200);
 
     expect(response.body.notifications.map(notification => notification.idempotency_key)).toEqual([
       'upcoming_game:10:20:22',
@@ -380,7 +377,7 @@ describe('server routes', () => {
     ]);
   });
 
-  it('GET /coaches/:id does not show the same persisted and computed reminder twice when idempotency_key matches', async () => {
+  it('GET /api/v1/coaches/:id does not show the same persisted and computed reminder twice when idempotency_key matches', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 10,
@@ -421,27 +418,27 @@ describe('server routes', () => {
 
     jest.useFakeTimers().setSystemTime(new Date('2026-03-27T12:00:00.000Z'));
 
-    const response = await request(app).get('/coaches/10').expect(200);
+    const response = await request(app).get('/api/v1/coaches/10').expect(200);
 
     expect(response.body.notifications).toHaveLength(1);
     expect(response.body.notifications[0].idempotency_key).toBe('upcoming_game:10:20:21');
     expect(mockNotificationForge).not.toHaveBeenCalled();
   });
 
-  it('GET /coaches/:id rejects access to another coach profile', async () => {
+  it('GET /api/v1/coaches/:id rejects access to another coach profile', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res, next) => {
       req.authenticatedCoachId = 999;
       req.session.coachId = 999;
       next();
     });
 
-    const response = await request(app).get('/coaches/10').expect(403);
+    const response = await request(app).get('/api/v1/coaches/10').expect(403);
 
     expect(response.text).toBe('Unauthorized');
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  it('GET /coaches returns only the authenticated coach', async () => {
+  it('GET /api/v1/coaches returns only the authenticated coach', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 1,
@@ -450,7 +447,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/coaches').expect(200);
+    const response = await request(app).get('/api/v1/coaches').expect(200);
 
     expect(Coach.where).toHaveBeenCalledWith({ id: 1 });
     expect(Array.isArray(response.body)).toBe(true);
@@ -458,7 +455,7 @@ describe('server routes', () => {
     expect(response.body[0].id).toBe(1);
   });
 
-  it('GET /players returns only players owned by the authenticated coach', async () => {
+  it('GET /api/v1/players returns only players owned by the authenticated coach', async () => {
     mockPlayerFetchAll.mockResolvedValue({
       toJSON: () => ([
         {
@@ -484,14 +481,14 @@ describe('server routes', () => {
       ])
     });
 
-    const response = await request(app).get('/players').expect(200);
+    const response = await request(app).get('/api/v1/players').expect(200);
 
     expect(response.body).toHaveLength(1);
     expect(response.body[0].id).toBe(10);
     expect(response.body[0].teams).toBeUndefined();
   });
 
-  it('GET /players/:id rejects access to a player outside the authenticated coach', async () => {
+  it('GET /api/v1/players/:id rejects access to a player outside the authenticated coach', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 12,
@@ -504,12 +501,12 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/players/12').expect(403);
+    const response = await request(app).get('/api/v1/players/12').expect(403);
 
     expect(response.text).toBe('Unauthorized');
   });
 
-  it('GET /players/:id/stats rejects access to player stats outside the authenticated coach', async () => {
+  it('GET /api/v1/players/:id/stats rejects access to player stats outside the authenticated coach', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 13,
@@ -523,12 +520,12 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/players/13/stats').expect(403);
+    const response = await request(app).get('/api/v1/players/13/stats').expect(403);
 
     expect(response.text).toBe('Unauthorized');
   });
 
-  it('GET /teams/:id/coaches returns sanitized collaborators for a team member', async () => {
+  it('GET /api/v1/teams/:id/coaches returns sanitized collaborators for a team member', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 9,
@@ -539,7 +536,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/9/coaches').expect(200);
+    const response = await request(app).get('/api/v1/teams/9/coaches').expect(200);
 
     expect(response.body).toEqual([
       { id: 1, email: 'owner@example.com', first_name: 'Owner', last_name: 'Coach', role: 'owner' },
@@ -566,7 +563,7 @@ describe('server routes', () => {
     ]);
   });
 
-  it('GET /teams/:id/coaches surfaces role metadata from fetched relation payloads', async () => {
+  it('GET /api/v1/teams/:id/coaches surfaces role metadata from fetched relation payloads', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 9,
@@ -577,13 +574,13 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/9/coaches').expect(200);
+    const response = await request(app).get('/api/v1/teams/9/coaches').expect(200);
 
     expect(response.body[0].role).toBe('owner');
     expect(response.body[1].role).toBe('assistant');
   });
 
-  it('GET /teams/:id/coaches rejects coaches outside the team', async () => {
+  it('GET /api/v1/teams/:id/coaches rejects coaches outside the team', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res, next) => {
       req.authenticatedCoachId = 99;
       req.session.coachId = 99;
@@ -598,23 +595,23 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/9/coaches').expect(403);
+    const response = await request(app).get('/api/v1/teams/9/coaches').expect(403);
 
     expect(response.text).toBe('Unauthorized');
   });
 
-  it('GET /teams/:id/coaches rejects unauthenticated access', async () => {
+  it('GET /api/v1/teams/:id/coaches rejects unauthenticated access', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res) => {
       res.status(403).send('No session available');
     });
 
-    const response = await request(app).get('/teams/9/coaches').expect(403);
+    const response = await request(app).get('/api/v1/teams/9/coaches').expect(403);
 
     expect(response.text).toBe('No session available');
     expect(mockTeamFetch).not.toHaveBeenCalled();
   });
 
-  it('POST /teams/:id/coaches lets an owner add a collaborator with a role', async () => {
+  it('POST /api/v1/teams/:id/coaches lets an owner add a collaborator with a role', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 9,
@@ -637,7 +634,7 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .post('/teams/9/coaches'))
+      .post('/api/v1/teams/9/coaches'))
       .send({
         coachId: 2,
         role: 'assistant'
@@ -658,7 +655,7 @@ describe('server routes', () => {
     });
   });
 
-  it('POST /teams/:id/coaches should write the role during the initial attach and not require updatePivot', async () => {
+  it('POST /api/v1/teams/:id/coaches should write the role during the initial attach and not require updatePivot', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 9,
@@ -681,7 +678,7 @@ describe('server routes', () => {
     });
 
     await withTrustedOrigin(request(app)
-      .post('/teams/9/coaches'))
+      .post('/api/v1/teams/9/coaches'))
       .send({
         coachId: 2,
         role: 'assistant'
@@ -695,7 +692,7 @@ describe('server routes', () => {
     expect(mockTeamCoachUpdatePivot).not.toHaveBeenCalled();
   });
 
-  it('POST /teams/:id/coaches rejects duplicate collaborators', async () => {
+  it('POST /api/v1/teams/:id/coaches rejects duplicate collaborators', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 9,
@@ -711,7 +708,7 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .post('/teams/9/coaches'))
+      .post('/api/v1/teams/9/coaches'))
       .send({
         coachId: 2,
         role: 'assistant'
@@ -722,7 +719,7 @@ describe('server routes', () => {
     expect(mockTeamCoachAttach).not.toHaveBeenCalled();
   });
 
-  it('POST /teams/:id/coaches rejects nonexistent coach ids', async () => {
+  it('POST /api/v1/teams/:id/coaches rejects nonexistent coach ids', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 9,
@@ -738,7 +735,7 @@ describe('server routes', () => {
     mockFetch.mockResolvedValue(null);
 
     const response = await withTrustedOrigin(request(app)
-      .post('/teams/9/coaches'))
+      .post('/api/v1/teams/9/coaches'))
       .send({
         coachId: 99,
         role: 'assistant'
@@ -749,7 +746,7 @@ describe('server routes', () => {
     expect(mockTeamCoachAttach).not.toHaveBeenCalled();
   });
 
-  it('POST /teams/:id/coaches rejects non-owner collaborators', async () => {
+  it('POST /api/v1/teams/:id/coaches rejects non-owner collaborators', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res, next) => {
       req.authenticatedCoachId = 2;
       req.session.coachId = 2;
@@ -770,7 +767,7 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .post('/teams/9/coaches'))
+      .post('/api/v1/teams/9/coaches'))
       .send({
         coachId: 3,
         role: 'assistant'
@@ -781,9 +778,9 @@ describe('server routes', () => {
     expect(mockTeamCoachAttach).not.toHaveBeenCalled();
   });
 
-  it('POST /teams/:id/coaches rejects invalid roles', async () => {
+  it('POST /api/v1/teams/:id/coaches rejects invalid roles', async () => {
     const response = await withTrustedOrigin(request(app)
-      .post('/teams/9/coaches'))
+      .post('/api/v1/teams/9/coaches'))
       .send({
         coachId: 2,
         role: 'manager'
@@ -793,13 +790,13 @@ describe('server routes', () => {
     expect(response.text).toBe('Sorry your role is invalid please try again');
   });
 
-  it('POST /teams/:id/coaches rejects unauthenticated access', async () => {
+  it('POST /api/v1/teams/:id/coaches rejects unauthenticated access', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res) => {
       res.status(403).send('No session available');
     });
 
     const response = await withTrustedOrigin(request(app)
-      .post('/teams/9/coaches'))
+      .post('/api/v1/teams/9/coaches'))
       .send({
         coachId: 2,
         role: 'assistant'
@@ -811,7 +808,7 @@ describe('server routes', () => {
     expect(mockTeamCoachAttach).not.toHaveBeenCalled();
   });
 
-  it('PUT /teams/:id/coaches/:coachId lets an owner update a collaborator role', async () => {
+  it('PUT /api/v1/teams/:id/coaches/:coachId lets an owner update a collaborator role', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 9,
@@ -826,7 +823,7 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .put('/teams/9/coaches/2'))
+      .put('/api/v1/teams/9/coaches/2'))
       .send({
         role: 'owner'
       })
@@ -845,7 +842,7 @@ describe('server routes', () => {
     });
   });
 
-  it('PUT /teams/:id/coaches/:coachId rejects non-owner collaborators', async () => {
+  it('PUT /api/v1/teams/:id/coaches/:coachId rejects non-owner collaborators', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res, next) => {
       req.authenticatedCoachId = 2;
       req.session.coachId = 2;
@@ -865,7 +862,7 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .put('/teams/9/coaches/1'))
+      .put('/api/v1/teams/9/coaches/1'))
       .send({
         role: 'assistant'
       })
@@ -875,9 +872,9 @@ describe('server routes', () => {
     expect(mockTeamCoachUpdatePivot).not.toHaveBeenCalled();
   });
 
-  it('PUT /teams/:id/coaches/:coachId rejects invalid coach ids', async () => {
+  it('PUT /api/v1/teams/:id/coaches/:coachId rejects invalid coach ids', async () => {
     const response = await withTrustedOrigin(request(app)
-      .put('/teams/9/coaches/not-a-number'))
+      .put('/api/v1/teams/9/coaches/not-a-number'))
       .send({
         role: 'assistant'
       })
@@ -886,7 +883,7 @@ describe('server routes', () => {
     expect(response.text).toBe('Sorry your coachId is invalid please try again');
   });
 
-  it('PUT /teams/:id/coaches/:coachId rejects nonexistent target coach ids', async () => {
+  it('PUT /api/v1/teams/:id/coaches/:coachId rejects nonexistent target coach ids', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 9,
@@ -901,7 +898,7 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .put('/teams/9/coaches/99'))
+      .put('/api/v1/teams/9/coaches/99'))
       .send({
         role: 'assistant'
       })
@@ -911,22 +908,22 @@ describe('server routes', () => {
     expect(mockTeamCoachUpdatePivot).not.toHaveBeenCalled();
   });
 
-  it('PUT /teams/:id/coaches/:coachId rejects missing roles', async () => {
+  it('PUT /api/v1/teams/:id/coaches/:coachId rejects missing roles', async () => {
     const response = await withTrustedOrigin(request(app)
-      .put('/teams/9/coaches/2'))
+      .put('/api/v1/teams/9/coaches/2'))
       .send({})
       .expect(400);
 
     expect(response.text).toBe('Sorry your missing role please try again');
   });
 
-  it('PUT /teams/:id/coaches/:coachId rejects unauthenticated access', async () => {
+  it('PUT /api/v1/teams/:id/coaches/:coachId rejects unauthenticated access', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res) => {
       res.status(403).send('No session available');
     });
 
     const response = await withTrustedOrigin(request(app)
-      .put('/teams/9/coaches/2'))
+      .put('/api/v1/teams/9/coaches/2'))
       .send({
         role: 'assistant'
       })
@@ -937,7 +934,7 @@ describe('server routes', () => {
     expect(mockTeamCoachUpdatePivot).not.toHaveBeenCalled();
   });
 
-  it('DELETE /teams/:id/coaches/:coachId rejects removing the last owner', async () => {
+  it('DELETE /api/v1/teams/:id/coaches/:coachId rejects removing the last owner', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 9,
@@ -952,14 +949,14 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .delete('/teams/9/coaches/1'))
+      .delete('/api/v1/teams/9/coaches/1'))
       .expect(400);
 
     expect(response.text).toBe('Sorry this coach cannot be removed from the team');
     expect(mockTeamCoachDetach).not.toHaveBeenCalled();
   });
 
-  it('DELETE /teams/:id/coaches/:coachId lets an owner remove a non-owner collaborator', async () => {
+  it('DELETE /api/v1/teams/:id/coaches/:coachId lets an owner remove a non-owner collaborator', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 9,
@@ -974,13 +971,13 @@ describe('server routes', () => {
     });
 
     await withTrustedOrigin(request(app)
-      .delete('/teams/9/coaches/2'))
+      .delete('/api/v1/teams/9/coaches/2'))
       .expect(204);
 
     expect(mockTeamCoachDetach).toHaveBeenCalledWith([2]);
   });
 
-  it('DELETE /teams/:id/coaches/:coachId rejects non-owner collaborators', async () => {
+  it('DELETE /api/v1/teams/:id/coaches/:coachId rejects non-owner collaborators', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res, next) => {
       req.authenticatedCoachId = 2;
       req.session.coachId = 2;
@@ -1000,14 +997,14 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .delete('/teams/9/coaches/1'))
+      .delete('/api/v1/teams/9/coaches/1'))
       .expect(403);
 
     expect(response.text).toBe('Unauthorized');
     expect(mockTeamCoachDetach).not.toHaveBeenCalled();
   });
 
-  it('DELETE /teams/:id/coaches/:coachId rejects invalid collaborator ids', async () => {
+  it('DELETE /api/v1/teams/:id/coaches/:coachId rejects invalid collaborator ids', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 9,
@@ -1022,29 +1019,29 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .delete('/teams/9/coaches/99'))
+      .delete('/api/v1/teams/9/coaches/99'))
       .expect(400);
 
     expect(response.text).toBe('Sorry your coachId is invalid please try again');
     expect(mockTeamCoachDetach).not.toHaveBeenCalled();
   });
 
-  it('DELETE /teams/:id/coaches/:coachId rejects non-numeric target coach ids explicitly', async () => {
+  it('DELETE /api/v1/teams/:id/coaches/:coachId rejects non-numeric target coach ids explicitly', async () => {
     const response = await withTrustedOrigin(request(app)
-      .delete('/teams/9/coaches/not-a-number'))
+      .delete('/api/v1/teams/9/coaches/not-a-number'))
       .expect(400);
 
     expect(response.text).toBe('Sorry your coachId is invalid please try again');
     expect(mockTeamCoachDetach).not.toHaveBeenCalled();
   });
 
-  it('DELETE /teams/:id/coaches/:coachId rejects unauthenticated access', async () => {
+  it('DELETE /api/v1/teams/:id/coaches/:coachId rejects unauthenticated access', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res) => {
       res.status(403).send('No session available');
     });
 
     const response = await withTrustedOrigin(request(app)
-      .delete('/teams/9/coaches/2'))
+      .delete('/api/v1/teams/9/coaches/2'))
       .expect(403);
 
     expect(response.text).toBe('No session available');
@@ -1052,7 +1049,7 @@ describe('server routes', () => {
     expect(mockTeamCoachDetach).not.toHaveBeenCalled();
   });
 
-  it('POST /teams/:id/coaches fails if the initial relation attach does not include the required role', async () => {
+  it('POST /api/v1/teams/:id/coaches fails if the initial relation attach does not include the required role', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 9,
@@ -1081,7 +1078,7 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .post('/teams/9/coaches'))
+      .post('/api/v1/teams/9/coaches'))
       .send({
         coachId: 2,
         role: 'assistant'
@@ -1098,9 +1095,9 @@ describe('server routes', () => {
     expect(mockTeamCoachUpdatePivot).not.toHaveBeenCalled();
   });
 
-  it('POST /sessions/login rejects requests from an untrusted origin', async () => {
+  it('POST /api/v1/sessions/login rejects requests from an untrusted origin', async () => {
     const response = await request(app)
-      .post('/sessions/login')
+      .post('/api/v1/sessions/login')
       .set('Origin', 'http://malicious.example')
       .send({
         email: 'coach@example.com',
@@ -1126,7 +1123,7 @@ describe('server routes', () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  it('GET /sessions returns the current authenticated coach bootstrap payload', async () => {
+  it('GET /api/v1/sessions returns the current authenticated coach bootstrap payload', async () => {
     mockFetch.mockResolvedValue({
       id: 10,
       email: 'coach@example.com',
@@ -1136,7 +1133,7 @@ describe('server routes', () => {
     });
 
     const response = await request(app)
-      .get('/sessions')
+      .get('/api/v1/sessions')
       .expect(200);
 
     expect(Coach.where).toHaveBeenCalledWith({ id: 1 });
@@ -1172,27 +1169,27 @@ describe('server routes', () => {
     expect(response.body.password).toBeUndefined();
   });
 
-  it('GET /sessions returns 401 when no valid authenticated session exists', async () => {
+  it('GET /api/v1/sessions returns 401 when no valid authenticated session exists', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res) => {
       res.sendStatus(401);
     });
 
     await request(app)
-      .get('/sessions')
+      .get('/api/v1/sessions')
       .expect(401);
 
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  it('GET /sessions returns 401 when the session coach record no longer exists', async () => {
+  it('GET /api/v1/sessions returns 401 when the session coach record no longer exists', async () => {
     mockFetch.mockResolvedValue(null);
 
     await request(app)
-      .get('/sessions')
+      .get('/api/v1/sessions')
       .expect(401);
   });
 
-  it('GET /sessions destroys a stale invalid session before returning 401', async () => {
+  it('GET /api/v1/sessions destroys a stale invalid session before returning 401', async () => {
     const destroy = jest.fn((callback) => callback());
 
     ensureAuthenticated.mockImplementationOnce((req, res, next) => {
@@ -1203,13 +1200,13 @@ describe('server routes', () => {
     mockFetch.mockResolvedValue(null);
 
     await request(app)
-      .get('/sessions')
+      .get('/api/v1/sessions')
       .expect(401);
 
     expect(destroy).toHaveBeenCalled();
   });
 
-  it('POST /sessions/login rate limits repeated invalid credentials', async () => {
+  it('POST /api/v1/sessions/login rate limits repeated invalid credentials', async () => {
     Coach.validatePassword.mockResolvedValue(false);
     mockFetch.mockResolvedValue({
       id: 1,
@@ -1218,7 +1215,7 @@ describe('server routes', () => {
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
       await withTrustedOrigin(request(app)
-        .post('/sessions/login'))
+        .post('/api/v1/sessions/login'))
         .send({
           email: 'coach@example.com',
           pwd: 'wrong-password'
@@ -1227,7 +1224,7 @@ describe('server routes', () => {
     }
 
     const response = await withTrustedOrigin(request(app)
-      .post('/sessions/login'))
+      .post('/api/v1/sessions/login'))
       .send({
         email: 'coach@example.com',
         pwd: 'wrong-password'
@@ -1237,7 +1234,7 @@ describe('server routes', () => {
     expect(response.body).toBe('Too many login attempts, please try again later');
   });
 
-  it('GET /coaches/:id returns null derived stats when denominators are missing or zero', async () => {
+  it('GET /api/v1/coaches/:id returns null derived stats when denominators are missing or zero', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 11,
@@ -1264,7 +1261,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/coaches/11').expect(200);
+    const response = await request(app).get('/api/v1/coaches/11').expect(200);
     const player = response.body.teams[0].players[0];
 
     expect(player.derivedStats).toEqual({
@@ -1315,7 +1312,7 @@ describe('server routes', () => {
     });
   });
 
-  it('GET /coaches/:id defaults to the latest available season and returns season metadata', async () => {
+  it('GET /api/v1/coaches/:id defaults to the latest available season and returns season metadata', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 12,
@@ -1358,7 +1355,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/coaches/12').expect(200);
+    const response = await request(app).get('/api/v1/coaches/12').expect(200);
 
     expect(response.body.availableSeasons).toEqual([2026, 2025]);
     expect(response.body.activeSeason).toBe(2026);
@@ -1376,7 +1373,7 @@ describe('server routes', () => {
     });
   });
 
-  it('GET /coaches/:id filters teams and stats to the requested season', async () => {
+  it('GET /api/v1/coaches/:id filters teams and stats to the requested season', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 13,
@@ -1418,7 +1415,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/coaches/13?season=2025').expect(200);
+    const response = await request(app).get('/api/v1/coaches/13?season=2025').expect(200);
 
     expect(response.body.availableSeasons).toEqual([2026, 2025]);
     expect(response.body.activeSeason).toBe(2025);
@@ -1432,7 +1429,7 @@ describe('server routes', () => {
     });
   });
 
-  it('GET /coaches/:id filters teams by teamSearch', async () => {
+  it('GET /api/v1/coaches/:id filters teams by teamSearch', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 130,
@@ -1455,7 +1452,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/coaches/130?teamSearch=war').expect(200);
+    const response = await request(app).get('/api/v1/coaches/130?teamSearch=war').expect(200);
 
     expect(response.body.availableSeasons).toEqual([2026]);
     expect(response.body.activeSeason).toBe(2026);
@@ -1463,7 +1460,7 @@ describe('server routes', () => {
     expect(response.body.teams[0].id).toBe(241);
   });
 
-  it('GET /coaches/:id filters players by playerSearch across filtered teams', async () => {
+  it('GET /api/v1/coaches/:id filters players by playerSearch across filtered teams', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 131,
@@ -1503,7 +1500,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/coaches/131?playerSearch=slug').expect(200);
+    const response = await request(app).get('/api/v1/coaches/131?playerSearch=slug').expect(200);
 
     expect(response.body.teams).toHaveLength(1);
     expect(response.body.teams[0].players).toHaveLength(1);
@@ -1516,7 +1513,7 @@ describe('server routes', () => {
     });
   });
 
-  it('GET /coaches/:id filters players by position across filtered teams', async () => {
+  it('GET /api/v1/coaches/:id filters players by position across filtered teams', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 132,
@@ -1556,7 +1553,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/coaches/132?position=pitch').expect(200);
+    const response = await request(app).get('/api/v1/coaches/132?position=pitch').expect(200);
 
     expect(response.body.teams).toHaveLength(1);
     expect(response.body.teams[0].players).toHaveLength(1);
@@ -1569,7 +1566,7 @@ describe('server routes', () => {
     });
   });
 
-  it('GET /coaches/:id returns 200 with empty players for a valid no-match player filter', async () => {
+  it('GET /api/v1/coaches/:id returns 200 with empty players for a valid no-match player filter', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 133,
@@ -1598,7 +1595,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/coaches/133?playerSearch=nomatch').expect(200);
+    const response = await request(app).get('/api/v1/coaches/133?playerSearch=nomatch').expect(200);
 
     expect(response.body.availableSeasons).toEqual([2026]);
     expect(response.body.activeSeason).toBe(2026);
@@ -1606,7 +1603,7 @@ describe('server routes', () => {
     expect(response.body.teams[0].players).toEqual([]);
   });
 
-  it('GET /coaches/:id applies combined season and teamSearch filters', async () => {
+  it('GET /api/v1/coaches/:id applies combined season and teamSearch filters', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 134,
@@ -1635,7 +1632,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/coaches/134?season=2025&teamSearch=war').expect(200);
+    const response = await request(app).get('/api/v1/coaches/134?season=2025&teamSearch=war').expect(200);
 
     expect(response.body.availableSeasons).toEqual([2026, 2025]);
     expect(response.body.activeSeason).toBe(2025);
@@ -1643,7 +1640,7 @@ describe('server routes', () => {
     expect(response.body.teams[0].id).toBe(245);
   });
 
-  it('GET /coaches/:id applies combined season and playerSearch filters', async () => {
+  it('GET /api/v1/coaches/:id applies combined season and playerSearch filters', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 135,
@@ -1690,7 +1687,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/coaches/135?season=2025&playerSearch=slug').expect(200);
+    const response = await request(app).get('/api/v1/coaches/135?season=2025&playerSearch=slug').expect(200);
 
     expect(response.body.availableSeasons).toEqual([2026, 2025]);
     expect(response.body.activeSeason).toBe(2025);
@@ -1700,7 +1697,7 @@ describe('server routes', () => {
     expect(response.body.teams[0].players[0].id).toBe(345);
   });
 
-  it('GET /coaches/:id returns 200 with empty teams for a valid no-match teamSearch', async () => {
+  it('GET /api/v1/coaches/:id returns 200 with empty teams for a valid no-match teamSearch', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 136,
@@ -1717,14 +1714,14 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/coaches/136?teamSearch=nomatch').expect(200);
+    const response = await request(app).get('/api/v1/coaches/136?teamSearch=nomatch').expect(200);
 
     expect(response.body.availableSeasons).toEqual([2026]);
     expect(response.body.activeSeason).toBe(2026);
     expect(response.body.teams).toEqual([]);
   });
 
-  it('GET /coaches/:id rejects an invalid season query', async () => {
+  it('GET /api/v1/coaches/:id rejects an invalid season query', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 14,
@@ -1741,30 +1738,30 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/coaches/14?season=summer').expect(400);
+    const response = await request(app).get('/api/v1/coaches/14?season=summer').expect(400);
 
     expect(response.text).toBe('Sorry your season is invalid please try again');
   });
 
-  it('GET /coaches/:id rejects an invalid teamSearch query', async () => {
+  it('GET /api/v1/coaches/:id rejects an invalid teamSearch query', async () => {
     const response = await request(app)
-      .get(`/coaches/14?teamSearch=${'x'.repeat(101)}`)
+      .get(`/api/v1/coaches/14?teamSearch=${'x'.repeat(101)}`)
       .expect(400);
 
     expect(response.text).toBe('Sorry your teamSearch is invalid please try again');
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  it('GET /coaches/:id rejects an invalid position query', async () => {
+  it('GET /api/v1/coaches/:id rejects an invalid position query', async () => {
     const response = await request(app)
-      .get(`/coaches/14?position=${'x'.repeat(101)}`)
+      .get(`/api/v1/coaches/14?position=${'x'.repeat(101)}`)
       .expect(400);
 
     expect(response.text).toBe('Sorry your position is invalid please try again');
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  it('GET /coaches/:id ignores a whitespace-only teamSearch query', async () => {
+  it('GET /api/v1/coaches/:id ignores a whitespace-only teamSearch query', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 15,
@@ -1781,13 +1778,13 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/coaches/15?teamSearch=%20%20%20').expect(200);
+    const response = await request(app).get('/api/v1/coaches/15?teamSearch=%20%20%20').expect(200);
 
     expect(response.body.teams).toHaveLength(1);
     expect(response.body.teams[0].id).toBe(27);
   });
 
-  it('GET /coaches/:id ignores a whitespace-only playerSearch query', async () => {
+  it('GET /api/v1/coaches/:id ignores a whitespace-only playerSearch query', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 16,
@@ -1813,14 +1810,14 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/coaches/16?playerSearch=%20%20').expect(200);
+    const response = await request(app).get('/api/v1/coaches/16?playerSearch=%20%20').expect(200);
 
     expect(response.body.teams).toHaveLength(1);
     expect(response.body.teams[0].players).toHaveLength(1);
     expect(response.body.teams[0].players[0].id).toBe(36);
   });
 
-  it('GET /coaches/:id ignores a whitespace-only position query', async () => {
+  it('GET /api/v1/coaches/:id ignores a whitespace-only position query', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
         id: 17,
@@ -1847,14 +1844,14 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/coaches/17?position=%20%20').expect(200);
+    const response = await request(app).get('/api/v1/coaches/17?position=%20%20').expect(200);
 
     expect(response.body.teams).toHaveLength(1);
     expect(response.body.teams[0].players).toHaveLength(1);
     expect(response.body.teams[0].players[0].id).toBe(37);
   });
 
-  it('GET /teams/:id adds derived stats from related player stats', async () => {
+  it('GET /api/v1/teams/:id adds derived stats from related player stats', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 50,
@@ -1888,7 +1885,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/50').expect(200);
+    const response = await request(app).get('/api/v1/teams/50').expect(200);
     const player = response.body.players[0];
 
     expect(player.derivedStats).toEqual({
@@ -1900,7 +1897,7 @@ describe('server routes', () => {
   });
 
 
-  it('GET /teams/:id defaults to the latest same-name season and returns season metadata', async () => {
+  it('GET /api/v1/teams/:id defaults to the latest same-name season and returns season metadata', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 53,
@@ -1933,7 +1930,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/53').expect(200);
+    const response = await request(app).get('/api/v1/teams/53').expect(200);
 
     expect(response.body.season).toBe(2025);
     expect(response.body.availableSeasons).toEqual([2026, 2025]);
@@ -1950,7 +1947,7 @@ describe('server routes', () => {
     });
   });
 
-  it('GET /teams/:id filters player stats to the requested season and same-name family', async () => {
+  it('GET /api/v1/teams/:id filters player stats to the requested season and same-name family', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 56,
@@ -1984,7 +1981,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/56?season=2025').expect(200);
+    const response = await request(app).get('/api/v1/teams/56?season=2025').expect(200);
 
     expect(response.body.availableSeasons).toEqual([2026, 2025]);
     expect(response.body.activeSeason).toBe(2025);
@@ -2001,7 +1998,7 @@ describe('server routes', () => {
     });
   });
 
-  it('GET /teams/:id filters players by playerSearch', async () => {
+  it('GET /api/v1/teams/:id filters players by playerSearch', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 560,
@@ -2044,7 +2041,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/560?playerSearch=slug').expect(200);
+    const response = await request(app).get('/api/v1/teams/560?playerSearch=slug').expect(200);
 
     expect(response.body.availableSeasons).toEqual([2026]);
     expect(response.body.activeSeason).toBe(2026);
@@ -2058,7 +2055,7 @@ describe('server routes', () => {
     });
   });
 
-  it('GET /teams/:id rejects access to a team outside the authenticated coach', async () => {
+  it('GET /api/v1/teams/:id rejects access to a team outside the authenticated coach', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 569,
@@ -2071,13 +2068,13 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/569').expect(403);
+    const response = await request(app).get('/api/v1/teams/569').expect(403);
 
     expect(response.text).toBe('Unauthorized');
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  it('GET /teams/:id filters players by position', async () => {
+  it('GET /api/v1/teams/:id filters players by position', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 561,
@@ -2120,7 +2117,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/561?position=pitch').expect(200);
+    const response = await request(app).get('/api/v1/teams/561?position=pitch').expect(200);
 
     expect(response.body.players).toHaveLength(1);
     expect(response.body.players[0].id).toBe(642);
@@ -2132,7 +2129,7 @@ describe('server routes', () => {
     });
   });
 
-  it('GET /teams/:id returns 200 with empty players for a valid no-match player filter', async () => {
+  it('GET /api/v1/teams/:id returns 200 with empty players for a valid no-match player filter', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 562,
@@ -2164,14 +2161,14 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/562?playerSearch=nomatch').expect(200);
+    const response = await request(app).get('/api/v1/teams/562?playerSearch=nomatch').expect(200);
 
     expect(response.body.availableSeasons).toEqual([2026]);
     expect(response.body.activeSeason).toBe(2026);
     expect(response.body.players).toEqual([]);
   });
 
-  it('GET /teams/:id applies combined season and playerSearch filters', async () => {
+  it('GET /api/v1/teams/:id applies combined season and playerSearch filters', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 563,
@@ -2217,7 +2214,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/563?season=2025&playerSearch=slug').expect(200);
+    const response = await request(app).get('/api/v1/teams/563?season=2025&playerSearch=slug').expect(200);
 
     expect(response.body.availableSeasons).toEqual([2026, 2025]);
     expect(response.body.activeSeason).toBe(2025);
@@ -2229,7 +2226,7 @@ describe('server routes', () => {
     ]);
   });
 
-  it('GET /teams/:id applies combined season and position filters', async () => {
+  it('GET /api/v1/teams/:id applies combined season and position filters', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 565,
@@ -2275,7 +2272,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/565?season=2025&position=pitch').expect(200);
+    const response = await request(app).get('/api/v1/teams/565?season=2025&position=pitch').expect(200);
 
     expect(response.body.availableSeasons).toEqual([2026, 2025]);
     expect(response.body.activeSeason).toBe(2025);
@@ -2287,7 +2284,7 @@ describe('server routes', () => {
     ]);
   });
 
-  it('GET /teams/:id preserves availableSeasons and activeSeason for valid no-match combined filters', async () => {
+  it('GET /api/v1/teams/:id preserves availableSeasons and activeSeason for valid no-match combined filters', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 567,
@@ -2320,14 +2317,14 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/567?season=2025&playerSearch=slug').expect(200);
+    const response = await request(app).get('/api/v1/teams/567?season=2025&playerSearch=slug').expect(200);
 
     expect(response.body.availableSeasons).toEqual([2026, 2025]);
     expect(response.body.activeSeason).toBe(2025);
     expect(response.body.players).toEqual([]);
   });
 
-  it('GET /teams/:id applies combined playerSearch and position filters', async () => {
+  it('GET /api/v1/teams/:id applies combined playerSearch and position filters', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 568,
@@ -2381,7 +2378,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/568?playerSearch=slug&position=pitch').expect(200);
+    const response = await request(app).get('/api/v1/teams/568?playerSearch=slug&position=pitch').expect(200);
 
     expect(response.body.availableSeasons).toEqual([2026]);
     expect(response.body.activeSeason).toBe(2026);
@@ -2395,7 +2392,7 @@ describe('server routes', () => {
     });
   });
 
-  it('GET /teams/:id rejects an invalid season query', async () => {
+  it('GET /api/v1/teams/:id rejects an invalid season query', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 59,
@@ -2408,30 +2405,30 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/59?season=fall').expect(400);
+    const response = await request(app).get('/api/v1/teams/59?season=fall').expect(400);
 
     expect(response.text).toBe('Sorry your season is invalid please try again');
   });
 
-  it('GET /teams/:id rejects an invalid playerSearch query', async () => {
+  it('GET /api/v1/teams/:id rejects an invalid playerSearch query', async () => {
     const response = await request(app)
-      .get(`/teams/59?playerSearch=${'x'.repeat(101)}`)
+      .get(`/api/v1/teams/59?playerSearch=${'x'.repeat(101)}`)
       .expect(400);
 
     expect(response.text).toBe('Sorry your playerSearch is invalid please try again');
     expect(mockTeamFetch).not.toHaveBeenCalled();
   });
 
-  it('GET /teams/:id rejects an invalid position query', async () => {
+  it('GET /api/v1/teams/:id rejects an invalid position query', async () => {
     const response = await request(app)
-      .get(`/teams/59?position=${'x'.repeat(101)}`)
+      .get(`/api/v1/teams/59?position=${'x'.repeat(101)}`)
       .expect(400);
 
     expect(response.text).toBe('Sorry your position is invalid please try again');
     expect(mockTeamFetch).not.toHaveBeenCalled();
   });
 
-  it('GET /teams/:id ignores a whitespace-only playerSearch query', async () => {
+  it('GET /api/v1/teams/:id ignores a whitespace-only playerSearch query', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 65,
@@ -2460,13 +2457,13 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/65?playerSearch=%20%20').expect(200);
+    const response = await request(app).get('/api/v1/teams/65?playerSearch=%20%20').expect(200);
 
     expect(response.body.players).toHaveLength(1);
     expect(response.body.players[0].id).toBe(66);
   });
 
-  it('GET /teams/:id ignores a whitespace-only position query', async () => {
+  it('GET /api/v1/teams/:id ignores a whitespace-only position query', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 67,
@@ -2496,13 +2493,13 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/67?position=%20%20').expect(200);
+    const response = await request(app).get('/api/v1/teams/67?position=%20%20').expect(200);
 
     expect(response.body.players).toHaveLength(1);
     expect(response.body.players[0].id).toBe(68);
   });
 
-  it('GET /teams/:id returns null derived stats when denominators are missing or zero', async () => {
+  it('GET /api/v1/teams/:id returns null derived stats when denominators are missing or zero', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 51,
@@ -2521,7 +2518,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/51').expect(200);
+    const response = await request(app).get('/api/v1/teams/51').expect(200);
     const player = response.body.players[0];
 
     expect(player.derivedStats).toEqual({
@@ -2532,7 +2529,7 @@ describe('server routes', () => {
     });
   });
 
-  it('GET /teams/:id sums duplicate stat rows before computing derived stats', async () => {
+  it('GET /api/v1/teams/:id sums duplicate stat rows before computing derived stats', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 52,
@@ -2554,7 +2551,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/52').expect(200);
+    const response = await request(app).get('/api/v1/teams/52').expect(200);
     const player = response.body.players[0];
 
     expect(player.derivedStats).toEqual({
@@ -2565,9 +2562,9 @@ describe('server routes', () => {
     });
   });
 
-  it('POST /teams rejects requests with an invalid season', async () => {
+  it('POST /api/v1/teams rejects requests with an invalid season', async () => {
     const response = await withTrustedOrigin(request(app)
-      .post('/teams'))
+      .post('/api/v1/teams'))
       .send({
         name: 'Highlanders',
         city: 'Bronx',
@@ -2582,9 +2579,9 @@ describe('server routes', () => {
     expect(Team.forge).not.toHaveBeenCalled();
   });
 
-  it('POST /teams rejects requests with a missing season', async () => {
+  it('POST /api/v1/teams rejects requests with a missing season', async () => {
     const response = await withTrustedOrigin(request(app)
-      .post('/teams'))
+      .post('/api/v1/teams'))
       .send({
         name: 'Highlanders',
         city: 'Bronx',
@@ -2598,7 +2595,7 @@ describe('server routes', () => {
     expect(Team.forge).not.toHaveBeenCalled();
   });
 
-  it('POST /teams persists a validated season', async () => {
+  it('POST /api/v1/teams persists a validated season', async () => {
     const attach = jest.fn().mockResolvedValue(undefined);
     const savedTeam = {
       id: 70,
@@ -2617,7 +2614,7 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .post('/teams'))
+      .post('/api/v1/teams'))
       .send({
         name: 'Highlanders',
         city: 'Bronx',
@@ -2642,9 +2639,9 @@ describe('server routes', () => {
     expect(response.body.season).toBe(2026);
   });
 
-  it('POST /teams rejects requests from an untrusted origin', async () => {
+  it('POST /api/v1/teams rejects requests from an untrusted origin', async () => {
     const response = await request(app)
-      .post('/teams')
+      .post('/api/v1/teams')
       .set('Origin', 'http://malicious.example')
       .send({
         name: 'Highlanders',
@@ -2660,9 +2657,9 @@ describe('server routes', () => {
     expect(Team.forge).not.toHaveBeenCalled();
   });
 
-  it('POST /teams rejects requests for another coach', async () => {
+  it('POST /api/v1/teams rejects requests for another coach', async () => {
     const response = await withTrustedOrigin(request(app)
-      .post('/teams'))
+      .post('/api/v1/teams'))
       .send({
         name: 'Highlanders',
         city: 'Bronx',
@@ -2677,9 +2674,9 @@ describe('server routes', () => {
     expect(Team.forge).not.toHaveBeenCalled();
   });
 
-  it('PUT /teams/:id rejects requests with an invalid season', async () => {
+  it('PUT /api/v1/teams/:id rejects requests with an invalid season', async () => {
     const response = await withTrustedOrigin(request(app)
-      .put('/teams/50'))
+      .put('/api/v1/teams/50'))
       .send({
         name: 'Highlanders',
         city: 'Bronx',
@@ -2692,9 +2689,9 @@ describe('server routes', () => {
     expect(Team.where).not.toHaveBeenCalled();
   });
 
-  it('PUT /teams/:id rejects requests with a missing season', async () => {
+  it('PUT /api/v1/teams/:id rejects requests with a missing season', async () => {
     const response = await withTrustedOrigin(request(app)
-      .put('/teams/50'))
+      .put('/api/v1/teams/50'))
       .send({
         name: 'Highlanders',
         city: 'Bronx',
@@ -2706,7 +2703,7 @@ describe('server routes', () => {
     expect(Team.where).not.toHaveBeenCalled();
   });
 
-  it('PUT /teams/:id persists a validated season', async () => {
+  it('PUT /api/v1/teams/:id persists a validated season', async () => {
     const save = jest.fn().mockResolvedValue({
       id: 50,
       name: 'Highlanders',
@@ -2726,7 +2723,7 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .put('/teams/50'))
+      .put('/api/v1/teams/50'))
       .send({
         name: 'Highlanders',
         city: 'Bronx',
@@ -2744,7 +2741,7 @@ describe('server routes', () => {
     expect(response.body.season).toBe(2027);
   });
 
-  it('PUT /teams/:id allows assistant collaborators to update team details', async () => {
+  it('PUT /api/v1/teams/:id allows assistant collaborators to update team details', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res, next) => {
       req.authenticatedCoachId = 2;
       req.session.coachId = 2;
@@ -2769,7 +2766,7 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .put('/teams/50'))
+      .put('/api/v1/teams/50'))
       .send({
         name: 'Highlanders',
         city: 'Bronx',
@@ -2787,7 +2784,7 @@ describe('server routes', () => {
     expect(response.body.season).toBe(2028);
   });
 
-  it('PUT /teams/:id rejects updates for a team outside the authenticated coach', async () => {
+  it('PUT /api/v1/teams/:id rejects updates for a team outside the authenticated coach', async () => {
     const save = jest.fn();
 
     Team.where.mockReturnValue({
@@ -2801,7 +2798,7 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .put('/teams/50'))
+      .put('/api/v1/teams/50'))
       .send({
         name: 'Highlanders',
         city: 'Bronx',
@@ -2814,11 +2811,11 @@ describe('server routes', () => {
     expect(save).not.toHaveBeenCalled();
   });
 
-  it('PUT /teams/:id rejects unauthenticated requests', async () => {
+  it('PUT /api/v1/teams/:id rejects unauthenticated requests', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res) => res.status(401).send('Unauthorized'));
 
     const response = await withTrustedOrigin(request(app)
-      .put('/teams/50'))
+      .put('/api/v1/teams/50'))
       .send({
         name: 'Highlanders',
         city: 'Bronx',
@@ -2831,7 +2828,7 @@ describe('server routes', () => {
     expect(Team.where).not.toHaveBeenCalled();
   });
 
-  it('POST /teams/:id/games creates a game and linked non-zero stat rows in one transaction', async () => {
+  it('POST /api/v1/teams/:id/games creates a game and linked non-zero stat rows in one transaction', async () => {
     const gameSave = jest.fn().mockResolvedValue({ id: 90 });
     const playerStatSave = jest.fn().mockResolvedValue({ id: 91 });
 
@@ -2858,7 +2855,7 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .post('/teams/50/games'))
+      .post('/api/v1/teams/50/games'))
       .send({
         opponent: 'Lions',
         game_date: '2026-03-28T00:00:00Z',
@@ -2912,7 +2909,7 @@ describe('server routes', () => {
     });
   });
 
-  it('POST /teams/:id/games allows assistant collaborators to create game entries', async () => {
+  it('POST /api/v1/teams/:id/games allows assistant collaborators to create game entries', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res, next) => {
       req.authenticatedCoachId = 2;
       req.session.coachId = 2;
@@ -2942,7 +2939,7 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .post('/teams/50/games'))
+      .post('/api/v1/teams/50/games'))
       .send({
         opponent: 'Bears',
         game_date: '2026-04-01T00:00:00Z',
@@ -2966,9 +2963,9 @@ describe('server routes', () => {
     });
   });
 
-  it('POST /teams/:id/games rejects requests with an invalid game date', async () => {
+  it('POST /api/v1/teams/:id/games rejects requests with an invalid game date', async () => {
     const response = await withTrustedOrigin(request(app)
-      .post('/teams/50/games'))
+      .post('/api/v1/teams/50/games'))
       .send({
         opponent: 'Lions',
         game_date: 'not-a-date',
@@ -2988,7 +2985,7 @@ describe('server routes', () => {
     expect(Bookshelf.transaction).not.toHaveBeenCalled();
   });
 
-  it('POST /teams/:id/games rejects requests for players outside the team roster', async () => {
+  it('POST /api/v1/teams/:id/games rejects requests for players outside the team roster', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 50,
@@ -3002,7 +2999,7 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .post('/teams/50/games'))
+      .post('/api/v1/teams/50/games'))
       .send({
         opponent: 'Lions',
         game_date: '2026-03-28T00:00:00Z',
@@ -3022,7 +3019,7 @@ describe('server routes', () => {
     expect(Bookshelf.transaction).not.toHaveBeenCalled();
   });
 
-  it('POST /teams/:id/games rejects requests with an unknown stat catalog id', async () => {
+  it('POST /api/v1/teams/:id/games rejects requests with an unknown stat catalog id', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 50,
@@ -3037,7 +3034,7 @@ describe('server routes', () => {
     mockStatCatalogFetch.mockResolvedValue(null);
 
     const response = await withTrustedOrigin(request(app)
-      .post('/teams/50/games'))
+      .post('/api/v1/teams/50/games'))
       .send({
         opponent: 'Lions',
         game_date: '2026-03-28T00:00:00Z',
@@ -3056,11 +3053,11 @@ describe('server routes', () => {
     expect(Bookshelf.transaction).not.toHaveBeenCalled();
   });
 
-  it('POST /teams/:id/games rejects unauthenticated requests', async () => {
+  it('POST /api/v1/teams/:id/games rejects unauthenticated requests', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res) => res.status(401).send('Unauthorized'));
 
     const response = await withTrustedOrigin(request(app)
-      .post('/teams/50/games'))
+      .post('/api/v1/teams/50/games'))
       .send({
         opponent: 'Lions',
         game_date: '2026-03-28T00:00:00Z',
@@ -3080,9 +3077,9 @@ describe('server routes', () => {
     expect(Bookshelf.transaction).not.toHaveBeenCalled();
   });
 
-  it('POST /teams/:id/games rejects requests with an invalid opponent', async () => {
+  it('POST /api/v1/teams/:id/games rejects requests with an invalid opponent', async () => {
     const response = await withTrustedOrigin(request(app)
-      .post('/teams/50/games'))
+      .post('/api/v1/teams/50/games'))
       .send({
         opponent: '   ',
         game_date: '2026-03-28T00:00:00Z',
@@ -3102,9 +3099,9 @@ describe('server routes', () => {
     expect(Bookshelf.transaction).not.toHaveBeenCalled();
   });
 
-  it('POST /teams/:id/games rejects requests with negative stat values', async () => {
+  it('POST /api/v1/teams/:id/games rejects requests with negative stat values', async () => {
     const response = await withTrustedOrigin(request(app)
-      .post('/teams/50/games'))
+      .post('/api/v1/teams/50/games'))
       .send({
         opponent: 'Lions',
         game_date: '2026-03-28T00:00:00Z',
@@ -3124,9 +3121,9 @@ describe('server routes', () => {
     expect(Bookshelf.transaction).not.toHaveBeenCalled();
   });
 
-  it('POST /teams/:id/games rejects requests with only zero-valued stat rows', async () => {
+  it('POST /api/v1/teams/:id/games rejects requests with only zero-valued stat rows', async () => {
     const response = await withTrustedOrigin(request(app)
-      .post('/teams/50/games'))
+      .post('/api/v1/teams/50/games'))
       .send({
         opponent: 'Lions',
         game_date: '2026-03-28T00:00:00Z',
@@ -3147,11 +3144,11 @@ describe('server routes', () => {
     expect(Bookshelf.transaction).not.toHaveBeenCalled();
   });
 
-  it('POST /teams/:id/games rejects requests for an unknown team id', async () => {
+  it('POST /api/v1/teams/:id/games rejects requests for an unknown team id', async () => {
     mockTeamFetch.mockResolvedValue(null);
 
     const response = await withTrustedOrigin(request(app)
-      .post('/teams/999/games'))
+      .post('/api/v1/teams/999/games'))
       .send({
         opponent: 'Lions',
         game_date: '2026-03-28T00:00:00Z',
@@ -3171,7 +3168,7 @@ describe('server routes', () => {
     expect(Bookshelf.transaction).not.toHaveBeenCalled();
   });
 
-  it('POST /teams/:id/games rejects requests for a team outside the authenticated coach', async () => {
+  it('POST /api/v1/teams/:id/games rejects requests for a team outside the authenticated coach', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 50,
@@ -3185,7 +3182,7 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .post('/teams/50/games'))
+      .post('/api/v1/teams/50/games'))
       .send({
         opponent: 'Lions',
         game_date: '2026-03-28T00:00:00Z',
@@ -3205,7 +3202,7 @@ describe('server routes', () => {
     expect(Bookshelf.transaction).not.toHaveBeenCalled();
   });
 
-  it('POST /teams/:id/player rejects requests for a team outside the authenticated coach', async () => {
+  it('POST /api/v1/teams/:id/player rejects requests for a team outside the authenticated coach', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 50,
@@ -3216,7 +3213,7 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .post('/teams/50/player'))
+      .post('/api/v1/teams/50/player'))
       .send({
         email: 'pat@example.com',
         first_name: 'Pat',
@@ -3228,11 +3225,11 @@ describe('server routes', () => {
     expect(response.text).toBe('Unauthorized');
   });
 
-  it('POST /teams/:id/player rejects unauthenticated requests', async () => {
+  it('POST /api/v1/teams/:id/player rejects unauthenticated requests', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res) => res.status(401).send('Unauthorized'));
 
     const response = await withTrustedOrigin(request(app)
-      .post('/teams/50/player'))
+      .post('/api/v1/teams/50/player'))
       .send({
         email: 'pat@example.com',
         first_name: 'Pat',
@@ -3246,7 +3243,7 @@ describe('server routes', () => {
     expect(Player.forge).not.toHaveBeenCalled();
   });
 
-  it('GET /teams/:id includes collaborators and the current coach role in the team detail payload', async () => {
+  it('GET /api/v1/teams/:id includes collaborators and the current coach role in the team detail payload', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 50,
@@ -3271,7 +3268,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/50').expect(200);
+    const response = await request(app).get('/api/v1/teams/50').expect(200);
 
     expect(response.body.collaborators).toEqual([
       { id: 1, email: 'owner@example.com', first_name: 'Owner', last_name: 'Coach', role: 'owner' },
@@ -3280,7 +3277,7 @@ describe('server routes', () => {
     expect(response.body.currentCoachRole).toBe('owner');
   });
 
-  it('GET /teams/:id returns currentCoachRole as assistant for assistant-authenticated coaches', async () => {
+  it('GET /api/v1/teams/:id returns currentCoachRole as assistant for assistant-authenticated coaches', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res, next) => {
       req.authenticatedCoachId = 2;
       req.session.coachId = 2;
@@ -3309,12 +3306,12 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/50').expect(200);
+    const response = await request(app).get('/api/v1/teams/50').expect(200);
 
     expect(response.body.currentCoachRole).toBe('assistant');
   });
 
-  it('GET /teams/:id includes collaboration metadata in the fallback branch without coach season lookup', async () => {
+  it('GET /api/v1/teams/:id includes collaboration metadata in the fallback branch without coach season lookup', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 50,
@@ -3327,7 +3324,7 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/teams/50').expect(200);
+    const response = await request(app).get('/api/v1/teams/50').expect(200);
 
     expect(response.body.collaborators).toEqual([]);
     expect(response.body.currentCoachRole).toBeNull();
@@ -3335,7 +3332,7 @@ describe('server routes', () => {
     expect(response.body.activeSeason).toBe(2026);
   });
 
-  it('POST /teams/:id/player allows assistant collaborators to add players', async () => {
+  it('POST /api/v1/teams/:id/player allows assistant collaborators to add players', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res, next) => {
       req.authenticatedCoachId = 2;
       req.session.coachId = 2;
@@ -3365,7 +3362,7 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .post('/teams/50/player'))
+      .post('/api/v1/teams/50/player'))
       .send({
         email: 'pat@example.com',
         first_name: 'Pat',
@@ -3378,7 +3375,7 @@ describe('server routes', () => {
     expect(response.body.id).toBe(77);
   });
 
-  it('PUT /players/:id allows assistant collaborators to update players', async () => {
+  it('PUT /api/v1/players/:id allows assistant collaborators to update players', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res, next) => {
       req.authenticatedCoachId = 2;
       req.session.coachId = 2;
@@ -3408,7 +3405,7 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .put('/players/12'))
+      .put('/api/v1/players/12'))
       .send({
         email: 'ace@example.com',
         first_name: 'Ace',
@@ -3426,11 +3423,11 @@ describe('server routes', () => {
     expect(response.body.position).toBe('Catcher');
   });
 
-  it('PUT /players/:id rejects unauthenticated requests', async () => {
+  it('PUT /api/v1/players/:id rejects unauthenticated requests', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res) => res.status(401).send('Unauthorized'));
 
     const response = await withTrustedOrigin(request(app)
-      .put('/players/12'))
+      .put('/api/v1/players/12'))
       .send({
         email: 'ace@example.com',
         first_name: 'Ace',
@@ -3443,7 +3440,7 @@ describe('server routes', () => {
     expect(Player.where).not.toHaveBeenCalled();
   });
 
-  it('POST /players/:player_id/stats/:stat_catalog_id allows assistant collaborators to create stats', async () => {
+  it('POST /api/v1/players/:player_id/stats/:stat_catalog_id allows assistant collaborators to create stats', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res, next) => {
       req.authenticatedCoachId = 2;
       req.session.coachId = 2;
@@ -3467,7 +3464,7 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .post('/players/12/stats/5'))
+      .post('/api/v1/players/12/stats/5'))
       .send({
         how_many: 3
       })
@@ -3481,7 +3478,7 @@ describe('server routes', () => {
     expect(response.body.id).toBe(88);
   });
 
-  it('PUT /players/:player_id/stats/:stat_catalog_id allows assistant collaborators to update stats', async () => {
+  it('PUT /api/v1/players/:player_id/stats/:stat_catalog_id allows assistant collaborators to update stats', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res, next) => {
       req.authenticatedCoachId = 2;
       req.session.coachId = 2;
@@ -3507,7 +3504,7 @@ describe('server routes', () => {
     });
 
     const response = await withTrustedOrigin(request(app)
-      .put('/players/12/stats/5'))
+      .put('/api/v1/players/12/stats/5'))
       .send({
         how_many: 4
       })
@@ -3523,7 +3520,7 @@ describe('server routes', () => {
     expect(response.body.id).toBe(89);
   });
 
-  it('DELETE /players/:id allows assistant collaborators to delete players', async () => {
+  it('DELETE /api/v1/players/:id allows assistant collaborators to delete players', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res, next) => {
       req.authenticatedCoachId = 2;
       req.session.coachId = 2;
@@ -3547,7 +3544,7 @@ describe('server routes', () => {
     });
 
     await withTrustedOrigin(request(app)
-      .delete('/players/12'))
+      .delete('/api/v1/players/12'))
       .expect(200);
 
     expect(destroy).toHaveBeenCalled();

@@ -119,7 +119,7 @@ Changes:
 Done when:
 - server tests validate the versioned namespace for the migrated route groups
 
-- [ ] Step 4: Migrate client actions to `/api/v1`
+- [x] Step 4: Migrate client actions to `/api/v1`
 Goal: switch the existing client action callers to the versioned relative API paths
 Files:
 - /Users/hroman_codes/Documents/Code/highlander-react-redux/src/actions/loginAction.js
@@ -131,7 +131,7 @@ Changes:
 Done when:
 - the migrated client action files call only `/api/v1/...` paths
 
-- [ ] Step 5: Update client action tests
+- [x] Step 5: Update client action tests
 Goal: lock the new versioned client URL contract
 Files:
 - /Users/hroman_codes/Documents/Code/highlander-react-redux/src/actions/loginAction.test.js
@@ -142,7 +142,7 @@ Changes:
 Done when:
 - action tests pass with the versioned URL contract
 
-- [ ] Step 6: Remove legacy top-level mounts if safe
+- [x] Step 6: Remove legacy top-level mounts if safe
 Goal: complete the namespace migration by eliminating unversioned server mounts only if no repo consumers still depend on them
 Files:
 - /Users/hroman_codes/Documents/Code/highlander-react-redux/server.js
@@ -153,7 +153,7 @@ Changes:
 Done when:
 - the repo no longer depends on unversioned API mounts, or the plan explicitly documents why compatibility mounts remain
 
-- [ ] Step 7: Document shipped versioning behavior
+- [x] Step 7: Document shipped versioning behavior
 Goal: record the final `/api/v1` contract and mark the backlog item complete
 Files:
 - /Users/hroman_codes/Documents/Code/highlander-react-redux/architecture.md

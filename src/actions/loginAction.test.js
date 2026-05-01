@@ -103,7 +103,7 @@ describe('login actions', () => {
       pwd: 'password123'
     });
     expect(axios.post).toHaveBeenCalledWith(
-      '/sessions/login',
+      '/api/v1/sessions/login',
       { email: 'coach@example.com', pwd: 'password123' },
       { withCredentials: true }
     );
@@ -127,7 +127,7 @@ describe('login actions', () => {
       pwd: 'wrong-password'
     });
     expect(axios.post).toHaveBeenCalledWith(
-      '/sessions/login',
+      '/api/v1/sessions/login',
       { email: 'coach@example.com', pwd: 'wrong-password' },
       { withCredentials: true }
     );
@@ -156,7 +156,7 @@ describe('login actions', () => {
     expect(dispatch).toHaveBeenNthCalledWith(1, {
       type: BOOTSTRAP_SESSION_REQUEST
     });
-    expect(axios.get).toHaveBeenCalledWith('/sessions', {
+    expect(axios.get).toHaveBeenCalledWith('/api/v1/sessions', {
       withCredentials: true
     });
     expect(dispatch).toHaveBeenNthCalledWith(2, {
@@ -176,7 +176,7 @@ describe('login actions', () => {
     expect(dispatch).toHaveBeenNthCalledWith(1, {
       type: BOOTSTRAP_SESSION_REQUEST
     });
-    expect(axios.get).toHaveBeenCalledWith('/sessions', {
+    expect(axios.get).toHaveBeenCalledWith('/api/v1/sessions', {
       withCredentials: true
     });
     expect(dispatch).toHaveBeenNthCalledWith(2, {

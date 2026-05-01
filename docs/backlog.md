@@ -13,7 +13,7 @@
 
 - [x] Add an auth/session bootstrap endpoint
 - [x] Remove hardcoded API origins
-- [ ] Introduce an `/api` namespace and versioning
+- [x] Introduce an `/api` namespace and versioning
 - [ ] Separate route handlers from business logic
 - [ ] Standardize error handling and validation
 - [ ] Add pagination and query capabilities

@@ -84,7 +84,7 @@ describe('team actions', () => {
       season: undefined,
       filters: {}
     });
-    expect(axios.get).toHaveBeenCalledWith('/teams/9', {
+    expect(axios.get).toHaveBeenCalledWith('/api/v1/teams/9', {
       withCredentials: true
     });
   });
@@ -100,7 +100,7 @@ describe('team actions', () => {
       season: 2026,
       filters: {}
     });
-    expect(axios.get).toHaveBeenCalledWith('/teams/9?season=2026', {
+    expect(axios.get).toHaveBeenCalledWith('/api/v1/teams/9?season=2026', {
       withCredentials: true
     });
   });
@@ -123,7 +123,7 @@ describe('team actions', () => {
       }
     });
     expect(axios.get).toHaveBeenCalledWith(
-      '/teams/9?season=2026&playerSearch=Ace&position=Pitcher',
+      '/api/v1/teams/9?season=2026&playerSearch=Ace&position=Pitcher',
       { withCredentials: true }
     );
   });
@@ -137,7 +137,7 @@ describe('team actions', () => {
     })(dispatch);
 
     expect(axios.get).toHaveBeenCalledWith(
-      '/teams/9?position=Pitcher',
+      '/api/v1/teams/9?position=Pitcher',
       { withCredentials: true }
     );
   });
@@ -151,7 +151,7 @@ describe('team actions', () => {
     })(dispatch);
 
     expect(axios.get).toHaveBeenCalledWith(
-      '/teams/9?season=2026&playerSearch=Ace+Slugger&position=Pitcher',
+      '/api/v1/teams/9?season=2026&playerSearch=Ace+Slugger&position=Pitcher',
       { withCredentials: true }
     );
   });
@@ -177,7 +177,7 @@ describe('team actions', () => {
       position: 'Pitcher'
     });
     expect(axios.post).toHaveBeenCalledWith(
-      '/teams/9/player',
+      '/api/v1/teams/9/player',
       {
         email: 'ace@example.com',
         first_name: 'Ace',
@@ -237,7 +237,7 @@ describe('team actions', () => {
       type: GET_TEAM_COLLABORATORS,
       id: 9
     });
-    expect(axios.get).toHaveBeenCalledWith('/teams/9/coaches', {
+    expect(axios.get).toHaveBeenCalledWith('/api/v1/teams/9/coaches', {
       withCredentials: true
     });
   });
@@ -310,7 +310,7 @@ describe('team actions', () => {
       role: 'assistant'
     });
     expect(axios.post).toHaveBeenCalledWith(
-      '/teams/9/coaches',
+      '/api/v1/teams/9/coaches',
       { coachId: 2, role: 'assistant' },
       { withCredentials: true }
     );
@@ -388,7 +388,7 @@ describe('team actions', () => {
       role: 'owner'
     });
     expect(axios.put).toHaveBeenCalledWith(
-      '/teams/9/coaches/2',
+      '/api/v1/teams/9/coaches/2',
       { role: 'owner' },
       { withCredentials: true }
     );
@@ -465,7 +465,7 @@ describe('team actions', () => {
       coachId: 2
     });
     expect(axios.delete).toHaveBeenCalledWith(
-      '/teams/9/coaches/2',
+      '/api/v1/teams/9/coaches/2',
       { withCredentials: true }
     );
   });
@@ -545,7 +545,7 @@ describe('team actions', () => {
       payload
     });
     expect(axios.post).toHaveBeenCalledWith(
-      '/teams/9/games',
+      '/api/v1/teams/9/games',
       payload,
       { withCredentials: true }
     );

@@ -32,14 +32,13 @@
 - Technical constraints:
   - Express 4 + Bookshelf/Knex + React 17 + Redux architecture is the current stack.
   - Session auth depends on `CLIENT_ORIGIN`, `SECRET`, and `DATABASE_URL`.
-  - API routes are mounted without an `/api` prefix.
+  - API routes are mounted under the `/api/v1` prefix.
 - Product constraints:
   - Current stat analytics only support metrics derivable from the existing stat catalog.
   - Team season views are constrained by current schema and legacy stat rows.
 - Explicit non-goals:
   - No microservice split.
   - No background job system.
-  - No public API versioning strategy is implemented.
 - Framework/tooling limits:
   - Client is built with `react-scripts`.
   - Bookshelf models expose basic relations; route handlers still own most orchestration.
@@ -69,7 +68,7 @@ Additional flows:
 - React dev server → Express API → PostgreSQL during local development
 - Express static file serving → Browser for `public/` and `build/` assets
 - Team game entry write flow:
-  - React form → `POST /teams/:id/games` → transaction creating `games` row and related `players_stat_catalogs` rows
+  - React form → `POST /api/v1/teams/:id/games` → transaction creating `games` row and related `players_stat_catalogs` rows
 
 ## Data Layer
 - Primary database:
@@ -80,7 +79,7 @@ Additional flows:
   - Schema changes live in `data/migrations/`
   - Seed data lives in `data/seeds/` and `data/prod_seeds/`
 - Transactional boundaries:
-  - `POST /teams/:id/games` uses a Bookshelf/Knex transaction to create one game and its stat rows together
+  - `POST /api/v1/teams/:id/games` uses a Bookshelf/Knex transaction to create one game and its stat rows together
   - Most other writes are single-model saves without explicit transactions
 
 ## Database Schema (High Level)
@@ -150,15 +149,15 @@ Additional flows:
   - `api/routes/statRouter.js`
   - `api/routes/sessionRouter.js`
 - API namespace contract:
-  - the long-term public route prefix is `/api/v1`
-  - existing resource groups should be exposed under:
+  - the public route prefix is `/api/v1`
+  - existing resource groups are exposed under:
     - `/api/v1/players`
     - `/api/v1/coaches`
     - `/api/v1/teams`
     - `/api/v1/stats`
     - `/api/v1/sessions`
-  - route behavior and payload shapes stay unchanged during the namespace migration
-  - compatibility mounts without the `/api/v1` prefix may remain temporarily only while the repository client and tests are being migrated
+  - route behavior and payload shapes remain unchanged under the versioned namespace
+  - unversioned top-level compatibility mounts have been removed from the repository server contract
 - Versioning strategy:
   - v1 is path-based under `/api/v1`
   - additive migrations are preferred before removing legacy unversioned mounts
@@ -173,13 +172,13 @@ Additional flows:
 - Session/token approach:
   - Session-based auth with `express-session`
   - Session data stored in Postgres outside tests
-  - Login endpoint is `POST /sessions/login`
-  - Auth bootstrap endpoint is `GET /sessions`
-  - `GET /sessions` reads only `req.session.coachId`
-  - `GET /sessions` is read-only and returns minimal coach identity data for client rehydration
-  - `GET /sessions` returns `401` when no valid authenticated session exists
-  - If `req.session.coachId` points to a missing coach, `GET /sessions` destroys the stale session before returning `401`
-  - Logout endpoint is `DELETE /sessions`
+- Login endpoint is `POST /api/v1/sessions/login`
+- Auth bootstrap endpoint is `GET /api/v1/sessions`
+  - `GET /api/v1/sessions` reads only `req.session.coachId`
+  - `GET /api/v1/sessions` is read-only and returns minimal coach identity data for client rehydration
+  - `GET /api/v1/sessions` returns `401` when no valid authenticated session exists
+  - If `req.session.coachId` points to a missing coach, `GET /api/v1/sessions` destroys the stale session before returning `401`
+  - Logout endpoint is `DELETE /api/v1/sessions`
 
 ## Authorization
 - Roles/permissions:
@@ -189,7 +188,7 @@ Additional flows:
     - `assistant`
 - Resource access rules:
   - Coaches can access teams/players associated to their coach account
-  - `GET /coaches/:id` also requires the path id to match the authenticated coach id
+  - `GET /api/v1/coaches/:id` also requires the path id to match the authenticated coach id
   - Collaboration read rule:
     - any coach attached to a team may read collaborator data for that team
   - Collaboration mutate rule:
@@ -208,10 +207,10 @@ Additional flows:
   - Player reads and writes
   - Logout
   - Collaboration-protected operations:
-    - `GET /teams/:id/coaches` requires team membership
-    - `POST /teams/:id/coaches` requires `owner`
-    - `PUT /teams/:id/coaches/:coachId` requires `owner`
-    - `DELETE /teams/:id/coaches/:coachId` requires `owner`
+    - `GET /api/v1/teams/:id/coaches` requires team membership
+    - `POST /api/v1/teams/:id/coaches` requires `owner`
+    - `PUT /api/v1/teams/:id/coaches/:coachId` requires `owner`
+    - `DELETE /api/v1/teams/:id/coaches/:coachId` requires `owner`
 
 ## Security Model
 - Input validation:
@@ -250,7 +249,7 @@ Additional flows:
   - upcoming-game reminders only in v1
 - Planned notification ownership rules:
   - a coach may read and mutate only that coach's notifications
-  - notification routes must keep the existing `GET /coaches/:id` path-id ownership rule
+  - notification routes must keep the existing `GET /api/v1/coaches/:id` path-id ownership rule
   - mutating notification routes must preserve `requireTrustedOrigin`
 - Planned notification states:
   - unread

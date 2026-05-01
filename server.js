@@ -49,12 +49,6 @@ app.use(express.static('public'));
 app.use(express.static('build'));
 app.use(cors({ origin: CLIENT_ORIGIN, credentials: true }));
 
-app.use('/players', playerRouter);
-app.use('/coaches', coachRouter);
-app.use('/teams', teamRouter);
-app.use('/stats', statRouter);
-app.use('/sessions', sessionRouter);
-
 app.use('/api/v1/players', playerRouter);
 app.use('/api/v1/coaches', coachRouter);
 app.use('/api/v1/teams', teamRouter);
