@@ -14,7 +14,7 @@
 - [x] Add an auth/session bootstrap endpoint
 - [x] Remove hardcoded API origins
 - [x] Introduce an `/api` namespace and versioning
-- [ ] Separate route handlers from business logic
+- [x] Separate route handlers from business logic
 - [ ] Standardize error handling and validation
 - [ ] Add pagination and query capabilities
 

@@ -126,10 +126,12 @@ Additional flows:
 
 ## Server Architecture
 - Route/controller/service boundaries:
-  - Route files act as both routing and controller layer
-  - There is no separate service layer in the repository
+  - Route files in `api/routes/` should remain thin routing layers responsible for middleware composition and route registration
+  - Route callback bodies should be extracted into domain handler modules under `api/handlers/`
+  - Existing shared logic should continue living in `api/utils/` and `api/middleware/` where reuse already exists
+  - This repository still has no broad separate service layer; the current refactor target stops at router-to-handler separation
 - Business logic location:
-  - Mostly in route handlers
+  - Request orchestration should live in domain handler modules
   - Shared auth/filter/analytics logic in `api/utils/`
 - Validation strategy:
   - Manual per-route field checks
@@ -148,6 +150,11 @@ Additional flows:
   - `api/routes/teamRouter.js`
   - `api/routes/statRouter.js`
   - `api/routes/sessionRouter.js`
+  - Route handlers should be organized in matching domain modules such as:
+    - `api/handlers/playerHandlers.js`
+    - `api/handlers/coachHandlers.js`
+    - `api/handlers/teamHandlers.js`
+    - `api/handlers/sessionHandlers.js`
 - API namespace contract:
   - the public route prefix is `/api/v1`
   - existing resource groups are exposed under:
