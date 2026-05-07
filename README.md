@@ -1,5 +1,6 @@
+[![wakatime](https://wakatime.com/badge/user/3a78d911-a08a-40c2-bf2c-782c4d20eb23/project/500f18f9-dec6-4568-9d05-66f96de49281.svg)](https://wakatime.com/badge/user/3a78d911-a08a-40c2-bf2c-782c4d20eb23/project/500f18f9-dec6-4568-9d05-66f96de49281)
+
 ![Highlander](/public/assets/img/highlander_logo.png)
-[![Build Status](https://travis-ci.org/iamromanh/highlander-react-redux.svg?branch=master)](https://travis-ci.org/iamromanh/highlander-react-redux)
 
 ## Live Demo
 Currently no live demo is available.
