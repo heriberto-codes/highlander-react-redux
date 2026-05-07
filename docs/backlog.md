@@ -15,7 +15,7 @@
 - [x] Remove hardcoded API origins
 - [x] Introduce an `/api` namespace and versioning
 - [x] Separate route handlers from business logic
-- [ ] Standardize error handling and validation
+- [x] Standardize error handling and validation
 - [ ] Add pagination and query capabilities
 
 ## Client Improvements

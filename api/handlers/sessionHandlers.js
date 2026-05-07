@@ -1,6 +1,12 @@
 "use strict";
 
 const Coach = require('../models/Coach');
+const {
+        createApiError,
+        sendApiError,
+        sendAuthenticationError,
+        sendValidationError
+} = require('../utils/apiErrors');
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
@@ -69,7 +75,7 @@ function readSession(req, res, next) {
                 .then(function(coach) {
                         if (!coach) {
                                 req.session.destroy(function() {
-                                        res.sendStatus(401);
+                                        return sendAuthenticationError(res, 'Authentication required');
                                 });
                                 return;
                         }
@@ -83,15 +89,14 @@ function readSession(req, res, next) {
 
 function login(req, res, next) {
         if (!req.body.email || !req.body.pwd) {
-                res.status(400).json('Email and password are required');
-                return;
+                return sendValidationError(res, 'Email and password are required');
         }
         const attemptKey = buildLoginAttemptKey(req);
         const now = Date.now();
         const existingAttempts = pruneAndReadAttempts(attemptKey, now);
 
         if (existingAttempts && existingAttempts.count >= MAX_LOGIN_ATTEMPTS) {
-                return res.status(429).json('Too many login attempts, please try again later');
+                return sendApiError(res, createApiError(429, 'Too many login attempts, please try again later'));
         }
 
         let coachData;
@@ -104,8 +109,7 @@ function login(req, res, next) {
                         coachData = coach;
                         if (!coachData) {
                                 recordFailedAttempt(attemptKey, now);
-                                res.status(401).json('Invalid credentials');
-                                return;
+                                return sendAuthenticationError(res, 'Invalid credentials');
                         }
                         return Coach.validatePassword(coachData.get('password'), req.body.pwd);
                 }).then(function(validPassword) {
@@ -118,7 +122,7 @@ function login(req, res, next) {
                                 res.status(200).json(coachData);
                         } else {
                                 recordFailedAttempt(attemptKey, now);
-                                res.status(401).json('Invalid credentials');
+                                return sendAuthenticationError(res, 'Invalid credentials');
                         }
                 })
                 .catch(function(err) {

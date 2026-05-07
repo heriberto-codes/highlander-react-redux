@@ -23,8 +23,24 @@ const {
 	matchesOptionalPositionFilter,
 	buildPlayerSearchText
 } = require('../utils/filterQuery');
+const {
+	sendForbiddenError,
+	sendValidationError
+} = require('../utils/apiErrors');
 
 const ALLOWED_COACH_TEAM_ROLES = ['owner', 'assistant'];
+
+function sendMissingFieldError(res, field) {
+	return sendValidationError(res, `Sorry your missing ${field} please try again`);
+}
+
+function sendInvalidFieldError(res, field) {
+	return sendValidationError(res, `Sorry your ${field} is invalid please try again`);
+}
+
+function sendInvalidPlayerStatsError(res) {
+	return sendValidationError(res, 'Sorry your playerStats are invalid please try again');
+}
 
 function parseSeason(value) {
 	const season = Number(value);
@@ -186,7 +202,7 @@ function listTeamCoaches(req, res, next) {
 		.fetch({ withRelated: ['coach'] })
 		.then(function(team) {
 			if (!team || !coachBelongsToTeam(team, authenticatedCoachId)) {
-				return res.status(403).send('Unauthorized');
+				return sendForbiddenError(res, 'Unauthorized');
 			}
 
 			const teamPayload = team.toJSON();
@@ -203,20 +219,18 @@ function addTeamCoach(req, res, next) {
 	for (var i = 0; i < postParams.length; i++) {
 		const requiredParam = postParams[i];
 		if (!(requiredParam in req.body)) {
-			const errorMessage = `Sorry your missing ${requiredParam} please try again`;
-			console.error(errorMessage);
-			return res.status(400).send(errorMessage);
+			return sendMissingFieldError(res, requiredParam);
 		}
 	}
 
 	const targetCoachId = Number(req.body.coachId);
 	if (!Number.isInteger(targetCoachId)) {
-		return res.status(400).send('Sorry your coachId is invalid please try again');
+		return sendInvalidFieldError(res, 'coachId');
 	}
 
 	const role = parseCoachTeamRole(req.body.role);
 	if (role === null) {
-		return res.status(400).send('Sorry your role is invalid please try again');
+		return sendInvalidFieldError(res, 'role');
 	}
 
 	Team
@@ -224,7 +238,7 @@ function addTeamCoach(req, res, next) {
 		.fetch({ withRelated: ['coach'] })
 		.then(function(team) {
 			if (!team || !coachIsTeamOwner(team, authenticatedCoachId)) {
-				return res.status(403).send('Unauthorized');
+				return sendForbiddenError(res, 'Unauthorized');
 			}
 
 			const teamPayload = team.toJSON();
@@ -233,7 +247,7 @@ function addTeamCoach(req, res, next) {
 				return Number(coach && coach.id) === targetCoachId;
 			});
 			if (alreadyAttached) {
-				return res.status(400).send('Sorry this coach is already assigned to the team');
+				return sendValidationError(res, 'Sorry this coach is already assigned to the team');
 			}
 
 			return Coaches
@@ -241,7 +255,7 @@ function addTeamCoach(req, res, next) {
 				.fetch()
 				.then(function(coach) {
 					if (!coach) {
-						return res.status(400).send('Sorry your coachId is invalid please try again');
+						return sendInvalidFieldError(res, 'coachId');
 					}
 
 					const relation = team.coach();
@@ -266,17 +280,17 @@ function addTeamCoach(req, res, next) {
 function updateTeamCoach(req, res, next) {
 	const authenticatedCoachId = getAuthenticatedCoachId(req);
 	if (!('role' in req.body)) {
-		return res.status(400).send('Sorry your missing role please try again');
+		return sendMissingFieldError(res, 'role');
 	}
 
 	const targetCoachId = Number(req.params.coachId);
 	if (!Number.isInteger(targetCoachId)) {
-		return res.status(400).send('Sorry your coachId is invalid please try again');
+		return sendInvalidFieldError(res, 'coachId');
 	}
 
 	const role = parseCoachTeamRole(req.body.role);
 	if (role === null) {
-		return res.status(400).send('Sorry your role is invalid please try again');
+		return sendInvalidFieldError(res, 'role');
 	}
 
 	Team
@@ -284,7 +298,7 @@ function updateTeamCoach(req, res, next) {
 		.fetch({ withRelated: ['coach'] })
 		.then(function(team) {
 			if (!team || !coachIsTeamOwner(team, authenticatedCoachId)) {
-				return res.status(403).send('Unauthorized');
+				return sendForbiddenError(res, 'Unauthorized');
 			}
 
 			const teamPayload = team.toJSON();
@@ -293,7 +307,7 @@ function updateTeamCoach(req, res, next) {
 				return Number(coach && coach.id) === targetCoachId;
 			});
 			if (!targetCoach) {
-				return res.status(400).send('Sorry your coachId is invalid please try again');
+				return sendInvalidFieldError(res, 'coachId');
 			}
 
 			return team.coach()
@@ -316,7 +330,7 @@ function deleteTeamCoach(req, res, next) {
 	const authenticatedCoachId = getAuthenticatedCoachId(req);
 	const targetCoachId = Number(req.params.coachId);
 	if (!Number.isInteger(targetCoachId)) {
-		return res.status(400).send('Sorry your coachId is invalid please try again');
+		return sendInvalidFieldError(res, 'coachId');
 	}
 
 	Team
@@ -324,7 +338,7 @@ function deleteTeamCoach(req, res, next) {
 		.fetch({ withRelated: ['coach'] })
 		.then(function(team) {
 			if (!team || !coachIsTeamOwner(team, authenticatedCoachId)) {
-				return res.status(403).send('Unauthorized');
+				return sendForbiddenError(res, 'Unauthorized');
 			}
 
 			const teamPayload = team.toJSON();
@@ -332,10 +346,10 @@ function deleteTeamCoach(req, res, next) {
 				return Number(coach && coach.id) === targetCoachId;
 			});
 			if (!targetCoach) {
-				return res.status(400).send('Sorry your coachId is invalid please try again');
+				return sendInvalidFieldError(res, 'coachId');
 			}
 			if (!canSafelyRemoveCoachFromTeam(teamPayload, targetCoachId)) {
-				return res.status(400).send('Sorry this coach cannot be removed from the team');
+				return sendValidationError(res, 'Sorry this coach cannot be removed from the team');
 			}
 
 			return team.coach()
@@ -375,7 +389,7 @@ function getTeam(req, res, next) {
 	 */
 	const parsedFilters = parseTeamFilters(req.query);
 	if (parsedFilters.error) {
-		return res.status(400).send(parsedFilters.error);
+		return sendValidationError(res, parsedFilters.error);
 	}
 	const authenticatedCoachId = getAuthenticatedCoachId(req);
 
@@ -384,7 +398,7 @@ function getTeam(req, res, next) {
 		.fetch({ withRelated: ['coach', 'players', 'players.stats'] })
 		.then(function(team) {
 			if (!team || !coachOwnsTeam(team, authenticatedCoachId)) {
-				return res.status(403).send('Unauthorized');
+				return sendForbiddenError(res, 'Unauthorized');
 			}
 			const teamPayload = team.toJSON();
 			const coachId = teamPayload.coach && teamPayload.coach[0] && teamPayload.coach[0].id;
@@ -446,17 +460,13 @@ function updateTeam(req, res, next) {
 	for (var i = 0; i < updateParams.length; i++) {
 		const confirmedParams = updateParams[i];
 		if (!(confirmedParams in req.body)) {
-			const errorMessage = `Sorry your missing ${confirmedParams} please try again`;
-			console.error(errorMessage);
-			return res.status(400).send(errorMessage);
+			return sendMissingFieldError(res, confirmedParams);
 		}
 	}
 
 	const season = parseSeason(req.body.season);
 	if (season === null) {
-		const errorMessage = 'Sorry your season is invalid please try again';
-		console.error(errorMessage);
-		return res.status(400).send(errorMessage);
+		return sendInvalidFieldError(res, 'season');
 	}
 
 	Team
@@ -464,7 +474,7 @@ function updateTeam(req, res, next) {
 		.fetch({ withRelated: ['coach'] })
 		.then(function(team) {
 			if (!team || !coachBelongsToTeam(team, authenticatedCoachId)) {
-				return res.status(403).send('Unauthorized');
+				return sendForbiddenError(res, 'Unauthorized');
 			}
 			return team.save({
 				name: req.body.name,
@@ -490,21 +500,17 @@ function createTeam(req, res, next) {
 	for (var i = 0; i < postParams.length; i++) {
 		const confirmPostParams = postParams[i];
 		if (!(confirmPostParams in req.body)) {
-			const errorMessage = `Sorry your missing ${confirmPostParams} please try again`;
-			console.error(errorMessage);
-			return res.status(400).send(errorMessage);
+			return sendMissingFieldError(res, confirmPostParams);
 		}
 	}
 
 	const season = parseSeason(req.body.season);
 	if (season === null) {
-		const errorMessage = 'Sorry your season is invalid please try again';
-		console.error(errorMessage);
-		return res.status(400).send(errorMessage);
+		return sendInvalidFieldError(res, 'season');
 	}
 
 	if (Number(req.body.coachId) !== authenticatedCoachId) {
-		return res.status(403).send('Unauthorized');
+		return sendForbiddenError(res, 'Unauthorized');
 	}
 
 	Coaches
@@ -512,9 +518,7 @@ function createTeam(req, res, next) {
 		.fetch()
 		.then(function(coach) {
 			if (!coach) {
-				const errorMessage = 'Sorry your coachId is invalid please try again';
-				console.error(errorMessage);
-				return res.status(400).send(errorMessage);
+				return sendInvalidFieldError(res, 'coachId');
 			}
 
 			return Team
@@ -550,36 +554,26 @@ function createTeamGame(req, res, next) {
 	for (var i = 0; i < postParams.length; i++) {
 		const confirmedParam = postParams[i];
 		if (!(confirmedParam in req.body)) {
-			const errorMessage = `Sorry your missing ${confirmedParam} please try again`;
-			console.error(errorMessage);
-			return res.status(400).send(errorMessage);
+			return sendMissingFieldError(res, confirmedParam);
 		}
 	}
 
 	const gameDate = parseGameDate(req.body.game_date);
 	if (gameDate === null) {
-		const errorMessage = 'Sorry your game_date is invalid please try again';
-		console.error(errorMessage);
-		return res.status(400).send(errorMessage);
+		return sendInvalidFieldError(res, 'game_date');
 	}
 
 	if (typeof req.body.opponent !== 'string' || req.body.opponent.trim() === '') {
-		const errorMessage = 'Sorry your opponent is invalid please try again';
-		console.error(errorMessage);
-		return res.status(400).send(errorMessage);
+		return sendInvalidFieldError(res, 'opponent');
 	}
 
 	if (!Array.isArray(req.body.playerStats) || req.body.playerStats.length === 0) {
-		const errorMessage = 'Sorry your playerStats are invalid please try again';
-		console.error(errorMessage);
-		return res.status(400).send(errorMessage);
+		return sendInvalidPlayerStatsError(res);
 	}
 
 	const statRows = collectGameStatRows(req.body.playerStats);
 	if (!statRows || statRows.length === 0) {
-		const errorMessage = 'Sorry your playerStats are invalid please try again';
-		console.error(errorMessage);
-		return res.status(400).send(errorMessage);
+		return sendInvalidPlayerStatsError(res);
 	}
 
 	Team
@@ -587,12 +581,10 @@ function createTeamGame(req, res, next) {
 		.fetch({ withRelated: ['coach', 'players'] })
 		.then(function(team) {
 			if (!team) {
-				const errorMessage = 'Sorry your teamId is invalid please try again';
-				console.error(errorMessage);
-				return res.status(400).send(errorMessage);
+				return sendInvalidFieldError(res, 'teamId');
 			}
 			if (!coachBelongsToTeam(team, authenticatedCoachId)) {
-				return res.status(403).send('Unauthorized');
+				return sendForbiddenError(res, 'Unauthorized');
 			}
 
 			const teamPayload = team.toJSON();
@@ -612,9 +604,7 @@ function createTeamGame(req, res, next) {
 			});
 
 			if (hasInvalidPlayer) {
-				const errorMessage = 'Sorry your playerId is invalid please try again';
-				console.error(errorMessage);
-				return res.status(400).send(errorMessage);
+				return sendInvalidFieldError(res, 'playerId');
 			}
 
 			const requestedStatCatalogIds = Array.from(
@@ -636,9 +626,7 @@ function createTeamGame(req, res, next) {
 					});
 
 					if (hasMissingStatCatalog) {
-						const errorMessage = 'Sorry your statCatalogId is invalid please try again';
-						console.error(errorMessage);
-						return res.status(400).send(errorMessage);
+						return sendInvalidFieldError(res, 'statCatalogId');
 					}
 
 					return Bookshelf.transaction(function(transaction) {
@@ -687,9 +675,7 @@ function createTeamPlayer(req, res, next) {
 	for (var i = 0; i < postParams.length; i++) {
 		const confirmPostParams = postParams[i];
 		if (!(confirmPostParams in req.body)) {
-			const errorMessage = `Sorry your missing ${confirmPostParams} please try again`;
-			console.error(errorMessage);
-			return res.status(400).send(errorMessage);
+			return sendMissingFieldError(res, confirmPostParams);
 		}
 	}
 
@@ -698,7 +684,7 @@ function createTeamPlayer(req, res, next) {
 		.fetch({ withRelated: ['coach'] })
 		.then(function(team) {
 			if (!team || !coachBelongsToTeam(team, authenticatedCoachId)) {
-				return res.status(403).send('Unauthorized');
+				return sendForbiddenError(res, 'Unauthorized');
 			}
 
 			return Player

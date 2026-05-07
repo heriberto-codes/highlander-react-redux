@@ -14,6 +14,15 @@ const {
 	matchesOptionalPositionFilter,
 	buildPlayerSearchText
 } = require('../utils/filterQuery');
+const {
+	sendForbiddenError,
+	sendNotFoundError,
+	sendValidationError
+} = require('../utils/apiErrors');
+
+function sendMissingFieldError(res, field) {
+	return sendValidationError(res, `Sorry your missing ${field} please try again`);
+}
 
 function parseDashboardFilters(query) {
 	const requestedSeason = parseRequestedSeason(query.season);
@@ -88,7 +97,7 @@ function listCoaches(req, res, next) {
 		.fetch()
 		.then(function(coach) {
 			if (!coach) {
-				return res.status(404).send('Coach not found');
+				return sendNotFoundError(res, 'Coach not found');
 			}
 
 			res.json([coach.toJSON()]);
@@ -162,11 +171,11 @@ function getCoachProfile(req, res, next) {
          */
         const parsedFilters = parseDashboardFilters(req.query);
         if (parsedFilters.error) {
-                return res.status(400).send(parsedFilters.error);
+                return sendValidationError(res, parsedFilters.error);
         }
         const authenticatedCoachId = getAuthenticatedCoachId(req);
         if (authenticatedCoachId === null || authenticatedCoachId !== Number(req.params.id)) {
-                return res.status(403).send('Unauthorized');
+                return sendForbiddenError(res, 'Unauthorized');
         }
 
         Coach
@@ -243,9 +252,7 @@ function createCoach(req, res, next) {
 	for (var i = 0; i < postParams.length; i++) {
 		const confirmPostParams = postParams[i];
                 if(!(confirmPostParams in req.body)) {
-                        const errorMessage = `Sorry your missing ${confirmPostParams} please try again`;
-                        console.error(errorMessage);
-                        return res.status(400).send(errorMessage);
+                        return sendMissingFieldError(res, confirmPostParams);
                 }
 	}
 	Coach.hashPassword(req.body.password)
@@ -270,15 +277,13 @@ function createCoach(req, res, next) {
 function updateCoach(req, res, next) {
 	const authenticatedCoachId = getAuthenticatedCoachId(req);
 	if (authenticatedCoachId === null || authenticatedCoachId !== Number(req.params.id)) {
-		return res.status(403).send('Unauthorized');
+		return sendForbiddenError(res, 'Unauthorized');
 	}
 	const updateParams = ['email', 'first_name', 'last_name'];
 	for(var i = 0; i < updateParams.length; i++) {
 		const confirmedParams = updateParams[i];
 		if(!(confirmedParams in req.body)) {
-			const errorMessage = `Sorry your missing ${confirmedParams} please try again`;
-			console.error(errorMessage);
-			return res.status(400).send(errorMessage);
+			return sendMissingFieldError(res, confirmedParams);
 		}
 	}
 	Coach

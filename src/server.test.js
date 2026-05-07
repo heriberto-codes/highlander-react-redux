@@ -25,6 +25,7 @@ const mockTeamCoachDetach = jest.fn();
 
 jest.mock('../api/models/Coach', () => ({
   where: jest.fn(),
+  hashPassword: jest.fn(),
   validatePassword: jest.fn()
 }));
 
@@ -82,6 +83,10 @@ function withTrustedOrigin(testRequest) {
   return testRequest.set('Origin', trustedOrigin);
 }
 
+function sendNoSessionError(req, res) {
+  return res.status(403).json({ error: 'No session available' });
+}
+
 describe('server routes', () => {
   beforeEach(() => {
     mockFetch.mockReset();
@@ -98,6 +103,7 @@ describe('server routes', () => {
     mockTeamCoachUpdatePivot.mockReset();
     mockTeamCoachDetach.mockReset();
     Coach.where.mockReset();
+    Coach.hashPassword.mockReset();
     Coach.validatePassword.mockReset();
     Team.where.mockReset();
     Player.fetchAll.mockReset();
@@ -112,6 +118,7 @@ describe('server routes', () => {
     Coach.where.mockReturnValue({
       fetch: mockFetch
     });
+    Coach.hashPassword.mockResolvedValue('hashed-password');
     Coach.validatePassword.mockResolvedValue(true);
     Team.where.mockReturnValue({
       fetch: mockTeamFetch
@@ -434,7 +441,9 @@ describe('server routes', () => {
 
     const response = await request(app).get('/api/v1/coaches/10').expect(403);
 
-    expect(response.text).toBe('Unauthorized');
+    expect(response.body).toEqual({
+      error: 'Unauthorized'
+    });
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
@@ -453,6 +462,57 @@ describe('server routes', () => {
     expect(Array.isArray(response.body)).toBe(true);
     expect(response.body).toHaveLength(1);
     expect(response.body[0].id).toBe(1);
+  });
+
+  it('GET /api/v1/coaches returns a not-found error payload when the authenticated coach is missing', async () => {
+    mockFetch.mockResolvedValue(null);
+
+    const response = await request(app).get('/api/v1/coaches').expect(404);
+
+    expect(response.body).toEqual({
+      error: 'Coach not found'
+    });
+  });
+
+  it('GET /api/v1/coaches returns the generic 500 payload for unexpected errors', async () => {
+    mockFetch.mockRejectedValue(new Error('database exploded'));
+
+    const response = await request(app).get('/api/v1/coaches').expect(500);
+
+    expect(response.body).toEqual({
+      error: 'Internal server error'
+    });
+  });
+
+  it('POST /api/v1/coaches rejects missing required fields with a validation error payload', async () => {
+    const response = await withTrustedOrigin(request(app)
+      .post('/api/v1/coaches'))
+      .send({
+        email: 'coach@example.com',
+        first_name: 'Test',
+        last_name: 'Coach'
+      })
+      .expect(400);
+
+    expect(response.body).toEqual({
+      error: 'Sorry your missing password please try again'
+    });
+    expect(Coach.hashPassword).not.toHaveBeenCalled();
+  });
+
+  it('PUT /api/v1/coaches/:id rejects missing required fields with a validation error payload', async () => {
+    const response = await withTrustedOrigin(request(app)
+      .put('/api/v1/coaches/1'))
+      .send({
+        email: 'coach@example.com',
+        first_name: 'Test'
+      })
+      .expect(400);
+
+    expect(response.body).toEqual({
+      error: 'Sorry your missing last_name please try again'
+    });
+    expect(Coach.where).not.toHaveBeenCalled();
   });
 
   it('GET /api/v1/players returns only players owned by the authenticated coach', async () => {
@@ -503,7 +563,9 @@ describe('server routes', () => {
 
     const response = await request(app).get('/api/v1/players/12').expect(403);
 
-    expect(response.text).toBe('Unauthorized');
+    expect(response.body).toEqual({
+      error: 'Unauthorized'
+    });
   });
 
   it('GET /api/v1/players/:id/stats rejects access to player stats outside the authenticated coach', async () => {
@@ -522,7 +584,9 @@ describe('server routes', () => {
 
     const response = await request(app).get('/api/v1/players/13/stats').expect(403);
 
-    expect(response.text).toBe('Unauthorized');
+    expect(response.body).toEqual({
+      error: 'Unauthorized'
+    });
   });
 
   it('GET /api/v1/teams/:id/coaches returns sanitized collaborators for a team member', async () => {
@@ -597,17 +661,19 @@ describe('server routes', () => {
 
     const response = await request(app).get('/api/v1/teams/9/coaches').expect(403);
 
-    expect(response.text).toBe('Unauthorized');
+    expect(response.body).toEqual({
+      error: 'Unauthorized'
+    });
   });
 
   it('GET /api/v1/teams/:id/coaches rejects unauthenticated access', async () => {
-    ensureAuthenticated.mockImplementationOnce((req, res) => {
-      res.status(403).send('No session available');
-    });
+    ensureAuthenticated.mockImplementationOnce(sendNoSessionError);
 
     const response = await request(app).get('/api/v1/teams/9/coaches').expect(403);
 
-    expect(response.text).toBe('No session available');
+    expect(response.body).toEqual({
+      error: 'No session available'
+    });
     expect(mockTeamFetch).not.toHaveBeenCalled();
   });
 
@@ -715,7 +781,9 @@ describe('server routes', () => {
       })
       .expect(400);
 
-    expect(response.text).toBe('Sorry this coach is already assigned to the team');
+    expect(response.body).toEqual({
+      error: 'Sorry this coach is already assigned to the team'
+    });
     expect(mockTeamCoachAttach).not.toHaveBeenCalled();
   });
 
@@ -742,7 +810,9 @@ describe('server routes', () => {
       })
       .expect(400);
 
-    expect(response.text).toBe('Sorry your coachId is invalid please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your coachId is invalid please try again'
+    });
     expect(mockTeamCoachAttach).not.toHaveBeenCalled();
   });
 
@@ -774,7 +844,9 @@ describe('server routes', () => {
       })
       .expect(403);
 
-    expect(response.text).toBe('Unauthorized');
+    expect(response.body).toEqual({
+      error: 'Unauthorized'
+    });
     expect(mockTeamCoachAttach).not.toHaveBeenCalled();
   });
 
@@ -787,13 +859,13 @@ describe('server routes', () => {
       })
       .expect(400);
 
-    expect(response.text).toBe('Sorry your role is invalid please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your role is invalid please try again'
+    });
   });
 
   it('POST /api/v1/teams/:id/coaches rejects unauthenticated access', async () => {
-    ensureAuthenticated.mockImplementationOnce((req, res) => {
-      res.status(403).send('No session available');
-    });
+    ensureAuthenticated.mockImplementationOnce(sendNoSessionError);
 
     const response = await withTrustedOrigin(request(app)
       .post('/api/v1/teams/9/coaches'))
@@ -803,7 +875,9 @@ describe('server routes', () => {
       })
       .expect(403);
 
-    expect(response.text).toBe('No session available');
+    expect(response.body).toEqual({
+      error: 'No session available'
+    });
     expect(mockTeamFetch).not.toHaveBeenCalled();
     expect(mockTeamCoachAttach).not.toHaveBeenCalled();
   });
@@ -868,7 +942,9 @@ describe('server routes', () => {
       })
       .expect(403);
 
-    expect(response.text).toBe('Unauthorized');
+    expect(response.body).toEqual({
+      error: 'Unauthorized'
+    });
     expect(mockTeamCoachUpdatePivot).not.toHaveBeenCalled();
   });
 
@@ -880,7 +956,9 @@ describe('server routes', () => {
       })
       .expect(400);
 
-    expect(response.text).toBe('Sorry your coachId is invalid please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your coachId is invalid please try again'
+    });
   });
 
   it('PUT /api/v1/teams/:id/coaches/:coachId rejects nonexistent target coach ids', async () => {
@@ -904,7 +982,9 @@ describe('server routes', () => {
       })
       .expect(400);
 
-    expect(response.text).toBe('Sorry your coachId is invalid please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your coachId is invalid please try again'
+    });
     expect(mockTeamCoachUpdatePivot).not.toHaveBeenCalled();
   });
 
@@ -914,13 +994,13 @@ describe('server routes', () => {
       .send({})
       .expect(400);
 
-    expect(response.text).toBe('Sorry your missing role please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your missing role please try again'
+    });
   });
 
   it('PUT /api/v1/teams/:id/coaches/:coachId rejects unauthenticated access', async () => {
-    ensureAuthenticated.mockImplementationOnce((req, res) => {
-      res.status(403).send('No session available');
-    });
+    ensureAuthenticated.mockImplementationOnce(sendNoSessionError);
 
     const response = await withTrustedOrigin(request(app)
       .put('/api/v1/teams/9/coaches/2'))
@@ -929,7 +1009,9 @@ describe('server routes', () => {
       })
       .expect(403);
 
-    expect(response.text).toBe('No session available');
+    expect(response.body).toEqual({
+      error: 'No session available'
+    });
     expect(mockTeamFetch).not.toHaveBeenCalled();
     expect(mockTeamCoachUpdatePivot).not.toHaveBeenCalled();
   });
@@ -952,7 +1034,9 @@ describe('server routes', () => {
       .delete('/api/v1/teams/9/coaches/1'))
       .expect(400);
 
-    expect(response.text).toBe('Sorry this coach cannot be removed from the team');
+    expect(response.body).toEqual({
+      error: 'Sorry this coach cannot be removed from the team'
+    });
     expect(mockTeamCoachDetach).not.toHaveBeenCalled();
   });
 
@@ -1000,7 +1084,9 @@ describe('server routes', () => {
       .delete('/api/v1/teams/9/coaches/1'))
       .expect(403);
 
-    expect(response.text).toBe('Unauthorized');
+    expect(response.body).toEqual({
+      error: 'Unauthorized'
+    });
     expect(mockTeamCoachDetach).not.toHaveBeenCalled();
   });
 
@@ -1022,7 +1108,9 @@ describe('server routes', () => {
       .delete('/api/v1/teams/9/coaches/99'))
       .expect(400);
 
-    expect(response.text).toBe('Sorry your coachId is invalid please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your coachId is invalid please try again'
+    });
     expect(mockTeamCoachDetach).not.toHaveBeenCalled();
   });
 
@@ -1031,20 +1119,22 @@ describe('server routes', () => {
       .delete('/api/v1/teams/9/coaches/not-a-number'))
       .expect(400);
 
-    expect(response.text).toBe('Sorry your coachId is invalid please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your coachId is invalid please try again'
+    });
     expect(mockTeamCoachDetach).not.toHaveBeenCalled();
   });
 
   it('DELETE /api/v1/teams/:id/coaches/:coachId rejects unauthenticated access', async () => {
-    ensureAuthenticated.mockImplementationOnce((req, res) => {
-      res.status(403).send('No session available');
-    });
+    ensureAuthenticated.mockImplementationOnce(sendNoSessionError);
 
     const response = await withTrustedOrigin(request(app)
       .delete('/api/v1/teams/9/coaches/2'))
       .expect(403);
 
-    expect(response.text).toBe('No session available');
+    expect(response.body).toEqual({
+      error: 'No session available'
+    });
     expect(mockTeamFetch).not.toHaveBeenCalled();
     expect(mockTeamCoachDetach).not.toHaveBeenCalled();
   });
@@ -1105,7 +1195,9 @@ describe('server routes', () => {
       })
       .expect(403);
 
-    expect(response.text).toBe('Invalid request origin');
+    expect(response.body).toEqual({
+      error: 'Invalid request origin'
+    });
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
@@ -1119,7 +1211,9 @@ describe('server routes', () => {
       })
       .expect(403);
 
-    expect(response.text).toBe('Invalid request origin');
+    expect(response.body).toEqual({
+      error: 'Invalid request origin'
+    });
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
@@ -1169,24 +1263,29 @@ describe('server routes', () => {
     expect(response.body.password).toBeUndefined();
   });
 
-  it('GET /api/v1/sessions returns 401 when no valid authenticated session exists', async () => {
-    ensureAuthenticated.mockImplementationOnce((req, res) => {
-      res.sendStatus(401);
-    });
+  it('GET /api/v1/sessions rejects missing middleware sessions with a standardized error payload', async () => {
+    ensureAuthenticated.mockImplementationOnce(sendNoSessionError);
 
-    await request(app)
+    const response = await request(app)
       .get('/api/v1/sessions')
-      .expect(401);
+      .expect(403);
 
+    expect(response.body).toEqual({
+      error: 'No session available'
+    });
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it('GET /api/v1/sessions returns 401 when the session coach record no longer exists', async () => {
     mockFetch.mockResolvedValue(null);
 
-    await request(app)
+    const response = await request(app)
       .get('/api/v1/sessions')
       .expect(401);
+
+    expect(response.body).toEqual({
+      error: 'Authentication required'
+    });
   });
 
   it('GET /api/v1/sessions destroys a stale invalid session before returning 401', async () => {
@@ -1199,11 +1298,45 @@ describe('server routes', () => {
     });
     mockFetch.mockResolvedValue(null);
 
-    await request(app)
+    const response = await request(app)
       .get('/api/v1/sessions')
       .expect(401);
 
     expect(destroy).toHaveBeenCalled();
+    expect(response.body).toEqual({
+      error: 'Authentication required'
+    });
+  });
+
+  it('POST /api/v1/sessions/login rejects missing credentials with a validation error payload', async () => {
+    const response = await withTrustedOrigin(request(app)
+      .post('/api/v1/sessions/login'))
+      .send({
+        email: 'coach@example.com'
+      })
+      .expect(400);
+
+    expect(response.body).toEqual({
+      error: 'Email and password are required'
+    });
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('POST /api/v1/sessions/login rejects invalid credentials with an authentication error payload', async () => {
+    mockFetch.mockResolvedValue(null);
+
+    const response = await withTrustedOrigin(request(app)
+      .post('/api/v1/sessions/login'))
+      .send({
+        email: 'missing-coach@example.com',
+        pwd: 'wrong-password'
+      })
+      .expect(401);
+
+    expect(response.body).toEqual({
+      error: 'Invalid credentials'
+    });
+    expect(Coach.validatePassword).not.toHaveBeenCalled();
   });
 
   it('POST /api/v1/sessions/login rate limits repeated invalid credentials', async () => {
@@ -1231,7 +1364,9 @@ describe('server routes', () => {
       })
       .expect(429);
 
-    expect(response.body).toBe('Too many login attempts, please try again later');
+    expect(response.body).toEqual({
+      error: 'Too many login attempts, please try again later'
+    });
   });
 
   it('GET /api/v1/coaches/:id returns null derived stats when denominators are missing or zero', async () => {
@@ -1740,7 +1875,9 @@ describe('server routes', () => {
 
     const response = await request(app).get('/api/v1/coaches/14?season=summer').expect(400);
 
-    expect(response.text).toBe('Sorry your season is invalid please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your season is invalid please try again'
+    });
   });
 
   it('GET /api/v1/coaches/:id rejects an invalid teamSearch query', async () => {
@@ -1748,7 +1885,9 @@ describe('server routes', () => {
       .get(`/api/v1/coaches/14?teamSearch=${'x'.repeat(101)}`)
       .expect(400);
 
-    expect(response.text).toBe('Sorry your teamSearch is invalid please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your teamSearch is invalid please try again'
+    });
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
@@ -1757,7 +1896,9 @@ describe('server routes', () => {
       .get(`/api/v1/coaches/14?position=${'x'.repeat(101)}`)
       .expect(400);
 
-    expect(response.text).toBe('Sorry your position is invalid please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your position is invalid please try again'
+    });
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
@@ -2070,7 +2211,9 @@ describe('server routes', () => {
 
     const response = await request(app).get('/api/v1/teams/569').expect(403);
 
-    expect(response.text).toBe('Unauthorized');
+    expect(response.body).toEqual({
+      error: 'Unauthorized'
+    });
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
@@ -2407,7 +2550,9 @@ describe('server routes', () => {
 
     const response = await request(app).get('/api/v1/teams/59?season=fall').expect(400);
 
-    expect(response.text).toBe('Sorry your season is invalid please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your season is invalid please try again'
+    });
   });
 
   it('GET /api/v1/teams/:id rejects an invalid playerSearch query', async () => {
@@ -2415,7 +2560,9 @@ describe('server routes', () => {
       .get(`/api/v1/teams/59?playerSearch=${'x'.repeat(101)}`)
       .expect(400);
 
-    expect(response.text).toBe('Sorry your playerSearch is invalid please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your playerSearch is invalid please try again'
+    });
     expect(mockTeamFetch).not.toHaveBeenCalled();
   });
 
@@ -2424,7 +2571,9 @@ describe('server routes', () => {
       .get(`/api/v1/teams/59?position=${'x'.repeat(101)}`)
       .expect(400);
 
-    expect(response.text).toBe('Sorry your position is invalid please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your position is invalid please try again'
+    });
     expect(mockTeamFetch).not.toHaveBeenCalled();
   });
 
@@ -2574,7 +2723,9 @@ describe('server routes', () => {
       })
       .expect(400);
 
-    expect(response.text).toBe('Sorry your season is invalid please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your season is invalid please try again'
+    });
     expect(Coach.where).not.toHaveBeenCalled();
     expect(Team.forge).not.toHaveBeenCalled();
   });
@@ -2590,7 +2741,9 @@ describe('server routes', () => {
       })
       .expect(400);
 
-    expect(response.text).toBe('Sorry your missing season please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your missing season please try again'
+    });
     expect(Coach.where).not.toHaveBeenCalled();
     expect(Team.forge).not.toHaveBeenCalled();
   });
@@ -2652,7 +2805,9 @@ describe('server routes', () => {
       })
       .expect(403);
 
-    expect(response.text).toBe('Invalid request origin');
+    expect(response.body).toEqual({
+      error: 'Invalid request origin'
+    });
     expect(Coach.where).not.toHaveBeenCalled();
     expect(Team.forge).not.toHaveBeenCalled();
   });
@@ -2669,7 +2824,9 @@ describe('server routes', () => {
       })
       .expect(403);
 
-    expect(response.text).toBe('Unauthorized');
+    expect(response.body).toEqual({
+      error: 'Unauthorized'
+    });
     expect(Coach.where).not.toHaveBeenCalled();
     expect(Team.forge).not.toHaveBeenCalled();
   });
@@ -2685,7 +2842,9 @@ describe('server routes', () => {
       })
       .expect(400);
 
-    expect(response.text).toBe('Sorry your season is invalid please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your season is invalid please try again'
+    });
     expect(Team.where).not.toHaveBeenCalled();
   });
 
@@ -2699,7 +2858,9 @@ describe('server routes', () => {
       })
       .expect(400);
 
-    expect(response.text).toBe('Sorry your missing season please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your missing season please try again'
+    });
     expect(Team.where).not.toHaveBeenCalled();
   });
 
@@ -2807,7 +2968,9 @@ describe('server routes', () => {
       })
       .expect(403);
 
-    expect(response.text).toBe('Unauthorized');
+    expect(response.body).toEqual({
+      error: 'Unauthorized'
+    });
     expect(save).not.toHaveBeenCalled();
   });
 
@@ -2980,7 +3143,9 @@ describe('server routes', () => {
       })
       .expect(400);
 
-    expect(response.text).toBe('Sorry your game_date is invalid please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your game_date is invalid please try again'
+    });
     expect(Team.where).not.toHaveBeenCalled();
     expect(Bookshelf.transaction).not.toHaveBeenCalled();
   });
@@ -3014,7 +3179,9 @@ describe('server routes', () => {
       })
       .expect(400);
 
-    expect(response.text).toBe('Sorry your playerId is invalid please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your playerId is invalid please try again'
+    });
     expect(Stat_Catalog.where).not.toHaveBeenCalled();
     expect(Bookshelf.transaction).not.toHaveBeenCalled();
   });
@@ -3049,7 +3216,9 @@ describe('server routes', () => {
       })
       .expect(400);
 
-    expect(response.text).toBe('Sorry your statCatalogId is invalid please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your statCatalogId is invalid please try again'
+    });
     expect(Bookshelf.transaction).not.toHaveBeenCalled();
   });
 
@@ -3094,7 +3263,9 @@ describe('server routes', () => {
       })
       .expect(400);
 
-    expect(response.text).toBe('Sorry your opponent is invalid please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your opponent is invalid please try again'
+    });
     expect(Team.where).not.toHaveBeenCalled();
     expect(Bookshelf.transaction).not.toHaveBeenCalled();
   });
@@ -3116,7 +3287,9 @@ describe('server routes', () => {
       })
       .expect(400);
 
-    expect(response.text).toBe('Sorry your playerStats are invalid please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your playerStats are invalid please try again'
+    });
     expect(Team.where).not.toHaveBeenCalled();
     expect(Bookshelf.transaction).not.toHaveBeenCalled();
   });
@@ -3139,7 +3312,9 @@ describe('server routes', () => {
       })
       .expect(400);
 
-    expect(response.text).toBe('Sorry your playerStats are invalid please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your playerStats are invalid please try again'
+    });
     expect(Team.where).not.toHaveBeenCalled();
     expect(Bookshelf.transaction).not.toHaveBeenCalled();
   });
@@ -3163,7 +3338,9 @@ describe('server routes', () => {
       })
       .expect(400);
 
-    expect(response.text).toBe('Sorry your teamId is invalid please try again');
+    expect(response.body).toEqual({
+      error: 'Sorry your teamId is invalid please try again'
+    });
     expect(Stat_Catalog.where).not.toHaveBeenCalled();
     expect(Bookshelf.transaction).not.toHaveBeenCalled();
   });
@@ -3197,7 +3374,9 @@ describe('server routes', () => {
       })
       .expect(403);
 
-    expect(response.text).toBe('Unauthorized');
+    expect(response.body).toEqual({
+      error: 'Unauthorized'
+    });
     expect(Stat_Catalog.where).not.toHaveBeenCalled();
     expect(Bookshelf.transaction).not.toHaveBeenCalled();
   });
@@ -3222,7 +3401,9 @@ describe('server routes', () => {
       })
       .expect(403);
 
-    expect(response.text).toBe('Unauthorized');
+    expect(response.body).toEqual({
+      error: 'Unauthorized'
+    });
   });
 
   it('POST /api/v1/teams/:id/player rejects unauthenticated requests', async () => {
@@ -3423,6 +3604,38 @@ describe('server routes', () => {
     expect(response.body.position).toBe('Catcher');
   });
 
+  it('POST /api/v1/players rejects missing required fields with a validation error payload', async () => {
+    const response = await withTrustedOrigin(request(app)
+      .post('/api/v1/players'))
+      .send({
+        first_name: 'Ace',
+        last_name: 'Lee',
+        position: 'Catcher'
+      })
+      .expect(400);
+
+    expect(response.body).toEqual({
+      error: 'Sorry your missing email please try again'
+    });
+    expect(Player.forge).not.toHaveBeenCalled();
+  });
+
+  it('PUT /api/v1/players/:id rejects missing required fields with a validation error payload', async () => {
+    const response = await withTrustedOrigin(request(app)
+      .put('/api/v1/players/12'))
+      .send({
+        email: 'ace@example.com',
+        first_name: 'Ace',
+        last_name: 'Lee'
+      })
+      .expect(400);
+
+    expect(response.body).toEqual({
+      error: 'Sorry your missing position please try again'
+    });
+    expect(Player.where).not.toHaveBeenCalled();
+  });
+
   it('PUT /api/v1/players/:id rejects unauthenticated requests', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res) => res.status(401).send('Unauthorized'));
 
@@ -3478,6 +3691,19 @@ describe('server routes', () => {
     expect(response.body.id).toBe(88);
   });
 
+  it('POST /api/v1/players/:player_id/stats/:stat_catalog_id rejects missing stat fields with a validation error payload', async () => {
+    const response = await withTrustedOrigin(request(app)
+      .post('/api/v1/players/12/stats/5'))
+      .send({})
+      .expect(400);
+
+    expect(response.body).toEqual({
+      error: 'Sorry your missing how_many please try again'
+    });
+    expect(Player.where).not.toHaveBeenCalled();
+    expect(PlayerStat.forge).not.toHaveBeenCalled();
+  });
+
   it('PUT /api/v1/players/:player_id/stats/:stat_catalog_id allows assistant collaborators to update stats', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res, next) => {
       req.authenticatedCoachId = 2;
@@ -3520,6 +3746,19 @@ describe('server routes', () => {
     expect(response.body.id).toBe(89);
   });
 
+  it('PUT /api/v1/players/:player_id/stats/:stat_catalog_id rejects missing stat fields with a validation error payload', async () => {
+    const response = await withTrustedOrigin(request(app)
+      .put('/api/v1/players/12/stats/5'))
+      .send({})
+      .expect(400);
+
+    expect(response.body).toEqual({
+      error: 'Sorry your missing how_many please try again'
+    });
+    expect(Player.where).not.toHaveBeenCalled();
+    expect(PlayerStat.where).not.toHaveBeenCalled();
+  });
+
   it('DELETE /api/v1/players/:id allows assistant collaborators to delete players', async () => {
     ensureAuthenticated.mockImplementationOnce((req, res, next) => {
       req.authenticatedCoachId = 2;
@@ -3548,5 +3787,19 @@ describe('server routes', () => {
       .expect(200);
 
     expect(destroy).toHaveBeenCalled();
+  });
+
+  it('DELETE /api/v1/players/:id returns a not-found error payload when the player does not exist', async () => {
+    Player.where.mockReturnValue({
+      fetch: jest.fn().mockResolvedValue(null)
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .delete('/api/v1/players/999'))
+      .expect(404);
+
+    expect(response.body).toEqual({
+      error: 'Player not found'
+    });
   });
 });

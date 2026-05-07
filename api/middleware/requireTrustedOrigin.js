@@ -1,6 +1,7 @@
 'use strict';
 
 const { CLIENT_ORIGIN } = require('../../config');
+const { sendForbiddenError } = require('../utils/apiErrors');
 
 function getOriginFromHeaders(req) {
   const originHeader = req.get('origin');
@@ -24,7 +25,7 @@ function requireTrustedOrigin(req, res, next) {
   const requestOrigin = getOriginFromHeaders(req);
 
   if (!requestOrigin || requestOrigin !== CLIENT_ORIGIN) {
-    return res.status(403).send('Invalid request origin');
+    return sendForbiddenError(res, 'Invalid request origin');
   }
 
   return next();

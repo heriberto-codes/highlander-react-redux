@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const helmet = require('helmet');
 const { SECRET, CLIENT_ORIGIN, DATABASE_URL } = require('./config');
+const { getApiErrorResponse } = require('./api/utils/apiErrors');
 const path = require('path');
 
 const app = express();
@@ -63,7 +64,8 @@ app.get('*', (req, res) => {
 // Error-handling middleware
 app.use((err, req, res, next) => {
         console.error(err);
-        res.status(500).json({ error: 'Internal server error' });
+        const response = getApiErrorResponse(err);
+        res.status(response.status).json(response.body);
 });
 
 let server;

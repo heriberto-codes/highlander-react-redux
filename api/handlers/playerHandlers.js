@@ -3,6 +3,11 @@
 const Player = require('../models/Player');
 const PlayerStat = require('../models/PlayerStat');
 const { getAuthenticatedCoachId, coachOwnsPlayer } = require('../utils/authorization');
+const {
+  sendForbiddenError,
+  sendNotFoundError,
+  sendValidationError
+} = require('../utils/apiErrors');
 
 function buildScopedPlayerList(players) {
   const seenPlayerIds = new Set();
@@ -46,6 +51,10 @@ function sanitizePlayerStatsResponse(player) {
   };
 }
 
+function sendMissingFieldError(res, field) {
+  return sendValidationError(res, `Sorry your missing ${field} please try again`);
+}
+
 function listPlayers(req, res, next) {
   const authenticatedCoachId = getAuthenticatedCoachId(req);
 
@@ -72,7 +81,7 @@ function getPlayer(req, res, next) {
     .fetch({ withRelated: ['teams', 'teams.coach'] })
     .then(function(player) {
       if (!player || !coachOwnsPlayer(player, authenticatedCoachId)) {
-        return res.status(403).send('Unauthorized');
+        return sendForbiddenError(res, 'Unauthorized');
       }
 
       res.json(sanitizePlayerResponse(player.toJSON()));
@@ -90,7 +99,7 @@ function getPlayerStats(req, res, next) {
     .fetch({ withRelated: ['teams', 'teams.coach', 'stats'] })
     .then(function(player) {
       if (!player || !coachOwnsPlayer(player, authenticatedCoachId)) {
-        return res.status(403).send('Unauthorized');
+        return sendForbiddenError(res, 'Unauthorized');
       }
 
       res.json(sanitizePlayerStatsResponse(player.toJSON()));
@@ -106,9 +115,7 @@ function updatePlayer(req, res, next) {
   for (var i = 0; i < updateParams.length; i++) {
     const confirmedParams = updateParams[i];
     if (!(confirmedParams in req.body)) {
-      const errorMessage = `Sorry your missing ${confirmedParams} please try again`;
-      console.error(errorMessage);
-      return res.status(400).send(errorMessage);
+      return sendMissingFieldError(res, confirmedParams);
     }
   }
 
@@ -117,7 +124,7 @@ function updatePlayer(req, res, next) {
     .fetch({ withRelated: ['teams', 'teams.coach'] })
     .then(function(player) {
       if (!player || !coachOwnsPlayer(player, authenticatedCoachId)) {
-        return res.status(403).send('Unauthorized');
+        return sendForbiddenError(res, 'Unauthorized');
       }
       return player.save({
         email: req.body.email,
@@ -140,9 +147,7 @@ function updatePlayerStat(req, res, next) {
   for (var i = 0; i < postParams.length; i++) {
     const confirmPutParams = postParams[i];
     if (!(confirmPutParams in req.body)) {
-      const errorMessage = `Sorry your missing ${confirmPutParams} please try again`;
-      console.error(errorMessage);
-      return res.status(400).send(errorMessage);
+      return sendMissingFieldError(res, confirmPutParams);
     }
   }
   Player
@@ -150,7 +155,7 @@ function updatePlayerStat(req, res, next) {
     .fetch({ withRelated: ['teams', 'teams.coach'] })
     .then(function(player) {
       if (!player || !coachOwnsPlayer(player, authenticatedCoachId)) {
-        return res.status(403).send('Unauthorized');
+        return sendForbiddenError(res, 'Unauthorized');
       }
 
       return PlayerStat
@@ -181,9 +186,7 @@ function createPlayer(req, res, next) {
   for (var i = 0; i < postParams.length; i++) {
     const confirmPostParams = postParams[i];
     if (!(confirmPostParams in req.body)) {
-      const errorMessage = `Sorry your missing ${confirmPostParams} please try again`;
-      console.error(errorMessage);
-      return res.status(400).send(errorMessage);
+      return sendMissingFieldError(res, confirmPostParams);
     }
   }
 
@@ -209,9 +212,7 @@ function createPlayerStat(req, res, next) {
   for (var i = 0; i < postParams.length; i++) {
     const confirmPostParams = postParams[i];
     if (!(confirmPostParams in req.body)) {
-      const errorMessage = `Sorry your missing ${confirmPostParams} please try again`;
-      console.error(errorMessage);
-      return res.status(400).send(errorMessage);
+      return sendMissingFieldError(res, confirmPostParams);
     }
   }
   Player
@@ -219,7 +220,7 @@ function createPlayerStat(req, res, next) {
     .fetch({ withRelated: ['teams', 'teams.coach'] })
     .then(function(player) {
       if (!player || !coachOwnsPlayer(player, authenticatedCoachId)) {
-        return res.status(403).send('Unauthorized');
+        return sendForbiddenError(res, 'Unauthorized');
       }
 
       return PlayerStat
@@ -247,9 +248,7 @@ function deletePlayer(req, res, next) {
   for (var i = 0; i < deleteParams.length; i++) {
     const wrongId = deleteParams[i];
     if (!(wrongId in req.params)) {
-      const errorMessage = `Sorry your missing ${wrongId} please try again`;
-      console.error(errorMessage);
-      return res.status(400).send(errorMessage);
+      return sendMissingFieldError(res, wrongId);
     }
   }
 
@@ -260,10 +259,10 @@ function deletePlayer(req, res, next) {
     .fetch({ withRelated: ['teams', 'teams.coach'] })
     .then(function(player) {
       if (player && !coachOwnsPlayer(player, authenticatedCoachId)) {
-        return res.status(403).send('Unauthorized');
+        return sendForbiddenError(res, 'Unauthorized');
       }
       if (!player) {
-        return res.status(404).json({ error: 'Player not found' });
+        return sendNotFoundError(res, 'Player not found');
       }
       return player.destroy()
         .then(function() {

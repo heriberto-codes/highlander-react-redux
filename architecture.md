@@ -135,11 +135,13 @@ Additional flows:
   - Shared auth/filter/analytics logic in `api/utils/`
 - Validation strategy:
   - Manual per-route field checks
+  - Validation may be centralized through small shared helpers in `api/utils/`, but this repository does not adopt a schema-validation framework by default
   - Ownership checks via `api/utils/authorization.js`
   - Request origin checks via `api/middleware/requireTrustedOrigin.js`
 - Error handling approach:
   - Route handlers usually call `next(err)`
   - Final middleware returns `{ error: 'Internal server error' }`
+  - Shared API error helpers may be used to standardize common responses without introducing a separate service layer
 
 ## API Structure
 - API style:
@@ -172,6 +174,9 @@ Additional flows:
   - JSON payloads for success cases
   - Plain string messages in many validation/auth failure cases
   - Additive response enrichment for derived stats and season metadata
+  - Standardization work should converge duplicated validation/auth/internal-error handling through shared helpers while preserving route behavior and status-code intent
+  - Route-level human-readable validation messages may remain if clients or tests depend on them; centralizing generation is preferred before changing payload shape
+  - Internal server failures must continue returning a generic JSON error payload and must not expose implementation details
 
 ## Authentication
 - Identity/authentication mechanism:
@@ -222,6 +227,7 @@ Additional flows:
 ## Security Model
 - Input validation:
   - Manual required-field and type checks in route handlers
+  - Shared helpers may standardize required-field, invalid-field, and not-found responses, but they must not weaken route-specific ownership or collaboration checks
   - Some query validation helpers in `api/utils/filterQuery.js`
   - Collaboration routes validate target coach id, role, duplicate association, and last-owner removal server-side
   - Planned notification routes should accept only explicit read/dismiss state transitions and must derive coach ownership from the authenticated session
@@ -236,6 +242,28 @@ Additional flows:
 - Abuse/rate-limit considerations:
   - Login endpoint has in-memory attempt limiting by `ip + email`
   - No generalized API rate limiting is present
+
+## API Error And Validation Contract
+- Standardization scope:
+  - server-side validation and error responses only
+  - no endpoint additions or removals
+  - no new third-party validation framework
+- Shared-helper boundary:
+  - reusable response and validation helpers may live in `api/utils/`
+  - auth and origin middleware may use those helpers, but request orchestration stays in handlers and middleware
+- Contract priorities:
+  - preserve existing authorization and trusted-origin semantics
+  - preserve status-code intent unless a specific route inconsistency is intentionally normalized
+  - avoid exposing stack traces or database details in client-facing responses
+- Common response classes to standardize:
+  - authentication failures
+  - trusted-origin failures
+  - required-field and invalid-field validation failures
+  - not-found responses where the route is intended to distinguish missing resources from unauthorized access
+  - internal server failures
+- Compatibility rule:
+  - centralize duplicated response construction first
+  - change payload shape only when the route contract is explicitly reviewed and covered by integration tests
 
 ## Background Tasks
 - No jobs, workers, or schedulers are defined in the repository.
