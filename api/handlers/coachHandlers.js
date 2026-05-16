@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const Coach = require('../models/Coach');
 const { addDerivedStatsToCoachPayload, addDerivedStatsToPlayers } = require('../utils/playerAnalytics');
@@ -12,7 +12,9 @@ const {
 	parseOptionalFilterText,
 	matchesCaseInsensitiveFilter,
 	matchesOptionalPositionFilter,
-	buildPlayerSearchText
+	buildPlayerSearchText,
+	parsePaginationQuery,
+	paginateItems
 } = require('../utils/filterQuery');
 const {
 	sendForbiddenError,
@@ -45,12 +47,42 @@ function parseDashboardFilters(query) {
 		return position;
 	}
 
+	const teamPagination = parsePaginationQuery(query, {
+		pageKey: 'teamPage',
+		limitKey: 'teamLimit'
+	});
+	if (teamPagination.error) {
+		return teamPagination;
+	}
+
+	const playerPagination = parsePaginationQuery(query, {
+		pageKey: 'playerPage',
+		limitKey: 'playerLimit'
+	});
+	if (playerPagination.error) {
+		return playerPagination;
+	}
+
+	const notificationPagination = parsePaginationQuery(
+		{ notificationLimit: query.notificationLimit },
+		{
+			pageKey: 'notificationPage',
+			limitKey: 'notificationLimit'
+		}
+	);
+	if (notificationPagination.error) {
+		return notificationPagination;
+	}
+
 	return {
 		value: {
 			season: requestedSeason.value,
 			teamSearch: teamSearch.value,
 			playerSearch: playerSearch.value,
 			position: position.value,
+			teamPagination: teamPagination.value,
+			playerPagination: playerPagination.value,
+			notificationPagination: notificationPagination.value,
 			matchesTeam: function(team) {
 				return matchesCaseInsensitiveFilter(team && team.name, teamSearch.value);
 			},
@@ -218,7 +250,7 @@ function getCoachProfile(req, res, next) {
                                         })
                         );
 
-                        coachPayload.teams = teams
+                        const filteredTeams = teams
                                 .filter(function(team) {
                                         return dashboardFilters.matchesTeam(team);
                                 })
@@ -233,9 +265,56 @@ function getCoachProfile(req, res, next) {
                                                 players: filteredPlayers
                                         });
                                 });
+                        const filteredTeamEntries = filteredTeams.map(function(team, teamIndex) {
+                                return {
+                                        teamIndex: teamIndex,
+                                        team: team
+                                };
+                        });
+                        const filteredPlayerEntries = [];
+                        filteredTeamEntries.forEach(function(entry) {
+                                (entry.team.players || []).forEach(function(player) {
+                                        filteredPlayerEntries.push({
+                                                teamIndex: entry.teamIndex,
+                                                player: player
+                                        });
+                                });
+                        });
+                        const paginatedTeamEntries = paginateItems(
+                                filteredTeamEntries,
+                                dashboardFilters.teamPagination
+                        );
+                        const paginatedPlayerEntries = paginateItems(
+                                filteredPlayerEntries,
+                                dashboardFilters.playerPagination
+                        );
+                        const playersByTeamIndex = {};
+                        paginatedPlayerEntries.items.forEach(function(entry) {
+                                if (!playersByTeamIndex[entry.teamIndex]) {
+                                        playersByTeamIndex[entry.teamIndex] = [];
+                                }
+
+                                playersByTeamIndex[entry.teamIndex].push(entry.player);
+                        });
+                        const teamsWithPaginatedPlayers = paginatedTeamEntries.items.map(function(entry) {
+                                const teamPlayers = playersByTeamIndex[entry.teamIndex] || [];
+
+                                return Object.assign({}, entry.team, {
+                                        players: teamPlayers
+                                });
+                        });
+                        const paginatedNotifications = paginateItems(
+                                notifications,
+                                dashboardFilters.notificationPagination
+                        );
+
+                        coachPayload.teams = teamsWithPaginatedPlayers;
+                        coachPayload.teamPagination = paginatedTeamEntries.pagination;
+                        coachPayload.playerPagination = paginatedPlayerEntries.pagination;
                         coachPayload.availableSeasons = availableSeasons;
                         coachPayload.activeSeason = activeSeason;
-                        coachPayload.notifications = notifications.slice(0, 10);
+                        coachPayload.notifications = paginatedNotifications.items;
+                        coachPayload.notificationPagination = paginatedNotifications.pagination;
                         coachPayload.unreadNotificationCount = notifications.filter(function(notification) {
                                 return !notification.read_at && !notification.dismissed_at;
                         }).length;

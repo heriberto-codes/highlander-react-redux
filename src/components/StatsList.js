@@ -3,6 +3,47 @@ import React from 'react';
 import 'bulma/css/bulma.css';
 import '../css/style.css';
 
+function renderPaginationControls(pagination, onPageChange) {
+	if (!pagination || pagination.totalPages <= 1) {
+		return null;
+	}
+
+	const previousPage = pagination.page - 1;
+	const nextPage = pagination.page + 1;
+	const canGoPrevious = pagination.hasPreviousPage && typeof onPageChange === 'function';
+	const canGoNext = pagination.hasNextPage && typeof onPageChange === 'function';
+
+	return (
+		<nav className="pagination is-small" role="navigation" aria-label="stats pagination">
+			<button
+				type="button"
+				className="pagination-previous"
+				disabled={!canGoPrevious}
+				onClick={() => canGoPrevious && onPageChange(previousPage)}>
+				Previous
+			</button>
+			<button
+				type="button"
+				className="pagination-next"
+				disabled={!canGoNext}
+				onClick={() => canGoNext && onPageChange(nextPage)}>
+				Next
+			</button>
+			<ul className="pagination-list">
+				<li>
+					<span className="pagination-link is-current">
+						Page {pagination.page} of {pagination.totalPages}
+					</span>
+				</li>
+			</ul>
+		</nav>
+	);
+}
+
+function isEmptyPaginatedPage(items, pagination) {
+	return items.length === 0 && pagination && pagination.totalItems > 0;
+}
+
 export default function StatsList(props) {
 	const stats = props.stats;
 	const activeSeason =
@@ -28,23 +69,25 @@ export default function StatsList(props) {
 		return <tr key={rowKey}>
 			<th>{player.position}</th>
 			<td>{player.first_name} {player.last_name}</td>
-			<td>{player.stats["Hits"]}</td>
-			<td>{player.stats["At Bats"]}</td>
-			<td>{player.stats["Home Runs"]}</td>
-			<td>{player.stats["Earned Runs"]}</td>
-			<td>{player.stats["Innings Pitched"]}</td>
-			<td>{player.stats["Strikeouts"]}</td>
+			<td>{player.stats['Hits']}</td>
+			<td>{player.stats['At Bats']}</td>
+			<td>{player.stats['Home Runs']}</td>
+			<td>{player.stats['Earned Runs']}</td>
+			<td>{player.stats['Innings Pitched']}</td>
+			<td>{player.stats['Strikeouts']}</td>
 			<td>{formatDerivedStat(player.derivedStats && player.derivedStats.battingAverage)}</td>
 			<td>{formatDerivedStat(player.derivedStats && player.derivedStats.homeRunRate)}</td>
 			<td>{formatDerivedStat(player.derivedStats && player.derivedStats.era)}</td>
 			<td>{formatDerivedStat(player.derivedStats && player.derivedStats.strikeoutsPerInning)}</td>
-		</tr>
-	})
+		</tr>;
+	});
 	// mergeTeamStats.push(newPlayerStat);
 	// })
 	// console.log(mergeTeamStats)
 
-	const emptyMessage = hasActiveFilters
+	const emptyMessage = isEmptyPaginatedPage(stats, props.pagination)
+		? 'No stats on this page.'
+		: hasActiveFilters
 		? `No stats match the current filters${activeSeason !== null ? ` for season ${activeSeason}` : ''}.`
 		: 'You dont have Stats.';
 	return (
@@ -126,7 +169,8 @@ export default function StatsList(props) {
 						</div>
 					)}
 				</section>
+				{renderPaginationControls(props.pagination, props.onPageChange)}
 			</div>
 		</div>
-	)
+	);
 }

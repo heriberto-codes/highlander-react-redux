@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const Bookshelf = require('../config/bookshelf.config');
 const Team = require('../models/Team');
@@ -21,7 +21,9 @@ const {
 	parseOptionalFilterText,
 	matchesCaseInsensitiveFilter,
 	matchesOptionalPositionFilter,
-	buildPlayerSearchText
+	buildPlayerSearchText,
+	parsePaginationQuery,
+	paginateItems
 } = require('../utils/filterQuery');
 const {
 	sendForbiddenError,
@@ -68,11 +70,20 @@ function parseTeamFilters(query) {
 		return position;
 	}
 
+	const playerPagination = parsePaginationQuery(query, {
+		pageKey: 'playerPage',
+		limitKey: 'playerLimit'
+	});
+	if (playerPagination.error) {
+		return playerPagination;
+	}
+
 	return {
 		value: {
 			season: requestedSeason.value,
 			playerSearch: playerSearch.value,
 			position: position.value,
+			playerPagination: playerPagination.value,
 			matchesPlayer: function(player) {
 				return matchesCaseInsensitiveFilter(buildPlayerSearchText(player), playerSearch.value);
 			},
@@ -411,11 +422,14 @@ function getTeam(req, res, next) {
 						? teamFilters.season
 						: (availableSeasons[0] !== undefined ? availableSeasons[0] : null);
 
-				teamPayload.players = addDerivedStatsToPlayers(teamPayload.players, activeSeason)
+				const filteredPlayers = addDerivedStatsToPlayers(teamPayload.players, activeSeason)
 					.filter(function(player) {
 						return teamFilters.matchesPlayer(player) &&
 							teamFilters.matchesPosition(player);
 					});
+				const paginatedPlayers = paginateItems(filteredPlayers, teamFilters.playerPagination);
+				teamPayload.players = paginatedPlayers.items;
+				teamPayload.playerPagination = paginatedPlayers.pagination;
 				addCollaborationMetadata(teamPayload, authenticatedCoachId);
 				teamPayload.availableSeasons = availableSeasons;
 				teamPayload.activeSeason = activeSeason;
@@ -437,11 +451,14 @@ function getTeam(req, res, next) {
 							? requestedSeason
 							: (availableSeasons[0] !== undefined ? availableSeasons[0] : null);
 
-					teamPayload.players = addDerivedStatsToPlayers(teamPayload.players, activeSeason)
+					const filteredPlayers = addDerivedStatsToPlayers(teamPayload.players, activeSeason)
 						.filter(function(player) {
 							return teamFilters.matchesPlayer(player) &&
 								teamFilters.matchesPosition(player);
 						});
+					const paginatedPlayers = paginateItems(filteredPlayers, teamFilters.playerPagination);
+					teamPayload.players = paginatedPlayers.items;
+					teamPayload.playerPagination = paginatedPlayers.pagination;
 					addCollaborationMetadata(teamPayload, authenticatedCoachId);
 					teamPayload.availableSeasons = availableSeasons;
 					teamPayload.activeSeason = activeSeason;

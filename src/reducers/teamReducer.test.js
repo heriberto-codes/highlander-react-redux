@@ -65,6 +65,18 @@ describe('teamReducer', () => {
         playerSearch: '',
         position: ''
       },
+      teamDetailPagination: {
+        playerPage: 1,
+        playerLimit: 10
+      },
+      playerPagination: {
+        page: 1,
+        limit: 10,
+        totalItems: 0,
+        totalPages: 0,
+        hasPreviousPage: false,
+        hasNextPage: false
+      },
       players: [
         { id: 7, first_name: 'P', last_name: 'L', email: 'e', position: 'p' }
       ],
@@ -161,6 +173,46 @@ describe('teamReducer', () => {
     });
   });
 
+  it('should store requested team detail pagination state on GET_TEAM_PROFILE', () => {
+    const state = teamReducer(undefined, {
+      type: GET_TEAM_PROFILE,
+      id: 9,
+      season: 2026,
+      filters: {
+        playerSearch: ' Ace ',
+        position: ' Pitcher ',
+        playerPage: '2',
+        playerLimit: 25
+      }
+    });
+
+    expect(state.filters).toEqual({
+      playerSearch: 'Ace',
+      position: 'Pitcher'
+    });
+    expect(state.teamDetailPagination).toEqual({
+      playerPage: 2,
+      playerLimit: 25
+    });
+  });
+
+  it('should default invalid team detail pagination requests on GET_TEAM_PROFILE', () => {
+    const state = teamReducer(undefined, {
+      type: GET_TEAM_PROFILE,
+      id: 9,
+      season: 2026,
+      filters: {
+        playerPage: 0,
+        playerLimit: 'all'
+      }
+    });
+
+    expect(state.teamDetailPagination).toEqual({
+      playerPage: 1,
+      playerLimit: 10
+    });
+  });
+
   it('should reset prior team filter state when GET_TEAM_PROFILE is dispatched without filters', () => {
     const previousState = teamReducer(undefined, {
       type: GET_TEAM_PROFILE,
@@ -217,6 +269,57 @@ describe('teamReducer', () => {
     expect(nextState.filters).toEqual({
       playerSearch: 'Ace',
       position: 'Pitcher'
+    });
+  });
+
+  it('should store team detail pagination metadata across GET_TEAM_PROFILE_SUCCESS', () => {
+    const previousState = teamReducer(undefined, {
+      type: GET_TEAM_PROFILE,
+      id: 9,
+      season: 2026,
+      filters: {
+        playerPage: 2,
+        playerLimit: 25
+      }
+    });
+
+    const nextState = teamReducer(previousState, {
+      type: GET_TEAM_PROFILE_SUCCESS,
+      response: {
+        data: {
+          name: 'Highlanders',
+          city: 'Bronx',
+          state: 'NY',
+          season: 2026,
+          activeSeason: 2026,
+          availableSeasons: [2026],
+          players: [],
+          playerPagination: {
+            page: 2,
+            limit: 25,
+            totalItems: 40,
+            totalPages: 2,
+            hasPreviousPage: true,
+            hasNextPage: false
+          },
+          coach: [
+            { first_name: 'Casey', last_name: 'Jones', email: 'coach@example.com' }
+          ]
+        }
+      }
+    });
+
+    expect(nextState.teamDetailPagination).toEqual({
+      playerPage: 2,
+      playerLimit: 25
+    });
+    expect(nextState.playerPagination).toEqual({
+      page: 2,
+      limit: 25,
+      totalItems: 40,
+      totalPages: 2,
+      hasPreviousPage: true,
+      hasNextPage: false
     });
   });
 

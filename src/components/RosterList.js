@@ -3,6 +3,47 @@ import React from 'react';
 import 'bulma/css/bulma.css';
 import '../css/style.css';
 
+function renderPaginationControls(pagination, onPageChange) {
+	if (!pagination || pagination.totalPages <= 1) {
+		return null;
+	}
+
+	const previousPage = pagination.page - 1;
+	const nextPage = pagination.page + 1;
+	const canGoPrevious = pagination.hasPreviousPage && typeof onPageChange === 'function';
+	const canGoNext = pagination.hasNextPage && typeof onPageChange === 'function';
+
+	return (
+		<nav className="pagination is-small" role="navigation" aria-label="roster pagination">
+			<button
+				type="button"
+				className="pagination-previous"
+				disabled={!canGoPrevious}
+				onClick={() => canGoPrevious && onPageChange(previousPage)}>
+				Previous
+			</button>
+			<button
+				type="button"
+				className="pagination-next"
+				disabled={!canGoNext}
+				onClick={() => canGoNext && onPageChange(nextPage)}>
+				Next
+			</button>
+			<ul className="pagination-list">
+				<li>
+					<span className="pagination-link is-current">
+						Page {pagination.page} of {pagination.totalPages}
+					</span>
+				</li>
+			</ul>
+		</nav>
+	);
+}
+
+function isEmptyPaginatedPage(items, pagination) {
+	return items.length === 0 && pagination && pagination.totalItems > 0;
+}
+
 export default function RosterList(props) {
 
 	const players = props.players;
@@ -17,7 +58,9 @@ export default function RosterList(props) {
 			props.filters.position
 		)
 	);
-	const emptyMessage = hasActiveFilters
+	const emptyMessage = isEmptyPaginatedPage(players, props.pagination)
+		? 'No players on this page.'
+		: hasActiveFilters
 		? `No players match the current filters${activeSeason !== null ? ` for season ${activeSeason}` : ''}.`
 		: 'You dont have a Roster.';
 	// const playersFirstName = props.players.first_name;
@@ -34,14 +77,14 @@ export default function RosterList(props) {
 					</span>
 				</p>
 			</footer>
-		</div>
+		</div>;
 	});
 
 
 	const playerList = listOfPlayers.length > 0 ? listOfPlayers:
 		<div className="notification has-text-centered roster-dashboard-message">
 			{emptyMessage}
-		</div>
+		</div>;
 
 	return (
 		<div className='tile is-child box header'>
@@ -75,6 +118,7 @@ export default function RosterList(props) {
 					</div>
 				</div>
 			</section>
+			{renderPaginationControls(props.pagination, props.onPageChange)}
 		</div>
-	)
+	);
 }

@@ -79,6 +79,41 @@ describe('coach actions', () => {
     );
   });
 
+  it('should append pagination queries with existing coach profile filters', () => {
+    const dispatch = jest.fn();
+
+    getProfile(12, 2026, {
+      teamSearch: 'War',
+      playerSearch: 'Ace',
+      position: 'Pitcher',
+      teamPage: 2,
+      teamLimit: 25,
+      playerPage: 3,
+      playerLimit: 10,
+      notificationLimit: 5
+    })(dispatch);
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: GET_PROFILE,
+      id: 12,
+      season: 2026,
+      filters: {
+        teamSearch: 'War',
+        playerSearch: 'Ace',
+        position: 'Pitcher',
+        teamPage: 2,
+        teamLimit: 25,
+        playerPage: 3,
+        playerLimit: 10,
+        notificationLimit: 5
+      }
+    });
+    expect(axios.get).toHaveBeenCalledWith(
+      '/api/v1/coaches/12?season=2026&teamSearch=War&playerSearch=Ace&position=Pitcher&teamPage=2&teamLimit=25&playerPage=3&playerLimit=10&notificationLimit=5',
+      { withCredentials: true }
+    );
+  });
+
   it('should omit empty string filters from the coach profile query', () => {
     const dispatch = jest.fn();
 

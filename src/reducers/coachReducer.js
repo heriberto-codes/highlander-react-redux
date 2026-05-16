@@ -7,6 +7,23 @@ const defaultFilters = () => ({
 	position: ''
 });
 
+const defaultDashboardPagination = () => ({
+	teamPage: 1,
+	teamLimit: 10,
+	playerPage: 1,
+	playerLimit: 10,
+	notificationLimit: 10
+});
+
+const defaultPaginationMetadata = () => ({
+	page: 1,
+	limit: 10,
+	totalItems: 0,
+	totalPages: 0,
+	hasPreviousPage: false,
+	hasNextPage: false
+});
+
 const initialState = {
 	stats: [],
 	teams: [],
@@ -14,6 +31,10 @@ const initialState = {
 	availableSeasons: [],
 	activeSeason: null,
 	filters: defaultFilters(),
+	dashboardPagination: defaultDashboardPagination(),
+	teamPagination: defaultPaginationMetadata(),
+	playerPagination: defaultPaginationMetadata(),
+	notificationPagination: defaultPaginationMetadata(),
 	first_name: '',
 	last_name: '',
 	email: '',
@@ -82,6 +103,34 @@ const normalizeCoachFilters = filters => ({
 	position: normalizeFilterValue(filters && filters.position)
 });
 
+const normalizePositiveInteger = (value, defaultValue) => {
+	const parsedValue = Number(value);
+
+	return Number.isInteger(parsedValue) && parsedValue > 0
+		? parsedValue
+		: defaultValue;
+};
+
+const normalizeDashboardPagination = filters => {
+	const defaults = defaultDashboardPagination();
+
+	return {
+		teamPage: normalizePositiveInteger(filters && filters.teamPage, defaults.teamPage),
+		teamLimit: normalizePositiveInteger(filters && filters.teamLimit, defaults.teamLimit),
+		playerPage: normalizePositiveInteger(filters && filters.playerPage, defaults.playerPage),
+		playerLimit: normalizePositiveInteger(filters && filters.playerLimit, defaults.playerLimit),
+		notificationLimit: normalizePositiveInteger(
+			filters && filters.notificationLimit,
+			defaults.notificationLimit
+		)
+	};
+};
+
+const normalizePaginationMetadata = pagination => Object.assign(
+	defaultPaginationMetadata(),
+	pagination || {}
+);
+
 export const coachReducer = (state = initialState, action) => {
 	switch (action.type) {
 	case LOGIN_SUCCESS:
@@ -91,7 +140,8 @@ export const coachReducer = (state = initialState, action) => {
 		break;
 	case GET_PROFILE:
 		return Object.assign({}, state, {
-			filters: normalizeCoachFilters(action.filters)
+			filters: normalizeCoachFilters(action.filters),
+			dashboardPagination: normalizeDashboardPagination(action.filters)
 		});
 	case PROFILE_SUCCESS:
 		let players = [];
@@ -139,6 +189,12 @@ export const coachReducer = (state = initialState, action) => {
                                         ? action.response.data.activeSeason
                                         : null,
                         filters: state.filters,
+                        dashboardPagination: state.dashboardPagination,
+                        teamPagination: normalizePaginationMetadata(action.response.data.teamPagination),
+                        playerPagination: normalizePaginationMetadata(action.response.data.playerPagination),
+                        notificationPagination: normalizePaginationMetadata(
+                                action.response.data.notificationPagination
+                        ),
                         first_name: action.response.data.first_name,
                         last_name: action.response.data.last_name,
                         email: action.response.data.email,

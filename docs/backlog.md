@@ -16,7 +16,7 @@
 - [x] Introduce an `/api` namespace and versioning
 - [x] Separate route handlers from business logic
 - [x] Standardize error handling and validation
-- [ ] Add pagination and query capabilities
+- [x] Add pagination and query capabilities
 
 ## Client Improvements
 

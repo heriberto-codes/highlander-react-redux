@@ -27,6 +27,20 @@ const defaultFilters = () => ({
 	position: ''
 });
 
+const defaultTeamDetailPagination = () => ({
+	playerPage: 1,
+	playerLimit: 10
+});
+
+const defaultPaginationMetadata = () => ({
+	page: 1,
+	limit: 10,
+	totalItems: 0,
+	totalPages: 0,
+	hasPreviousPage: false,
+	hasNextPage: false
+});
+
 // create intial state
 // think about what state is needed on this page
 const initialState = {
@@ -37,6 +51,8 @@ const initialState = {
 	activeSeason: null,
 	availableSeasons: [],
 	filters: defaultFilters(),
+	teamDetailPagination: defaultTeamDetailPagination(),
+	playerPagination: defaultPaginationMetadata(),
 	players: [],
 	coach: {
 		first_name: '',
@@ -145,6 +161,28 @@ const normalizeTeamFilters = filters => ({
 	position: normalizeFilterValue(filters && filters.position)
 });
 
+const normalizePositiveInteger = (value, defaultValue) => {
+	const parsedValue = Number(value);
+
+	return Number.isInteger(parsedValue) && parsedValue > 0
+		? parsedValue
+		: defaultValue;
+};
+
+const normalizeTeamDetailPagination = filters => {
+	const defaults = defaultTeamDetailPagination();
+
+	return {
+		playerPage: normalizePositiveInteger(filters && filters.playerPage, defaults.playerPage),
+		playerLimit: normalizePositiveInteger(filters && filters.playerLimit, defaults.playerLimit)
+	};
+};
+
+const normalizePaginationMetadata = pagination => Object.assign(
+	defaultPaginationMetadata(),
+	pagination || {}
+);
+
 const resetCollaboratorMutationState = {
 	isAddingCollaborator: false,
 	addCollaboratorSuccess: false,
@@ -163,7 +201,8 @@ export const teamReducer = (state = initialState, action) => {
 	switch(action.type) {
 	case GET_TEAM_PROFILE:
 		return Object.assign({}, state, {
-			filters: normalizeTeamFilters(action.filters)
+			filters: normalizeTeamFilters(action.filters),
+			teamDetailPagination: normalizeTeamDetailPagination(action.filters)
 		}, resetCollaboratorMutationState);
 	case GET_TEAM_PROFILE_SUCCESS:
 		return Object.assign({}, state, {
@@ -180,6 +219,8 @@ export const teamReducer = (state = initialState, action) => {
 					: null,
 			availableSeasons: action.response.data.availableSeasons || [],
 			filters: state.filters,
+			teamDetailPagination: state.teamDetailPagination,
+			playerPagination: normalizePaginationMetadata(action.response.data.playerPagination),
 			players: players(state.players, action),
 			coach: coach(state.coach, action),
 			collaborators: collaborators(state.collaborators, action),

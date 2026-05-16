@@ -194,4 +194,79 @@ describe('StatsList', () => {
     expect(div.textContent).toContain('No stats match the current filters for season 2026.');
     expect(div.querySelector('table')).toBeNull();
   });
+
+  it('renders an empty paginated page state when matching stats exist elsewhere', () => {
+    ReactDOM.render(
+      <StatsList
+        activeSeason={2026}
+        teams={[]}
+        stats={[]}
+        pagination={{
+          page: 4,
+          limit: 10,
+          totalItems: 25,
+          totalPages: 3,
+          hasPreviousPage: true,
+          hasNextPage: false
+        }}
+        onPageChange={jest.fn()}
+      />,
+      div
+    );
+
+    expect(div.textContent).toContain('No stats on this page.');
+    expect(div.textContent).toContain('Page 4 of 3');
+    expect(div.querySelector('.pagination')).not.toBeNull();
+    expect(div.querySelector('table')).toBeNull();
+    expect(div.textContent).not.toContain('You dont have Stats.');
+    expect(div.textContent).not.toContain('No stats match the current filters');
+  });
+
+  it('renders stats pagination controls and requests the previous page on the last page', () => {
+    const onPageChange = jest.fn();
+
+    ReactDOM.render(
+      <StatsList
+        activeSeason={2026}
+        teams={[]}
+        stats={[
+          {
+            first_name: 'Pat',
+            last_name: 'Lee',
+            position: 'Pitcher',
+            stats: {
+              Hits: 5,
+              'At Bats': 10,
+              'Home Runs': 2,
+              'Earned Runs': 3,
+              'Innings Pitched': 6,
+              Strikeouts: 9
+            },
+            derivedStats: {}
+          }
+        ]}
+        pagination={{
+          page: 5,
+          limit: 10,
+          totalItems: 45,
+          totalPages: 5,
+          hasPreviousPage: true,
+          hasNextPage: false
+        }}
+        onPageChange={onPageChange}
+      />,
+      div
+    );
+
+    const previousButton = div.querySelector('.pagination-previous');
+    const nextButton = div.querySelector('.pagination-next');
+
+    expect(div.textContent).toContain('Page 5 of 5');
+    expect(previousButton.disabled).toBe(false);
+    expect(nextButton.disabled).toBe(true);
+
+    previousButton.click();
+
+    expect(onPageChange).toHaveBeenCalledWith(4);
+  });
 });

@@ -32,11 +32,37 @@ function haveFilterValuesChanged(previousFilters, nextFilters) {
 		previousFilters.position !== nextFilters.position;
 }
 
-function getRequestFilters(state) {
+const defaultTeamDetailPagination = () => ({
+	playerPage: 1,
+	playerLimit: 10
+});
+
+function getPaginationStateFromProps(pagination) {
+	const defaults = defaultTeamDetailPagination();
+
+	return {
+		playerPage: pagination && pagination.playerPage ? pagination.playerPage : defaults.playerPage,
+		playerLimit: pagination && pagination.playerLimit ? pagination.playerLimit : defaults.playerLimit
+	};
+}
+
+function getResetPagination(pagination) {
+	const currentPagination = getPaginationStateFromProps(pagination);
+
+	return Object.assign({}, currentPagination, {
+		playerPage: 1
+	});
+}
+
+function getFilterRequestState(state) {
 	return {
 		playerSearch: state.playerSearch,
 		position: state.position
 	};
+}
+
+function getRequestFilters(filterState, paginationState) {
+	return Object.assign({}, filterState, paginationState);
 }
 
 export class TeamDetails extends Component {
@@ -47,7 +73,13 @@ export class TeamDetails extends Component {
 		}, getFilterStateFromProps(props.filters));
 	}
 
-	fetchTeamProfile(season, filters = getRequestFilters(this.state)) {
+	fetchTeamProfile(
+		season,
+		filters = getRequestFilters(
+			getFilterRequestState(this.state),
+			getPaginationStateFromProps(this.props.teamDetailPagination)
+		)
+	) {
 		const { id } = this.props.match.params;
 		this.props.dispatch(getTeamProfile(id, season, filters));
 	}
@@ -73,7 +105,13 @@ export class TeamDetails extends Component {
 	}
 
 	handleSeasonChange(season) {
-		this.fetchTeamProfile(season, getRequestFilters(this.state));
+		this.fetchTeamProfile(
+			season,
+			getRequestFilters(
+				getFilterRequestState(this.state),
+				getResetPagination(this.props.teamDetailPagination)
+			)
+		);
 	}
 
 	handleFilterChange(field, value) {
@@ -83,7 +121,26 @@ export class TeamDetails extends Component {
 	}
 
 	applyFilters() {
-		this.fetchTeamProfile(this.props.activeSeason, getRequestFilters(this.state));
+		this.fetchTeamProfile(
+			this.props.activeSeason,
+			getRequestFilters(
+				getFilterRequestState(this.state),
+				getResetPagination(this.props.teamDetailPagination)
+			)
+		);
+	}
+
+	handlePlayerPageChange(playerPage) {
+		const pagination = Object.assign(
+			{},
+			getPaginationStateFromProps(this.props.teamDetailPagination),
+			{ playerPage }
+		);
+
+		this.fetchTeamProfile(
+			this.props.activeSeason,
+			getRequestFilters(getFilterRequestState(this.state), pagination)
+		);
 	}
 
 	showModal(){
@@ -134,7 +191,7 @@ export class TeamDetails extends Component {
 				addPlayer={(teamId, email, firstName, lastName, position) => this.addNewPlayer(teamId, email, firstName, lastName, position)}
 				closeModal={() => this.closeModal()}
 				onSubmit={ this.submit }
-			 />;
+				/>;
 		}
 		return (
 			<div>
@@ -169,6 +226,8 @@ export class TeamDetails extends Component {
 					onAddCollaborator={(coachId, role) => this.addCollaborator(coachId, role)}
 					onUpdateCollaborator={(coachId, role) => this.updateCollaborator(coachId, role)}
 					onRemoveCollaborator={coachId => this.removeCollaborator(coachId)}
+					pagination={this.props.playerPagination}
+					onPageChange={page => this.handlePlayerPageChange(page)}
 					isAddingCollaborator={this.props.isAddingCollaborator}
 					addCollaboratorSuccess={this.props.addCollaboratorSuccess}
 					addCollaboratorError={this.props.addCollaboratorError}
@@ -199,6 +258,8 @@ const mapStateToProps = state => ({
 	last_name: state.teamReducer.coach.last_name,
 	email: state.teamReducer.coach.email,
 	players: state.teamReducer.players,
+	teamDetailPagination: state.teamReducer.teamDetailPagination,
+	playerPagination: state.teamReducer.playerPagination,
 	collaborators: state.teamReducer.collaborators,
 	currentCoachRole: state.teamReducer.currentCoachRole,
 	isAddingCollaborator: state.teamReducer.isAddingCollaborator,

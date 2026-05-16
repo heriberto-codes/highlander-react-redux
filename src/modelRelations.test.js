@@ -4,6 +4,7 @@
 
 function loadCoachModel() {
   jest.resetModules();
+  jest.unmock('../api/models/Coach');
 
   const mockBookshelf = {
     Model: {
@@ -61,6 +62,7 @@ function loadGameModel() {
 
 function loadNotificationModel() {
   jest.resetModules();
+  jest.unmock('../api/models/Notification');
 
   const mockBookshelf = {
     Model: {

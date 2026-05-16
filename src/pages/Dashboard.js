@@ -26,13 +26,55 @@ function haveFilterValuesChanged(previousFilters, nextFilters) {
 		previousFilters.position !== nextFilters.position;
 }
 
+const defaultDashboardPagination = () => ({
+	teamPage: 1,
+	teamLimit: 10,
+	playerPage: 1,
+	playerLimit: 10,
+	notificationLimit: 10
+});
+
+function getPaginationStateFromProps(pagination) {
+	const defaults = defaultDashboardPagination();
+
+	return {
+		teamPage: pagination && pagination.teamPage ? pagination.teamPage : defaults.teamPage,
+		teamLimit: pagination && pagination.teamLimit ? pagination.teamLimit : defaults.teamLimit,
+		playerPage: pagination && pagination.playerPage ? pagination.playerPage : defaults.playerPage,
+		playerLimit: pagination && pagination.playerLimit ? pagination.playerLimit : defaults.playerLimit,
+		notificationLimit:
+			pagination && pagination.notificationLimit
+				? pagination.notificationLimit
+				: defaults.notificationLimit
+	};
+}
+
+function getResetPagination(pagination) {
+	const currentPagination = getPaginationStateFromProps(pagination);
+
+	return Object.assign({}, currentPagination, {
+		teamPage: 1,
+		playerPage: 1
+	});
+}
+
+function getRequestFilters(filterState, paginationState) {
+	return Object.assign({}, filterState, paginationState);
+}
+
 export class Dashboard extends Component {
 	constructor(props) {
 		super(props);
 		this.state = getFilterStateFromProps(props.filters);
 	}
 
-	fetchProfile(season, filters = this.state) {
+	fetchProfile(
+		season,
+		filters = getRequestFilters(
+			this.state,
+			getPaginationStateFromProps(this.props.dashboardPagination)
+		)
+	) {
 		if (!this.props.id) {
 			return;
 		}
@@ -57,7 +99,13 @@ export class Dashboard extends Component {
 	}
 
 	handleSeasonChange(season) {
-		this.fetchProfile(season, this.state);
+		this.fetchProfile(
+			season,
+			getRequestFilters(
+				this.state,
+				getResetPagination(this.props.dashboardPagination)
+			)
+		);
 	}
 
 	handleFilterChange(field, value) {
@@ -67,7 +115,39 @@ export class Dashboard extends Component {
 	}
 
 	applyFilters() {
-		this.fetchProfile(this.props.activeSeason, this.state);
+		this.fetchProfile(
+			this.props.activeSeason,
+			getRequestFilters(
+				this.state,
+				getResetPagination(this.props.dashboardPagination)
+			)
+		);
+	}
+
+	handleTeamPageChange(teamPage) {
+		const pagination = Object.assign(
+			{},
+			getPaginationStateFromProps(this.props.dashboardPagination),
+			{ teamPage }
+		);
+
+		this.fetchProfile(
+			this.props.activeSeason,
+			getRequestFilters(this.state, pagination)
+		);
+	}
+
+	handlePlayerPageChange(playerPage) {
+		const pagination = Object.assign(
+			{},
+			getPaginationStateFromProps(this.props.dashboardPagination),
+			{ playerPage }
+		);
+
+		this.fetchProfile(
+			this.props.activeSeason,
+			getRequestFilters(this.state, pagination)
+		);
 	}
 
 	render() {
@@ -95,11 +175,15 @@ export class Dashboard extends Component {
 								teams={this.props.teams}
 								filters={this.props.filters}
 								activeSeason={this.props.activeSeason}
+								pagination={this.props.teamPagination}
+								onPageChange={page => this.handleTeamPageChange(page)}
 							/>
 							<RosterList
 								players={this.props.players}
 								filters={this.props.filters}
 								activeSeason={this.props.activeSeason}
+								pagination={this.props.playerPagination}
+								onPageChange={page => this.handlePlayerPageChange(page)}
 							/>
 						</div>
 						<StatsList
@@ -107,11 +191,13 @@ export class Dashboard extends Component {
 							teams={this.props.teams}
 							filters={this.props.filters}
 							activeSeason={this.props.activeSeason}
+							pagination={this.props.playerPagination}
+							onPageChange={page => this.handlePlayerPageChange(page)}
 						/>
 					</div>
 				</section>
 			</div>
-		)
+		);
 	}
 }
 
@@ -122,14 +208,18 @@ const mapStateToProps = state => ({
 	availableSeasons: state.coachReducer.availableSeasons,
 	activeSeason: state.coachReducer.activeSeason,
 	filters: state.coachReducer.filters,
+	dashboardPagination: state.coachReducer.dashboardPagination,
+	teamPagination: state.coachReducer.teamPagination,
+	playerPagination: state.coachReducer.playerPagination,
+	notificationPagination: state.coachReducer.notificationPagination,
 	isLoggedIn: state.loginReducer.isloggedIn,
 	first_name: state.coachReducer.first_name,
 	last_name: state.coachReducer.last_name,
 	email: state.coachReducer.email,
 	stats: state.coachReducer.stats
-})
+});
 
-export default connect(mapStateToProps)(Dashboard)
+export default connect(mapStateToProps)(Dashboard);
 
 // ask wences if I can do someting like this is react?
 // const mapCoachReducerToProps = coachState => ({

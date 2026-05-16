@@ -128,5 +128,5 @@ export default function Hero(props) {
 				</div>
 			</section>
 		</div>
-	)
+	);
 }

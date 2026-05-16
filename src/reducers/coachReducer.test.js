@@ -156,6 +156,60 @@ describe('coachReducer', () => {
     });
   });
 
+  it('should store requested dashboard pagination state on GET_PROFILE', () => {
+    const state = coachReducer(undefined, {
+      type: GET_PROFILE,
+      id: 12,
+      season: 2026,
+      filters: {
+        teamSearch: ' War ',
+        playerSearch: ' Ace ',
+        position: ' Pitcher ',
+        teamPage: '2',
+        teamLimit: 25,
+        playerPage: 3,
+        playerLimit: '10',
+        notificationLimit: 5
+      }
+    });
+
+    expect(state.filters).toEqual({
+      teamSearch: 'War',
+      playerSearch: 'Ace',
+      position: 'Pitcher'
+    });
+    expect(state.dashboardPagination).toEqual({
+      teamPage: 2,
+      teamLimit: 25,
+      playerPage: 3,
+      playerLimit: 10,
+      notificationLimit: 5
+    });
+  });
+
+  it('should default invalid dashboard pagination requests on GET_PROFILE', () => {
+    const state = coachReducer(undefined, {
+      type: GET_PROFILE,
+      id: 12,
+      season: 2026,
+      filters: {
+        teamPage: 0,
+        teamLimit: 'all',
+        playerPage: -1,
+        playerLimit: '',
+        notificationLimit: null
+      }
+    });
+
+    expect(state.dashboardPagination).toEqual({
+      teamPage: 1,
+      teamLimit: 10,
+      playerPage: 1,
+      playerLimit: 10,
+      notificationLimit: 10
+    });
+  });
+
   it('should reset prior coach filter state when GET_PROFILE is dispatched without filters', () => {
     const previousState = coachReducer(undefined, {
       type: GET_PROFILE,
@@ -213,6 +267,92 @@ describe('coachReducer', () => {
       teamSearch: 'War',
       playerSearch: 'Ace',
       position: 'Pitcher'
+    });
+  });
+
+  it('should store dashboard pagination metadata across PROFILE_SUCCESS', () => {
+    const previousState = coachReducer(undefined, {
+      type: GET_PROFILE,
+      id: 12,
+      season: 2026,
+      filters: {
+        teamPage: 2,
+        teamLimit: 25,
+        playerPage: 3,
+        playerLimit: 10,
+        notificationLimit: 5
+      }
+    });
+
+    const nextState = coachReducer(previousState, {
+      type: PROFILE_SUCCESS,
+      response: {
+        data: {
+          availableSeasons: [2026],
+          activeSeason: 2026,
+          teams: [],
+          teamPagination: {
+            page: 2,
+            limit: 25,
+            totalItems: 30,
+            totalPages: 2,
+            hasPreviousPage: true,
+            hasNextPage: false
+          },
+          playerPagination: {
+            page: 3,
+            limit: 10,
+            totalItems: 42,
+            totalPages: 5,
+            hasPreviousPage: true,
+            hasNextPage: true
+          },
+          notificationPagination: {
+            page: 1,
+            limit: 5,
+            totalItems: 4,
+            totalPages: 1,
+            hasPreviousPage: false,
+            hasNextPage: false
+          },
+          first_name: 'Coach',
+          last_name: 'Test',
+          email: 'c@example.com',
+          id: 12
+        }
+      }
+    });
+
+    expect(nextState.dashboardPagination).toEqual({
+      teamPage: 2,
+      teamLimit: 25,
+      playerPage: 3,
+      playerLimit: 10,
+      notificationLimit: 5
+    });
+    expect(nextState.teamPagination).toEqual({
+      page: 2,
+      limit: 25,
+      totalItems: 30,
+      totalPages: 2,
+      hasPreviousPage: true,
+      hasNextPage: false
+    });
+    expect(nextState.playerPagination).toEqual({
+      page: 3,
+      limit: 10,
+      totalItems: 42,
+      totalPages: 5,
+      hasPreviousPage: true,
+      hasNextPage: true
+    });
+    expect(nextState.notificationPagination).toEqual({
+      page: 1,
+      limit: 5,
+      totalItems: 4,
+      totalPages: 1,
+      hasPreviousPage: false,
+      hasNextPage: false
     });
   });
 

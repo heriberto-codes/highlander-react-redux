@@ -7,7 +7,9 @@ function buildTeamProfileRequestUrl(id, season, filters) {
 	return buildRequestUrl(`${teamsUrl}${id}`, {
 		season,
 		playerSearch: filters.playerSearch,
-		position: filters.position
+		position: filters.position,
+		playerPage: filters.playerPage,
+		playerLimit: filters.playerLimit
 	});
 }
 
@@ -201,7 +203,7 @@ export const ADD_PLAYER = 'ADD_PLAYER';
 export const addPlayer = (response) => ({
 	type: ADD_PLAYER,
 	response
-})
+});
 
 export const ADD_PLAYER_ERROR = 'ADD_PLAYER_ERROR';
 export const addPlayerError = response => ({

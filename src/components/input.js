@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 
 export default class Input extends React.Component {
 	componentDidUpdate(prevProps) {
@@ -11,7 +11,7 @@ export default class Input extends React.Component {
 
 		let error;
 		if(this.props.meta.touched && this.props.meta.error) {
-			error = <div className='form-warning'>{this.props.meta.error}</div>
+			error = <div className='form-warning'>{this.props.meta.error}</div>;
 		}
 
 		let warning;

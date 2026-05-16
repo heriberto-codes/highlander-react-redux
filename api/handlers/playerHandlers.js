@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const Player = require('../models/Player');
 const PlayerStat = require('../models/PlayerStat');

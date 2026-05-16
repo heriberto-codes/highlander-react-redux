@@ -8,7 +8,12 @@ function buildCoachProfileRequestUrl(id, season, filters) {
 		season,
 		teamSearch: filters.teamSearch,
 		playerSearch: filters.playerSearch,
-		position: filters.position
+		position: filters.position,
+		teamPage: filters.teamPage,
+		teamLimit: filters.teamLimit,
+		playerPage: filters.playerPage,
+		playerLimit: filters.playerLimit,
+		notificationLimit: filters.notificationLimit
 	});
 }
 

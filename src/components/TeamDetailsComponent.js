@@ -13,6 +13,47 @@ const statCatalogs = [
 	{ id: 6, label: 'Strikeouts' }
 ];
 
+function renderPaginationControls(pagination, onPageChange) {
+	if (!pagination || pagination.totalPages <= 1) {
+		return null;
+	}
+
+	const previousPage = pagination.page - 1;
+	const nextPage = pagination.page + 1;
+	const canGoPrevious = pagination.hasPreviousPage && typeof onPageChange === 'function';
+	const canGoNext = pagination.hasNextPage && typeof onPageChange === 'function';
+
+	return (
+		<nav className="pagination is-small" role="navigation" aria-label="team details player pagination">
+			<button
+				type="button"
+				className="pagination-previous"
+				disabled={!canGoPrevious}
+				onClick={() => canGoPrevious && onPageChange(previousPage)}>
+				Previous
+			</button>
+			<button
+				type="button"
+				className="pagination-next"
+				disabled={!canGoNext}
+				onClick={() => canGoNext && onPageChange(nextPage)}>
+				Next
+			</button>
+			<ul className="pagination-list">
+				<li>
+					<span className="pagination-link is-current">
+						Page {pagination.page} of {pagination.totalPages}
+					</span>
+				</li>
+			</ul>
+		</nav>
+	);
+}
+
+function isEmptyPaginatedPage(items, pagination) {
+	return items.length === 0 && pagination && pagination.totalItems > 0;
+}
+
 export default function TeamDetailsComponent(props) {
 	const [opponent, setOpponent] = useState('');
 	const [gameDate, setGameDate] = useState('');
@@ -36,7 +77,9 @@ export default function TeamDetailsComponent(props) {
 			props.filters.position
 		)
 	);
-	const emptyMessage = hasActiveFilters
+	const emptyMessage = isEmptyPaginatedPage(props.players, props.pagination)
+		? 'No players on this page.'
+		: hasActiveFilters
 		? `No players match the current filters${activeSeason !== null ? ` for season ${activeSeason}` : ''}.`
 		: 'You dont have a Roster.';
 	const canSubmitGameEntry = !props.isSubmittingGame && opponent.trim() !== '' && gameDate !== '';
@@ -96,8 +139,9 @@ export default function TeamDetailsComponent(props) {
 	const submitAddCollaborator = event => {
 		event.preventDefault();
 
-		const coachId = Number(newCollaboratorCoachId);
-		if (!isOwner || !Number.isInteger(coachId) || props.isAddingCollaborator) {
+		const normalizedCoachId = newCollaboratorCoachId.trim();
+		const coachId = Number(normalizedCoachId);
+		if (!isOwner || normalizedCoachId === '' || !Number.isInteger(coachId) || coachId < 1 || props.isAddingCollaborator) {
 			return;
 		}
 
@@ -368,6 +412,7 @@ export default function TeamDetailsComponent(props) {
 					{emptyMessage}
 				</div>
 			)}
+			{renderPaginationControls(props.pagination, props.onPageChange)}
 		</section>
 	);
 }

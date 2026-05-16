@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 function toNumber(value) {
         return typeof value === 'number' && Number.isFinite(value) ? value : null;

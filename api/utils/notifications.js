@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 function getSerializablePayload(modelOrPayload) {
   if (modelOrPayload && typeof modelOrPayload.toJSON === 'function') {

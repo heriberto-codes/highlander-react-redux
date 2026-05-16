@@ -1832,6 +1832,403 @@ describe('server routes', () => {
     expect(response.body.teams[0].players[0].id).toBe(345);
   });
 
+  it('GET /api/v1/coaches/:id uses default dashboard pagination values', async () => {
+    const teams = Array.from({ length: 11 }, (_, index) => ({
+      id: 400 + index,
+      name: `Team ${index + 1}`,
+      season: 2026,
+      players: [
+        {
+          id: 500 + index,
+          first_name: `Player${index + 1}`,
+          last_name: 'Default',
+          email: `player${index + 1}@example.com`,
+          position: 'Pitcher',
+          stats: []
+        }
+      ]
+    }));
+
+    mockFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 141,
+        first_name: 'Test',
+        last_name: 'Coach',
+        teams: teams
+      })
+    });
+
+    const response = await request(app)
+      .get('/api/v1/coaches/141')
+      .expect(200);
+
+    expect(response.body.teams).toHaveLength(10);
+    expect(response.body.teams[0].id).toBe(400);
+    expect(response.body.teams[9].id).toBe(409);
+    expect(response.body.teamPagination).toEqual({
+      page: 1,
+      limit: 10,
+      totalItems: 11,
+      totalPages: 2,
+      hasPreviousPage: false,
+      hasNextPage: true
+    });
+    expect(response.body.playerPagination).toEqual({
+      page: 1,
+      limit: 10,
+      totalItems: 11,
+      totalPages: 2,
+      hasPreviousPage: false,
+      hasNextPage: true
+    });
+    expect(response.body.notificationPagination).toEqual({
+      page: 1,
+      limit: 10,
+      totalItems: 0,
+      totalPages: 0,
+      hasPreviousPage: false,
+      hasNextPage: false
+    });
+  });
+
+  it('GET /api/v1/coaches/:id paginates dashboard teams and players independently', async () => {
+    mockFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 137,
+        first_name: 'Test',
+        last_name: 'Coach',
+        teams: [
+          {
+            id: 251,
+            name: 'Highlander',
+            season: 2026,
+            players: [
+              {
+                id: 347,
+                first_name: 'First',
+                last_name: 'Player',
+                email: 'first@example.com',
+                position: 'Outfield',
+                stats: []
+              },
+              {
+                id: 348,
+                first_name: 'Second',
+                last_name: 'Player',
+                email: 'second@example.com',
+                position: 'Catcher',
+                stats: []
+              }
+            ]
+          },
+          {
+            id: 252,
+            name: 'Warriors',
+            season: 2026,
+            players: [
+              {
+                id: 349,
+                first_name: 'Third',
+                last_name: 'Player',
+                email: 'third@example.com',
+                position: 'Pitcher',
+                stats: []
+              }
+            ]
+          },
+          {
+            id: 253,
+            name: 'Rangers',
+            season: 2026,
+            players: [
+              {
+                id: 350,
+                first_name: 'Fourth',
+                last_name: 'Player',
+                email: 'fourth@example.com',
+                position: 'Infield',
+                stats: []
+              }
+            ]
+          }
+        ]
+      })
+    });
+
+    const response = await request(app)
+      .get('/api/v1/coaches/137?teamPage=2&teamLimit=1&playerPage=2&playerLimit=2')
+      .expect(200);
+
+    expect(response.body.teams).toHaveLength(1);
+    expect(response.body.teams[0].id).toBe(252);
+    expect(response.body.teams[0].players).toHaveLength(1);
+    expect(response.body.teams[0].players[0].id).toBe(349);
+    expect(response.body.teamPagination).toEqual({
+      page: 2,
+      limit: 1,
+      totalItems: 3,
+      totalPages: 3,
+      hasPreviousPage: true,
+      hasNextPage: true
+    });
+    expect(response.body.playerPagination).toEqual({
+      page: 2,
+      limit: 2,
+      totalItems: 4,
+      totalPages: 2,
+      hasPreviousPage: true,
+      hasNextPage: false
+    });
+  });
+
+  it('GET /api/v1/coaches/:id applies dashboard pagination after filters and paginates notifications', async () => {
+    mockFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 138,
+        first_name: 'Test',
+        last_name: 'Coach',
+        teams: [
+          {
+            id: 254,
+            name: 'Warriors',
+            season: 2025,
+            players: [
+              {
+                id: 351,
+                first_name: 'Slugger',
+                last_name: 'Pitch One',
+                email: 'slug-one@example.com',
+                position: 'Pitcher',
+                stats: []
+              },
+              {
+                id: 352,
+                first_name: 'Slugger',
+                last_name: 'Pitch Two',
+                email: 'slug-two@example.com',
+                position: 'Pitcher',
+                stats: []
+              },
+              {
+                id: 353,
+                first_name: 'Slugger',
+                last_name: 'Bat',
+                email: 'slug-bat@example.com',
+                position: 'Outfield',
+                stats: []
+              }
+            ]
+          },
+          {
+            id: 255,
+            name: 'Highlander',
+            season: 2025,
+            players: [
+              {
+                id: 354,
+                first_name: 'Slugger',
+                last_name: 'Pitch Three',
+                email: 'slug-three@example.com',
+                position: 'Pitcher',
+                stats: []
+              }
+            ]
+          },
+          {
+            id: 256,
+            name: 'Warriors',
+            season: 2026,
+            players: [
+              {
+                id: 355,
+                first_name: 'Slugger',
+                last_name: 'Pitch Four',
+                email: 'slug-four@example.com',
+                position: 'Pitcher',
+                stats: []
+              }
+            ]
+          }
+        ],
+        notifications: [
+          {
+            id: 30,
+            coach_id: 138,
+            kind: 'upcoming_game',
+            message: 'Older reminder',
+            scheduled_for: '2026-03-25T06:00:00.000Z',
+            read_at: null,
+            dismissed_at: null,
+            created_at: '2026-03-24T12:00:00.000Z',
+            idempotency_key: 'notification:older'
+          },
+          {
+            id: 31,
+            coach_id: 138,
+            kind: 'upcoming_game',
+            message: 'Newer reminder',
+            scheduled_for: '2026-03-26T06:00:00.000Z',
+            read_at: null,
+            dismissed_at: null,
+            created_at: '2026-03-25T12:00:00.000Z',
+            idempotency_key: 'notification:newer'
+          }
+        ]
+      })
+    });
+
+    const response = await request(app)
+      .get('/api/v1/coaches/138?season=2025&teamSearch=war&playerSearch=slug&position=pitch&teamLimit=1&playerLimit=1&notificationLimit=1')
+      .expect(200);
+
+    expect(response.body.availableSeasons).toEqual([2026, 2025]);
+    expect(response.body.activeSeason).toBe(2025);
+    expect(response.body.teams).toHaveLength(1);
+    expect(response.body.teams[0].id).toBe(254);
+    expect(response.body.teams[0].players).toHaveLength(1);
+    expect(response.body.teams[0].players[0].id).toBe(351);
+    expect(response.body.teamPagination).toEqual({
+      page: 1,
+      limit: 1,
+      totalItems: 1,
+      totalPages: 1,
+      hasPreviousPage: false,
+      hasNextPage: false
+    });
+    expect(response.body.playerPagination).toEqual({
+      page: 1,
+      limit: 1,
+      totalItems: 2,
+      totalPages: 2,
+      hasPreviousPage: false,
+      hasNextPage: true
+    });
+    expect(response.body.notifications).toHaveLength(1);
+    expect(response.body.notifications[0].idempotency_key).toBe('notification:newer');
+    expect(response.body.notificationPagination).toEqual({
+      page: 1,
+      limit: 1,
+      totalItems: 2,
+      totalPages: 2,
+      hasPreviousPage: false,
+      hasNextPage: true
+    });
+    expect(response.body.unreadNotificationCount).toBe(2);
+  });
+
+  it('GET /api/v1/coaches/:id rejects invalid dashboard pagination queries', async () => {
+    const invalidTeamPageResponse = await request(app)
+      .get('/api/v1/coaches/139?teamPage=0')
+      .expect(400);
+
+    expect(invalidTeamPageResponse.body).toEqual({
+      error: 'Sorry your teamPage is invalid please try again'
+    });
+
+    const invalidPlayerLimitResponse = await request(app)
+      .get('/api/v1/coaches/139?playerLimit=-1')
+      .expect(400);
+
+    expect(invalidPlayerLimitResponse.body).toEqual({
+      error: 'Sorry your playerLimit is invalid please try again'
+    });
+
+    const invalidNotificationLimitResponse = await request(app)
+      .get('/api/v1/coaches/139?notificationLimit=all')
+      .expect(400);
+
+    expect(invalidNotificationLimitResponse.body).toEqual({
+      error: 'Sorry your notificationLimit is invalid please try again'
+    });
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('GET /api/v1/coaches/:id returns empty arrays and metadata for out-of-range dashboard pages', async () => {
+    mockFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 142,
+        first_name: 'Test',
+        last_name: 'Coach',
+        teams: [
+          {
+            id: 270,
+            name: 'Highlander',
+            season: 2026,
+            players: [
+              {
+                id: 370,
+                first_name: 'First',
+                last_name: 'Player',
+                email: 'first@example.com',
+                position: 'Pitcher',
+                stats: []
+              }
+            ]
+          },
+          {
+            id: 271,
+            name: 'Warriors',
+            season: 2026,
+            players: [
+              {
+                id: 371,
+                first_name: 'Second',
+                last_name: 'Player',
+                email: 'second@example.com',
+                position: 'Catcher',
+                stats: []
+              }
+            ]
+          }
+        ],
+        notifications: [
+          {
+            id: 40,
+            coach_id: 142,
+            kind: 'upcoming_game',
+            message: 'Reminder',
+            scheduled_for: '2026-03-26T06:00:00.000Z',
+            read_at: null,
+            dismissed_at: null,
+            created_at: '2026-03-25T12:00:00.000Z',
+            idempotency_key: 'notification:out-of-range'
+          }
+        ]
+      })
+    });
+
+    const response = await request(app)
+      .get('/api/v1/coaches/142?teamPage=4&teamLimit=1&playerPage=4&playerLimit=1&notificationLimit=1')
+      .expect(200);
+
+    expect(response.body.teams).toEqual([]);
+    expect(response.body.notifications).toHaveLength(1);
+    expect(response.body.teamPagination).toEqual({
+      page: 4,
+      limit: 1,
+      totalItems: 2,
+      totalPages: 2,
+      hasPreviousPage: true,
+      hasNextPage: false
+    });
+    expect(response.body.playerPagination).toEqual({
+      page: 4,
+      limit: 1,
+      totalItems: 2,
+      totalPages: 2,
+      hasPreviousPage: true,
+      hasNextPage: false
+    });
+    expect(response.body.notificationPagination).toEqual({
+      page: 1,
+      limit: 1,
+      totalItems: 1,
+      totalPages: 1,
+      hasPreviousPage: false,
+      hasNextPage: false
+    });
+  });
+
   it('GET /api/v1/coaches/:id returns 200 with empty teams for a valid no-match teamSearch', async () => {
     mockFetch.mockResolvedValue({
       toJSON: () => ({
@@ -2006,12 +2403,12 @@ describe('server routes', () => {
             id: 60,
             first_name: 'Ace',
             stats: [
-              { description: 'Hits', _pivot_how_many: 5, _pivot_game_id: 300 },
-              { description: 'At Bats', _pivot_how_many: 10, _pivot_game_id: 300 },
-              { description: 'Home Runs', _pivot_how_many: 2, _pivot_game_id: 300 },
-              { description: 'Earned Runs', _pivot_how_many: 3, _pivot_game_id: 300 },
-              { description: 'Innings Pitched', _pivot_how_many: 6, _pivot_game_id: 300 },
-              { description: 'Strikeouts', _pivot_how_many: 9, _pivot_game_id: 300 }
+              { description: 'Hits', _pivot_how_many: 5, _pivot_game_id: 300, _pivot_game_date: '2026-04-10T00:00:00Z' },
+              { description: 'At Bats', _pivot_how_many: 10, _pivot_game_id: 300, _pivot_game_date: '2026-04-10T00:00:00Z' },
+              { description: 'Home Runs', _pivot_how_many: 2, _pivot_game_id: 300, _pivot_game_date: '2026-04-10T00:00:00Z' },
+              { description: 'Earned Runs', _pivot_how_many: 3, _pivot_game_id: 300, _pivot_game_date: '2026-04-10T00:00:00Z' },
+              { description: 'Innings Pitched', _pivot_how_many: 6, _pivot_game_id: 300, _pivot_game_date: '2026-04-10T00:00:00Z' },
+              { description: 'Strikeouts', _pivot_how_many: 9, _pivot_game_id: 300, _pivot_game_date: '2026-04-10T00:00:00Z' }
             ]
           }
         ]
@@ -2535,6 +2932,267 @@ describe('server routes', () => {
     });
   });
 
+  it('GET /api/v1/teams/:id uses default player pagination values', async () => {
+    const players = Array.from({ length: 11 }, (_, index) => ({
+      id: 700 + index,
+      first_name: `Player${index + 1}`,
+      last_name: 'Default',
+      email: `player${index + 1}@example.com`,
+      position: 'Pitcher',
+      stats: []
+    }));
+
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 573,
+        name: 'Highlander',
+        season: 2026,
+        coach: [
+          { id: 1 }
+        ],
+        players: players
+      })
+    });
+    mockFetch.mockResolvedValue({
+      toJSON: () => ({
+        teams: [
+          { id: 573, name: 'Highlander', season: 2026 }
+        ]
+      })
+    });
+
+    const response = await request(app)
+      .get('/api/v1/teams/573')
+      .expect(200);
+
+    expect(response.body.players).toHaveLength(10);
+    expect(response.body.players[0].id).toBe(700);
+    expect(response.body.players[9].id).toBe(709);
+    expect(response.body.playerPagination).toEqual({
+      page: 1,
+      limit: 10,
+      totalItems: 11,
+      totalPages: 2,
+      hasPreviousPage: false,
+      hasNextPage: true
+    });
+  });
+
+  it('GET /api/v1/teams/:id paginates filtered players and returns playerPagination metadata', async () => {
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 570,
+        name: 'Highlander',
+        season: 2026,
+        coach: [
+          { id: 1 }
+        ],
+        players: [
+          {
+            id: 654,
+            first_name: 'First',
+            last_name: 'Player',
+            email: 'first@example.com',
+            position: 'Pitcher',
+            stats: []
+          },
+          {
+            id: 655,
+            first_name: 'Second',
+            last_name: 'Player',
+            email: 'second@example.com',
+            position: 'Catcher',
+            stats: []
+          },
+          {
+            id: 656,
+            first_name: 'Third',
+            last_name: 'Player',
+            email: 'third@example.com',
+            position: 'Outfield',
+            stats: []
+          }
+        ]
+      })
+    });
+    mockFetch.mockResolvedValue({
+      toJSON: () => ({
+        teams: [
+          { id: 570, name: 'Highlander', season: 2026 }
+        ]
+      })
+    });
+
+    const response = await request(app)
+      .get('/api/v1/teams/570?playerPage=2&playerLimit=1')
+      .expect(200);
+
+    expect(response.body.players).toHaveLength(1);
+    expect(response.body.players[0].id).toBe(655);
+    expect(response.body.playerPagination).toEqual({
+      page: 2,
+      limit: 1,
+      totalItems: 3,
+      totalPages: 3,
+      hasPreviousPage: true,
+      hasNextPage: true
+    });
+  });
+
+  it('GET /api/v1/teams/:id applies pagination after season, playerSearch, and position filters', async () => {
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 571,
+        name: 'Highlander',
+        season: 2026,
+        coach: [
+          { id: 1 }
+        ],
+        players: [
+          {
+            id: 657,
+            first_name: 'Slugger',
+            last_name: 'Pitch One',
+            email: 'slug-one@example.com',
+            position: 'Pitcher',
+            stats: [
+              { description: 'Strikeouts', _pivot_how_many: 6, _pivot_game_date: '2025-05-10T00:00:00Z' },
+              { description: 'Innings Pitched', _pivot_how_many: 3, _pivot_game_date: '2025-05-10T00:00:00Z' }
+            ]
+          },
+          {
+            id: 658,
+            first_name: 'Slugger',
+            last_name: 'Pitch Two',
+            email: 'slug-two@example.com',
+            position: 'Pitcher',
+            stats: [
+              { description: 'Strikeouts', _pivot_how_many: 8, _pivot_game_date: '2025-05-10T00:00:00Z' },
+              { description: 'Innings Pitched', _pivot_how_many: 4, _pivot_game_date: '2025-05-10T00:00:00Z' },
+              { description: 'Strikeouts', _pivot_how_many: 10, _pivot_game_date: '2026-05-10T00:00:00Z' }
+            ]
+          },
+          {
+            id: 659,
+            first_name: 'Slugger',
+            last_name: 'Bat',
+            email: 'slug-bat@example.com',
+            position: 'Outfield',
+            stats: []
+          },
+          {
+            id: 660,
+            first_name: 'Ace',
+            last_name: 'Pitch',
+            email: 'ace@example.com',
+            position: 'Pitcher',
+            stats: []
+          }
+        ]
+      })
+    });
+    mockFetch.mockResolvedValue({
+      toJSON: () => ({
+        teams: [
+          { id: 572, name: 'Highlander', season: 2025 },
+          { id: 571, name: 'Highlander', season: 2026 }
+        ]
+      })
+    });
+
+    const response = await request(app)
+      .get('/api/v1/teams/571?season=2025&playerSearch=slug&position=pitch&playerPage=2&playerLimit=1')
+      .expect(200);
+
+    expect(response.body.availableSeasons).toEqual([2026, 2025]);
+    expect(response.body.activeSeason).toBe(2025);
+    expect(response.body.players).toHaveLength(1);
+    expect(response.body.players[0].id).toBe(658);
+    expect(response.body.players[0].stats).toEqual([
+      { description: 'Strikeouts', _pivot_how_many: 8, _pivot_game_date: '2025-05-10T00:00:00Z' },
+      { description: 'Innings Pitched', _pivot_how_many: 4, _pivot_game_date: '2025-05-10T00:00:00Z' }
+    ]);
+    expect(response.body.playerPagination).toEqual({
+      page: 2,
+      limit: 1,
+      totalItems: 2,
+      totalPages: 2,
+      hasPreviousPage: true,
+      hasNextPage: false
+    });
+  });
+
+  it('GET /api/v1/teams/:id rejects invalid player pagination queries', async () => {
+    const invalidPageResponse = await request(app)
+      .get('/api/v1/teams/59?playerPage=0')
+      .expect(400);
+
+    expect(invalidPageResponse.body).toEqual({
+      error: 'Sorry your playerPage is invalid please try again'
+    });
+
+    const invalidLimitResponse = await request(app)
+      .get('/api/v1/teams/59?playerLimit=-1')
+      .expect(400);
+
+    expect(invalidLimitResponse.body).toEqual({
+      error: 'Sorry your playerLimit is invalid please try again'
+    });
+    expect(mockTeamFetch).not.toHaveBeenCalled();
+  });
+
+  it('GET /api/v1/teams/:id returns an empty players array and metadata for an out-of-range player page', async () => {
+    mockTeamFetch.mockResolvedValue({
+      toJSON: () => ({
+        id: 574,
+        name: 'Highlander',
+        season: 2026,
+        coach: [
+          { id: 1 }
+        ],
+        players: [
+          {
+            id: 710,
+            first_name: 'First',
+            last_name: 'Player',
+            email: 'first@example.com',
+            position: 'Pitcher',
+            stats: []
+          },
+          {
+            id: 711,
+            first_name: 'Second',
+            last_name: 'Player',
+            email: 'second@example.com',
+            position: 'Catcher',
+            stats: []
+          }
+        ]
+      })
+    });
+    mockFetch.mockResolvedValue({
+      toJSON: () => ({
+        teams: [
+          { id: 574, name: 'Highlander', season: 2026 }
+        ]
+      })
+    });
+
+    const response = await request(app)
+      .get('/api/v1/teams/574?playerPage=4&playerLimit=1')
+      .expect(200);
+
+    expect(response.body.players).toEqual([]);
+    expect(response.body.playerPagination).toEqual({
+      page: 4,
+      limit: 1,
+      totalItems: 2,
+      totalPages: 2,
+      hasPreviousPage: true,
+      hasNextPage: false
+    });
+  });
+
   it('GET /api/v1/teams/:id rejects an invalid season query', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
@@ -2653,16 +3311,27 @@ describe('server routes', () => {
       toJSON: () => ({
         id: 51,
         name: 'Highlander',
+        season: 2026,
+        coach: [
+          { id: 1 }
+        ],
         players: [
           {
             id: 61,
             first_name: 'Utility',
             stats: [
-              { description: 'Hits', _pivot_how_many: 2 },
-              { description: 'At Bats', _pivot_how_many: 0 },
-              { description: 'Home Runs', _pivot_how_many: 1 }
+              { description: 'Hits', _pivot_how_many: 2, _pivot_game_date: '2026-05-10T00:00:00Z' },
+              { description: 'At Bats', _pivot_how_many: 0, _pivot_game_date: '2026-05-10T00:00:00Z' },
+              { description: 'Home Runs', _pivot_how_many: 1, _pivot_game_date: '2026-05-10T00:00:00Z' }
             ]
           }
+        ]
+      })
+    });
+    mockFetch.mockResolvedValue({
+      toJSON: () => ({
+        teams: [
+          { id: 51, name: 'Highlander', season: 2026 }
         ]
       })
     });
@@ -2683,19 +3352,30 @@ describe('server routes', () => {
       toJSON: () => ({
         id: 52,
         name: 'Highlander',
+        season: 2026,
+        coach: [
+          { id: 1 }
+        ],
         players: [
           {
             id: 62,
             first_name: 'Closer',
             stats: [
-              { description: 'Earned Runs', _pivot_how_many: 1 },
-              { description: 'Earned Runs', _pivot_how_many: 2 },
-              { description: 'Innings Pitched', _pivot_how_many: 3 },
-              { description: 'Innings Pitched', _pivot_how_many: 3 },
-              { description: 'Strikeouts', _pivot_how_many: 4 },
-              { description: 'Strikeouts', _pivot_how_many: 2 }
+              { description: 'Earned Runs', _pivot_how_many: 1, _pivot_game_date: '2026-05-10T00:00:00Z' },
+              { description: 'Earned Runs', _pivot_how_many: 2, _pivot_game_date: '2026-05-10T00:00:00Z' },
+              { description: 'Innings Pitched', _pivot_how_many: 3, _pivot_game_date: '2026-05-10T00:00:00Z' },
+              { description: 'Innings Pitched', _pivot_how_many: 3, _pivot_game_date: '2026-05-10T00:00:00Z' },
+              { description: 'Strikeouts', _pivot_how_many: 4, _pivot_game_date: '2026-05-10T00:00:00Z' },
+              { description: 'Strikeouts', _pivot_how_many: 2, _pivot_game_date: '2026-05-10T00:00:00Z' }
             ]
           }
+        ]
+      })
+    });
+    mockFetch.mockResolvedValue({
+      toJSON: () => ({
+        teams: [
+          { id: 52, name: 'Highlander', season: 2026 }
         ]
       })
     });
@@ -3492,7 +4172,7 @@ describe('server routes', () => {
     expect(response.body.currentCoachRole).toBe('assistant');
   });
 
-  it('GET /api/v1/teams/:id includes collaboration metadata in the fallback branch without coach season lookup', async () => {
+  it('GET /api/v1/teams/:id rejects team reads without a coach relationship', async () => {
     mockTeamFetch.mockResolvedValue({
       toJSON: () => ({
         id: 50,
@@ -3505,12 +4185,9 @@ describe('server routes', () => {
       })
     });
 
-    const response = await request(app).get('/api/v1/teams/50').expect(200);
+    const response = await request(app).get('/api/v1/teams/50').expect(403);
 
-    expect(response.body.collaborators).toEqual([]);
-    expect(response.body.currentCoachRole).toBeNull();
-    expect(response.body.availableSeasons).toEqual([2026]);
-    expect(response.body.activeSeason).toBe(2026);
+    expect(response.body).toEqual({ error: 'Unauthorized' });
   });
 
   it('POST /api/v1/teams/:id/player allows assistant collaborators to add players', async () => {

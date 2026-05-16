@@ -20,7 +20,7 @@ const rootReducer = combineReducers({
 	coachReducer,
 	teamReducer,
 	form: formReducer
-})
+});
 
 const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
 

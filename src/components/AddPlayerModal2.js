@@ -29,7 +29,7 @@ locationInput({ input, meta: { touched, error }, ...custom}) {
 		<div>
 			<h1>Some location input goes here</h1>
 		</div>
-	)
+	);
 }
 
 render() {
@@ -137,7 +137,7 @@ const validate = values => {
 		errors.location = 'Location required';
 	}
 	return errors;
-}
+};
 
 export default reduxForm({
 	form: 'addPlayer'

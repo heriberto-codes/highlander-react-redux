@@ -48,7 +48,7 @@ export default function Nav(props) {
 				<i className="fa fa-sign-out icon nav-icon" aria-hidden="true"></i>
         Log In
 			</Link>
-		)
+		);
 	}
 	return (
 		<nav className="nav has-shadow">
@@ -68,5 +68,5 @@ export default function Nav(props) {
 				{options}
 			</div>
 		</nav>
-	)
+	);
 }

@@ -1,4 +1,4 @@
-const Bookshelf = require('../config/bookshelf.config')
+const Bookshelf = require('../config/bookshelf.config');
 
 require('./Player');
 

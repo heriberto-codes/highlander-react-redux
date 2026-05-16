@@ -71,5 +71,5 @@ export default function LoginForm(props){
 				</div>
 			</section>
 		</div>
-	)
+	);
 }

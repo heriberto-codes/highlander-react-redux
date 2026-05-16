@@ -71,5 +71,5 @@ export default function RegisterForm(props) {
         </div>
     </div>
   </section>
-  )
+  );
 }

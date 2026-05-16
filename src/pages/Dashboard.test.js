@@ -67,6 +67,13 @@ describe('Dashboard page', () => {
         teamSearch: '',
         playerSearch: '',
         position: ''
+      },
+      dashboardPagination: {
+        teamPage: 3,
+        teamLimit: 25,
+        playerPage: 4,
+        playerLimit: 10,
+        notificationLimit: 5
       }
     });
 
@@ -81,7 +88,12 @@ describe('Dashboard page', () => {
     expect(getProfile).toHaveBeenCalledWith(12, 2026, {
       teamSearch: 'War',
       playerSearch: 'Ace',
-      position: 'Pitcher'
+      position: 'Pitcher',
+      teamPage: 1,
+      teamLimit: 25,
+      playerPage: 1,
+      playerLimit: 10,
+      notificationLimit: 5
     });
     expect(dispatch).toHaveBeenCalled();
   });
@@ -96,6 +108,13 @@ describe('Dashboard page', () => {
         teamSearch: '',
         playerSearch: '',
         position: ''
+      },
+      dashboardPagination: {
+        teamPage: 3,
+        teamLimit: 25,
+        playerPage: 4,
+        playerLimit: 10,
+        notificationLimit: 5
       }
     });
 
@@ -110,7 +129,129 @@ describe('Dashboard page', () => {
     expect(getProfile).toHaveBeenCalledWith(12, 2025, {
       teamSearch: 'War',
       playerSearch: 'Ace',
+      position: 'Pitcher',
+      teamPage: 1,
+      teamLimit: 25,
+      playerPage: 1,
+      playerLimit: 10,
+      notificationLimit: 5
+    });
+    expect(dispatch).toHaveBeenCalled();
+  });
+
+  it('includes current dashboard pagination when fetching the profile', () => {
+    const dispatch = jest.fn();
+    const dashboard = new Dashboard({
+      id: 12,
+      dispatch,
+      activeSeason: 2026,
+      filters: {
+        teamSearch: 'War',
+        playerSearch: 'Ace',
+        position: 'Pitcher'
+      },
+      dashboardPagination: {
+        teamPage: 2,
+        teamLimit: 25,
+        playerPage: 3,
+        playerLimit: 10,
+        notificationLimit: 5
+      }
+    });
+
+    dashboard.fetchProfile();
+
+    expect(getProfile).toHaveBeenCalledWith(12, undefined, {
+      teamSearch: 'War',
+      playerSearch: 'Ace',
+      position: 'Pitcher',
+      teamPage: 2,
+      teamLimit: 25,
+      playerPage: 3,
+      playerLimit: 10,
+      notificationLimit: 5
+    });
+    expect(dispatch).toHaveBeenCalled();
+  });
+
+  it('dispatches team page changes with current dashboard query state', () => {
+    const dispatch = jest.fn();
+    const dashboard = new Dashboard({
+      id: 12,
+      dispatch,
+      activeSeason: 2026,
+      filters: {
+        teamSearch: '',
+        playerSearch: '',
+        position: ''
+      },
+      dashboardPagination: {
+        teamPage: 2,
+        teamLimit: 25,
+        playerPage: 3,
+        playerLimit: 10,
+        notificationLimit: 5
+      }
+    });
+
+    dashboard.state = {
+      teamSearch: 'War',
+      playerSearch: 'Ace',
       position: 'Pitcher'
+    };
+
+    dashboard.handleTeamPageChange(4);
+
+    expect(getProfile).toHaveBeenCalledWith(12, 2026, {
+      teamSearch: 'War',
+      playerSearch: 'Ace',
+      position: 'Pitcher',
+      teamPage: 4,
+      teamLimit: 25,
+      playerPage: 3,
+      playerLimit: 10,
+      notificationLimit: 5
+    });
+    expect(dispatch).toHaveBeenCalled();
+  });
+
+  it('dispatches player page changes with current dashboard query state', () => {
+    const dispatch = jest.fn();
+    const dashboard = new Dashboard({
+      id: 12,
+      dispatch,
+      activeSeason: 2026,
+      filters: {
+        teamSearch: '',
+        playerSearch: '',
+        position: ''
+      },
+      dashboardPagination: {
+        teamPage: 2,
+        teamLimit: 25,
+        playerPage: 3,
+        playerLimit: 10,
+        notificationLimit: 5
+      }
+    });
+
+    dashboard.state = {
+      teamSearch: 'War',
+      playerSearch: 'Ace',
+      position: 'Pitcher'
+    };
+
+    dashboard.handlePlayerPageChange(4);
+
+    expect(getProfile).toHaveBeenCalledWith(12, 2026, {
+      teamSearch: 'War',
+      playerSearch: 'Ace',
+      position: 'Pitcher',
+      teamPage: 2,
+      teamLimit: 25,
+      playerPage: 4,
+      playerLimit: 10,
+      notificationLimit: 5
     });
     expect(dispatch).toHaveBeenCalled();
   });
@@ -226,6 +367,22 @@ describe('Dashboard page', () => {
         first_name="Casey"
         last_name="Jones"
         availableSeasons={[2026]}
+        teamPagination={{
+          page: 2,
+          limit: 25,
+          totalItems: 30,
+          totalPages: 2,
+          hasPreviousPage: true,
+          hasNextPage: false
+        }}
+        playerPagination={{
+          page: 3,
+          limit: 10,
+          totalItems: 40,
+          totalPages: 4,
+          hasPreviousPage: true,
+          hasNextPage: true
+        }}
       />,
       div
     );
@@ -237,7 +394,16 @@ describe('Dashboard page', () => {
         playerSearch: 'Ace',
         position: 'Pitcher'
       },
-      activeSeason: 2026
+      activeSeason: 2026,
+      pagination: {
+        page: 2,
+        limit: 25,
+        totalItems: 30,
+        totalPages: 2,
+        hasPreviousPage: true,
+        hasNextPage: false
+      },
+      onPageChange: expect.any(Function)
     }), expect.anything());
     expect(RosterList).toHaveBeenCalledWith(expect.objectContaining({
       players: [{ id: 2, first_name: 'Pat' }],
@@ -246,7 +412,16 @@ describe('Dashboard page', () => {
         playerSearch: 'Ace',
         position: 'Pitcher'
       },
-      activeSeason: 2026
+      activeSeason: 2026,
+      pagination: {
+        page: 3,
+        limit: 10,
+        totalItems: 40,
+        totalPages: 4,
+        hasPreviousPage: true,
+        hasNextPage: true
+      },
+      onPageChange: expect.any(Function)
     }), expect.anything());
     expect(StatsList).toHaveBeenCalledWith(expect.objectContaining({
       stats: [{ first_name: 'Pat', stats: {} }],
@@ -256,7 +431,16 @@ describe('Dashboard page', () => {
         playerSearch: 'Ace',
         position: 'Pitcher'
       },
-      activeSeason: 2026
+      activeSeason: 2026,
+      pagination: {
+        page: 3,
+        limit: 10,
+        totalItems: 40,
+        totalPages: 4,
+        hasPreviousPage: true,
+        hasNextPage: true
+      },
+      onPageChange: expect.any(Function)
     }), expect.anything());
   });
 });

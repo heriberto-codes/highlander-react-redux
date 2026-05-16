@@ -68,6 +68,10 @@ describe('TeamDetails page', () => {
       filters: {
         playerSearch: '',
         position: ''
+      },
+      teamDetailPagination: {
+        playerPage: 3,
+        playerLimit: 25
       }
     });
 
@@ -81,7 +85,9 @@ describe('TeamDetails page', () => {
 
     expect(getTeamProfile).toHaveBeenCalledWith('9', 2026, {
       playerSearch: 'Ace',
-      position: 'Pitcher'
+      position: 'Pitcher',
+      playerPage: 1,
+      playerLimit: 25
     });
     expect(dispatch).toHaveBeenCalled();
   });
@@ -95,6 +101,10 @@ describe('TeamDetails page', () => {
       filters: {
         playerSearch: '',
         position: ''
+      },
+      teamDetailPagination: {
+        playerPage: 3,
+        playerLimit: 25
       }
     });
 
@@ -108,12 +118,83 @@ describe('TeamDetails page', () => {
 
     expect(getTeamProfile).toHaveBeenCalledWith('9', 2025, {
       playerSearch: 'Ace',
+      position: 'Pitcher',
+      playerPage: 1,
+      playerLimit: 25
+    });
+    expect(dispatch).toHaveBeenCalled();
+  });
+
+  it('includes current team detail pagination when fetching the profile', () => {
+    const dispatch = jest.fn();
+    const page = new TeamDetails({
+      match: { params: { id: '9' } },
+      dispatch,
+      activeSeason: 2026,
+      filters: {
+        playerSearch: 'Ace',
+        position: 'Pitcher'
+      },
+      teamDetailPagination: {
+        playerPage: 2,
+        playerLimit: 25
+      }
+    });
+
+    page.fetchTeamProfile();
+
+    expect(getTeamProfile).toHaveBeenCalledWith('9', undefined, {
+      playerSearch: 'Ace',
+      position: 'Pitcher',
+      playerPage: 2,
+      playerLimit: 25
+    });
+    expect(dispatch).toHaveBeenCalled();
+  });
+
+  it('dispatches player page changes with current team detail query state', () => {
+    const dispatch = jest.fn();
+    const page = new TeamDetails({
+      match: { params: { id: '9' } },
+      dispatch,
+      activeSeason: 2026,
+      filters: {
+        playerSearch: '',
+        position: ''
+      },
+      teamDetailPagination: {
+        playerPage: 2,
+        playerLimit: 25
+      }
+    });
+
+    page.state = {
+      showGameEntryForm: false,
+      playerSearch: 'Ace',
       position: 'Pitcher'
+    };
+
+    page.handlePlayerPageChange(4);
+
+    expect(getTeamProfile).toHaveBeenCalledWith('9', 2026, {
+      playerSearch: 'Ace',
+      position: 'Pitcher',
+      playerPage: 4,
+      playerLimit: 25
     });
     expect(dispatch).toHaveBeenCalled();
   });
 
   it('passes filters and activeSeason to TeamDetailsComponent', () => {
+    const playerPagination = {
+      page: 2,
+      limit: 25,
+      totalItems: 30,
+      totalPages: 2,
+      hasPreviousPage: true,
+      hasNextPage: false
+    };
+
     ReactDOM.render(
       <TeamDetails
         match={{ params: { id: '9' } }}
@@ -124,6 +205,7 @@ describe('TeamDetails page', () => {
           position: 'Pitcher'
         }}
         players={[{ id: 1, first_name: 'Pat' }]}
+        playerPagination={playerPagination}
         collaborators={[{ id: 2, first_name: 'Alex', last_name: 'Smith', email: 'alex@example.com', role: 'assistant' }]}
         currentCoachRole="owner"
         isAddingCollaborator={false}
@@ -155,6 +237,8 @@ describe('TeamDetails page', () => {
       },
       activeSeason: 2026,
       showGameEntryForm: false,
+      pagination: playerPagination,
+      onPageChange: expect.any(Function),
       isSubmittingGame: false,
       gameSubmissionSuccess: false,
       lastCreatedGame: null,

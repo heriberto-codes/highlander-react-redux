@@ -128,6 +128,33 @@ describe('team actions', () => {
     );
   });
 
+  it('should append pagination queries with existing team profile filters', () => {
+    const dispatch = jest.fn();
+
+    getTeamProfile(9, 2026, {
+      playerSearch: 'Ace',
+      position: 'Pitcher',
+      playerPage: 2,
+      playerLimit: 10
+    })(dispatch);
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: GET_TEAM_PROFILE,
+      id: 9,
+      season: 2026,
+      filters: {
+        playerSearch: 'Ace',
+        position: 'Pitcher',
+        playerPage: 2,
+        playerLimit: 10
+      }
+    });
+    expect(axios.get).toHaveBeenCalledWith(
+      '/api/v1/teams/9?season=2026&playerSearch=Ace&position=Pitcher&playerPage=2&playerLimit=10',
+      { withCredentials: true }
+    );
+  });
+
   it('should omit empty string filters from the team profile query', () => {
     const dispatch = jest.fn();
 

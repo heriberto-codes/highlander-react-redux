@@ -176,6 +176,148 @@ describe('TeamDetailsComponent', () => {
     expect(div.textContent).toContain('No players match the current filters for season 2026.');
   });
 
+  it('renders an empty paginated page state when matching team players exist elsewhere', () => {
+    ReactDOM.render(
+      <TeamDetailsComponent
+        players={[]}
+        activeSeason={2026}
+        showGameEntryForm={false}
+        onSubmitGameEntry={() => {}}
+        onCancelGameEntry={() => {}}
+        isSubmittingGame={false}
+        gameSubmissionSuccess={false}
+        lastCreatedGame={null}
+        gameSubmissionError={null}
+        pagination={{
+          page: 4,
+          limit: 10,
+          totalItems: 25,
+          totalPages: 3,
+          hasPreviousPage: true,
+          hasNextPage: false
+        }}
+        onPageChange={jest.fn()}
+      />,
+      div
+    );
+
+    expect(div.textContent).toContain('No players on this page.');
+    expect(div.textContent).toContain('Page 4 of 3');
+    expect(div.querySelector('.pagination')).not.toBeNull();
+    expect(div.textContent).not.toContain('You dont have a Roster.');
+    expect(div.textContent).not.toContain('No players match the current filters');
+  });
+
+  it('renders player pagination controls and requests the next page', () => {
+    const onPageChange = jest.fn();
+
+    ReactDOM.render(
+      <TeamDetailsComponent
+        players={[
+          { id: 1, first_name: 'Pat', last_name: 'Lee', email: 'pat@example.com', position: 'P' }
+        ]}
+        showGameEntryForm={false}
+        onSubmitGameEntry={() => {}}
+        onCancelGameEntry={() => {}}
+        isSubmittingGame={false}
+        gameSubmissionSuccess={false}
+        lastCreatedGame={null}
+        gameSubmissionError={null}
+        pagination={{
+          page: 1,
+          limit: 10,
+          totalItems: 25,
+          totalPages: 3,
+          hasPreviousPage: false,
+          hasNextPage: true
+        }}
+        onPageChange={onPageChange}
+      />,
+      div
+    );
+
+    const previousButton = div.querySelector('.pagination-previous');
+    const nextButton = div.querySelector('.pagination-next');
+
+    expect(div.textContent).toContain('Page 1 of 3');
+    expect(previousButton.disabled).toBe(true);
+    expect(nextButton.disabled).toBe(false);
+
+    TestUtils.Simulate.click(nextButton);
+
+    expect(onPageChange).toHaveBeenCalledWith(2);
+  });
+
+  it('disables next player pagination on the last page and requests the previous page', () => {
+    const onPageChange = jest.fn();
+
+    ReactDOM.render(
+      <TeamDetailsComponent
+        players={[
+          { id: 1, first_name: 'Pat', last_name: 'Lee', email: 'pat@example.com', position: 'P' }
+        ]}
+        showGameEntryForm={false}
+        onSubmitGameEntry={() => {}}
+        onCancelGameEntry={() => {}}
+        isSubmittingGame={false}
+        gameSubmissionSuccess={false}
+        lastCreatedGame={null}
+        gameSubmissionError={null}
+        pagination={{
+          page: 3,
+          limit: 10,
+          totalItems: 25,
+          totalPages: 3,
+          hasPreviousPage: true,
+          hasNextPage: false
+        }}
+        onPageChange={onPageChange}
+      />,
+      div
+    );
+
+    const previousButton = div.querySelector('.pagination-previous');
+    const nextButton = div.querySelector('.pagination-next');
+
+    expect(div.textContent).toContain('Page 3 of 3');
+    expect(previousButton.disabled).toBe(false);
+    expect(nextButton.disabled).toBe(true);
+
+    TestUtils.Simulate.click(previousButton);
+
+    expect(onPageChange).toHaveBeenCalledWith(2);
+  });
+
+  it('does not render player pagination controls for a single page', () => {
+    ReactDOM.render(
+      <TeamDetailsComponent
+        players={[
+          { id: 1, first_name: 'Pat', last_name: 'Lee', email: 'pat@example.com', position: 'P' }
+        ]}
+        showGameEntryForm={false}
+        onSubmitGameEntry={() => {}}
+        onCancelGameEntry={() => {}}
+        isSubmittingGame={false}
+        gameSubmissionSuccess={false}
+        lastCreatedGame={null}
+        gameSubmissionError={null}
+        pagination={{
+          page: 1,
+          limit: 10,
+          totalItems: 1,
+          totalPages: 1,
+          hasPreviousPage: false,
+          hasNextPage: false
+        }}
+        onPageChange={jest.fn()}
+      />,
+      div
+    );
+
+    expect(div.querySelector('.pagination')).toBeNull();
+    expect(div.textContent).not.toContain('Page 1 of 1');
+  });
+
   it('renders collaborator management controls for owners and dispatches add, update, and remove actions', () => {
     const onAddCollaborator = jest.fn();
     const onUpdateCollaborator = jest.fn();
