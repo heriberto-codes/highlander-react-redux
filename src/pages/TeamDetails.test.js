@@ -1,8 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { act } from 'react-dom/test-utils';
 import { Provider } from 'react-redux';
 import { applyMiddleware, createStore } from 'redux';
 import thunk from 'redux-thunk';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 jest.mock('../actions/teamAction', () => ({
   createTeam: jest.fn(() => ({ type: 'CREATE_TEAM_REQUEST' })),
@@ -25,17 +27,78 @@ jest.mock('../components/TeamDetailsComponent', () => ({
   __esModule: true,
   default: jest.fn(() => null)
 }));
-jest.mock('../components/AddPlayerModal2', () => () => null);
+jest.mock('../components/AddPlayerModal2', () => jest.fn(() => null));
 
-import ConnectedTeamDetails, { TeamDetails } from './TeamDetails';
+import ConnectedTeamDetails, {
+  TeamDetails,
+  getFilterStateFromProps,
+  haveFilterValuesChanged,
+  getPaginationStateFromProps,
+  getResetPagination,
+  getFilterRequestState,
+  getRequestFilters
+} from './TeamDetails';
 import {
+  createGameEntry,
+  createTeam,
   getTeamProfile,
+  addNewPlayer,
   addTeamCollaborator,
   updateTeamCollaborator,
   removeTeamCollaborator
 } from '../actions/teamAction';
 import TeamDetailsNavigation from '../components/TeamDetailsNavigation';
 import TeamDetailsComponent from '../components/TeamDetailsComponent';
+import AddPlayer from '../components/AddPlayerModal2';
+
+const defaultTeamDetailPagination = {
+  playerPage: 2,
+  playerLimit: 25
+};
+
+const defaultPlayerPagination = {
+  page: 2,
+  limit: 25,
+  totalItems: 30,
+  totalPages: 2,
+  hasPreviousPage: true,
+  hasNextPage: false
+};
+
+const defaultProps = {
+  dispatch: jest.fn(),
+  name: 'Highlanders',
+  city: 'Bronx',
+  season: 2026,
+  activeSeason: 2026,
+  availableSeasons: [2026, 2025],
+  filters: {
+    playerSearch: 'Ace',
+    position: 'Pitcher'
+  },
+  first_name: 'Casey',
+  last_name: 'Jones',
+  email: 'coach@example.com',
+  players: [{ id: 1, first_name: 'Pat' }],
+  teamDetailPagination: defaultTeamDetailPagination,
+  playerPagination: defaultPlayerPagination,
+  collaborators: [{ id: 2, first_name: 'Alex', last_name: 'Smith', email: 'alex@example.com', role: 'assistant' }],
+  currentCoachRole: 'owner',
+  isAddingCollaborator: false,
+  addCollaboratorSuccess: false,
+  addCollaboratorError: null,
+  isUpdatingCollaborator: false,
+  updateCollaboratorSuccess: false,
+  updateCollaboratorError: null,
+  isRemovingCollaborator: false,
+  removeCollaboratorSuccess: false,
+  removeCollaboratorError: null,
+  isSubmittingGame: false,
+  gameSubmissionSuccess: false,
+  lastCreatedGame: null,
+  gameSubmissionError: null,
+  showModal: false
+};
 
 describe('TeamDetails page', () => {
   let div;
@@ -43,14 +106,19 @@ describe('TeamDetails page', () => {
   beforeEach(() => {
     div = document.createElement('div');
     document.body.appendChild(div);
+    createGameEntry.mockClear();
+    createTeam.mockClear();
     getTeamProfile.mockClear();
+    addNewPlayer.mockClear();
     addTeamCollaborator.mockClear();
     updateTeamCollaborator.mockClear();
     removeTeamCollaborator.mockClear();
     TeamDetailsNavigation.mockClear();
     TeamDetailsComponent.mockClear();
+    AddPlayer.mockClear();
     TeamDetailsNavigation.mockImplementation(() => null);
     TeamDetailsComponent.mockImplementation(() => null);
+    AddPlayer.mockImplementation(() => null);
   });
 
   afterEach(() => {
@@ -59,89 +127,35 @@ describe('TeamDetails page', () => {
     div = null;
   });
 
-  it('applies team detail filters with the active season', () => {
+  const renderTeamDetails = (props = {}, route = '/teamdetails/9') => {
+    const mergedProps = Object.assign({}, defaultProps, props);
+
+    act(() => {
+      ReactDOM.render(
+        <MemoryRouter initialEntries={[route]}>
+          <Routes>
+            <Route path="/teamdetails/:id" element={<TeamDetails {...mergedProps} />} />
+          </Routes>
+        </MemoryRouter>,
+        div
+      );
+    });
+
+    return mergedProps;
+  };
+
+  const latestNavigationProps = () => (
+    TeamDetailsNavigation.mock.calls[TeamDetailsNavigation.mock.calls.length - 1][0]
+  );
+
+  const latestComponentProps = () => (
+    TeamDetailsComponent.mock.calls[TeamDetailsComponent.mock.calls.length - 1][0]
+  );
+
+  it('fetches team profile on mount with the route id and current query state', () => {
     const dispatch = jest.fn();
-    const page = new TeamDetails({
-      match: { params: { id: '9' } },
-      dispatch,
-      activeSeason: 2026,
-      filters: {
-        playerSearch: '',
-        position: ''
-      },
-      teamDetailPagination: {
-        playerPage: 3,
-        playerLimit: 25
-      }
-    });
 
-    page.state = {
-      showGameEntryForm: false,
-      playerSearch: 'Ace',
-      position: 'Pitcher'
-    };
-
-    page.applyFilters();
-
-    expect(getTeamProfile).toHaveBeenCalledWith('9', 2026, {
-      playerSearch: 'Ace',
-      position: 'Pitcher',
-      playerPage: 1,
-      playerLimit: 25
-    });
-    expect(dispatch).toHaveBeenCalled();
-  });
-
-  it('passes current team detail filters when the season changes', () => {
-    const dispatch = jest.fn();
-    const page = new TeamDetails({
-      match: { params: { id: '9' } },
-      dispatch,
-      activeSeason: 2026,
-      filters: {
-        playerSearch: '',
-        position: ''
-      },
-      teamDetailPagination: {
-        playerPage: 3,
-        playerLimit: 25
-      }
-    });
-
-    page.state = {
-      showGameEntryForm: false,
-      playerSearch: 'Ace',
-      position: 'Pitcher'
-    };
-
-    page.handleSeasonChange(2025);
-
-    expect(getTeamProfile).toHaveBeenCalledWith('9', 2025, {
-      playerSearch: 'Ace',
-      position: 'Pitcher',
-      playerPage: 1,
-      playerLimit: 25
-    });
-    expect(dispatch).toHaveBeenCalled();
-  });
-
-  it('includes current team detail pagination when fetching the profile', () => {
-    const dispatch = jest.fn();
-    const page = new TeamDetails({
-      match: { params: { id: '9' } },
-      dispatch,
-      activeSeason: 2026,
-      filters: {
-        playerSearch: 'Ace',
-        position: 'Pitcher'
-      },
-      teamDetailPagination: {
-        playerPage: 2,
-        playerLimit: 25
-      }
-    });
-
-    page.fetchTeamProfile();
+    renderTeamDetails({ dispatch });
 
     expect(getTeamProfile).toHaveBeenCalledWith('9', undefined, {
       playerSearch: 'Ace',
@@ -152,126 +166,182 @@ describe('TeamDetails page', () => {
     expect(dispatch).toHaveBeenCalled();
   });
 
-  it('dispatches player page changes with current team detail query state', () => {
+  it('passes current team detail filters when the season changes', () => {
     const dispatch = jest.fn();
-    const page = new TeamDetails({
-      match: { params: { id: '9' } },
+
+    renderTeamDetails({ dispatch });
+    getTeamProfile.mockClear();
+
+    act(() => {
+      latestNavigationProps().onFilterChange('playerSearch', 'Slugger');
+      latestNavigationProps().onFilterChange('position', 'Catcher');
+    });
+    act(() => {
+      latestNavigationProps().onSeasonChange(2025);
+    });
+
+    expect(getTeamProfile).toHaveBeenCalledWith('9', 2025, {
+      playerSearch: 'Slugger',
+      position: 'Catcher',
+      playerPage: 1,
+      playerLimit: 25
+    });
+    expect(dispatch).toHaveBeenCalled();
+  });
+
+  it('applies filters with the active season and reset pagination', () => {
+    const dispatch = jest.fn();
+
+    renderTeamDetails({
       dispatch,
-      activeSeason: 2026,
       filters: {
         playerSearch: '',
         position: ''
       },
       teamDetailPagination: {
-        playerPage: 2,
+        playerPage: 3,
         playerLimit: 25
       }
     });
+    getTeamProfile.mockClear();
 
-    page.state = {
-      showGameEntryForm: false,
-      playerSearch: 'Ace',
-      position: 'Pitcher'
-    };
-
-    page.handlePlayerPageChange(4);
+    act(() => {
+      latestNavigationProps().onFilterChange('playerSearch', 'Ace');
+      latestNavigationProps().onFilterChange('position', 'Pitcher');
+    });
+    act(() => {
+      latestNavigationProps().onApplyFilters();
+    });
 
     expect(getTeamProfile).toHaveBeenCalledWith('9', 2026, {
       playerSearch: 'Ace',
       position: 'Pitcher',
+      playerPage: 1,
+      playerLimit: 25
+    });
+    expect(dispatch).toHaveBeenCalled();
+  });
+
+  it('dispatches player page changes with current team detail query state', () => {
+    const dispatch = jest.fn();
+
+    renderTeamDetails({ dispatch });
+    getTeamProfile.mockClear();
+
+    act(() => {
+      latestNavigationProps().onFilterChange('playerSearch', 'Slugger');
+      latestNavigationProps().onFilterChange('position', 'Catcher');
+    });
+    act(() => {
+      latestComponentProps().onPageChange(4);
+    });
+
+    expect(getTeamProfile).toHaveBeenCalledWith('9', 2026, {
+      playerSearch: 'Slugger',
+      position: 'Catcher',
       playerPage: 4,
       playerLimit: 25
     });
     expect(dispatch).toHaveBeenCalled();
   });
 
-  it('passes filters and activeSeason to TeamDetailsComponent', () => {
-    const playerPagination = {
-      page: 2,
-      limit: 25,
-      totalItems: 30,
-      totalPages: 2,
-      hasPreviousPage: true,
-      hasNextPage: false
-    };
+  it('preserves unsaved local filters when filter props do not change', () => {
+    const dispatch = jest.fn();
 
-    ReactDOM.render(
-      <TeamDetails
-        match={{ params: { id: '9' } }}
-        dispatch={jest.fn()}
-        activeSeason={2026}
-        filters={{
-          playerSearch: 'Ace',
-          position: 'Pitcher'
-        }}
-        players={[{ id: 1, first_name: 'Pat' }]}
-        playerPagination={playerPagination}
-        collaborators={[{ id: 2, first_name: 'Alex', last_name: 'Smith', email: 'alex@example.com', role: 'assistant' }]}
-        currentCoachRole="owner"
-        isAddingCollaborator={false}
-        addCollaboratorSuccess={false}
-        addCollaboratorError={null}
-        isUpdatingCollaborator={false}
-        updateCollaboratorSuccess={false}
-        updateCollaboratorError={null}
-        isRemovingCollaborator={false}
-        removeCollaboratorSuccess={false}
-        removeCollaboratorError={null}
-        isSubmittingGame={false}
-        gameSubmissionSuccess={false}
-        lastCreatedGame={null}
-        gameSubmissionError={null}
-        showModal={false}
-      />,
-      div
-    );
+    renderTeamDetails({ dispatch });
+    act(() => {
+      latestNavigationProps().onFilterChange('playerSearch', 'Unsaved');
+    });
 
-    expect(TeamDetailsComponent).toHaveBeenCalledWith(expect.objectContaining({
-      teamId: '9',
-      players: [{ id: 1, first_name: 'Pat' }],
-      collaborators: [{ id: 2, first_name: 'Alex', last_name: 'Smith', email: 'alex@example.com', role: 'assistant' }],
-      currentCoachRole: 'owner',
-      filters: {
-        playerSearch: 'Ace',
-        position: 'Pitcher'
-      },
-      activeSeason: 2026,
-      showGameEntryForm: false,
-      pagination: playerPagination,
-      onPageChange: expect.any(Function),
-      isSubmittingGame: false,
-      gameSubmissionSuccess: false,
-      lastCreatedGame: null,
-      gameSubmissionError: null
-    }), expect.anything());
+    renderTeamDetails({ dispatch });
 
-    expect(TeamDetailsNavigation).toHaveBeenCalledWith(expect.objectContaining({
-      currentCoachRole: 'owner'
-    }), expect.anything());
+    expect(latestNavigationProps()).toEqual(expect.objectContaining({
+      playerSearch: 'Unsaved',
+      position: 'Pitcher'
+    }));
   });
 
-  it('dispatches collaboration actions through page helpers', () => {
+  it('syncs local filters when filter prop values change', () => {
     const dispatch = jest.fn();
-    const page = new TeamDetails({
-      match: { params: { id: '9' } },
+
+    renderTeamDetails({ dispatch });
+    act(() => {
+      latestNavigationProps().onFilterChange('playerSearch', 'Unsaved');
+    });
+
+    renderTeamDetails({
       dispatch,
       filters: {
-        playerSearch: '',
-        position: ''
+        playerSearch: 'Redux',
+        position: 'Shortstop'
       }
     });
 
-    page.addCollaborator(7, 'assistant');
-    page.updateCollaborator(7, 'owner');
-    page.removeCollaborator(7);
+    expect(latestNavigationProps()).toEqual(expect.objectContaining({
+      playerSearch: 'Redux',
+      position: 'Shortstop'
+    }));
+  });
 
+  it('closes game entry form after successful submission', () => {
+    const dispatch = jest.fn();
+
+    renderTeamDetails({ dispatch });
+    act(() => {
+      latestNavigationProps().showGameEntryForm();
+    });
+
+    expect(latestComponentProps()).toEqual(expect.objectContaining({
+      showGameEntryForm: true
+    }));
+
+    renderTeamDetails({ dispatch, gameSubmissionSuccess: true });
+
+    expect(latestComponentProps()).toEqual(expect.objectContaining({
+      showGameEntryForm: false
+    }));
+  });
+
+  it('dispatches game entry and collaboration actions with the route id', () => {
+    const dispatch = jest.fn();
+
+    renderTeamDetails({ dispatch });
+    act(() => {
+      latestComponentProps().onSubmitGameEntry({ opponent: 'Rivals' });
+      latestComponentProps().onAddCollaborator(7, 'assistant');
+      latestComponentProps().onUpdateCollaborator(7, 'owner');
+      latestComponentProps().onRemoveCollaborator(7);
+    });
+
+    expect(createGameEntry).toHaveBeenCalledWith('9', { opponent: 'Rivals' });
     expect(addTeamCollaborator).toHaveBeenCalledWith('9', 7, 'assistant');
     expect(updateTeamCollaborator).toHaveBeenCalledWith('9', 7, 'owner');
     expect(removeTeamCollaborator).toHaveBeenCalledWith('9', 7);
-    expect(dispatch).toHaveBeenCalledTimes(3);
+    expect(dispatch).toHaveBeenCalledTimes(5);
   });
 
-  it('renders collaboration state from the connected store without direct prop injection', () => {
+  it('renders modal and dispatches player add through AddPlayer props', () => {
+    const dispatch = jest.fn();
+
+    renderTeamDetails({ dispatch, showModal: true });
+
+    expect(AddPlayer).toHaveBeenCalledWith(expect.objectContaining({
+      teamID: '9',
+      addPlayer: expect.any(Function),
+      closeModal: expect.any(Function)
+    }), expect.anything());
+
+    const addPlayerProps = AddPlayer.mock.calls[AddPlayer.mock.calls.length - 1][0];
+    act(() => {
+      addPlayerProps.addPlayer('9', 'player@example.com', 'Pat', 'Lee', 'Pitcher');
+      addPlayerProps.closeModal();
+    });
+
+    expect(addNewPlayer).toHaveBeenCalledWith('9', 'player@example.com', 'Pat', 'Lee', 'Pitcher');
+    expect(dispatch).toHaveBeenCalled();
+  });
+
+  it('passes collaboration state through the connected store using route params', () => {
     getTeamProfile.mockReturnValueOnce({
       type: 'GET_TEAM_PROFILE_REQUEST'
     });
@@ -293,6 +363,8 @@ describe('TeamDetails page', () => {
           email: 'coach@example.com'
         },
         players: [{ id: 1, first_name: 'Pat' }],
+        teamDetailPagination: defaultTeamDetailPagination,
+        playerPagination: defaultPlayerPagination,
         collaborators: [{ id: 2, first_name: 'Alex', last_name: 'Smith', email: 'alex@example.com', role: 'assistant' }],
         currentCoachRole: 'owner',
         isAddingCollaborator: true,
@@ -312,18 +384,25 @@ describe('TeamDetails page', () => {
       }
     }), applyMiddleware(thunk));
 
-    ReactDOM.render(
-      <Provider store={store}>
-        <ConnectedTeamDetails match={{ params: { id: '9' } }} />
-      </Provider>,
-      div
-    );
+    act(() => {
+      ReactDOM.render(
+        <Provider store={store}>
+          <MemoryRouter initialEntries={['/teamdetails/9']}>
+            <Routes>
+              <Route path="/teamdetails/:id" element={<ConnectedTeamDetails />} />
+            </Routes>
+          </MemoryRouter>
+        </Provider>,
+        div
+      );
+    });
 
     expect(TeamDetailsNavigation).toHaveBeenCalledWith(expect.objectContaining({
       currentCoachRole: 'owner'
     }), expect.anything());
 
     expect(TeamDetailsComponent).toHaveBeenCalledWith(expect.objectContaining({
+      teamId: '9',
       collaborators: [{ id: 2, first_name: 'Alex', last_name: 'Smith', email: 'alex@example.com', role: 'assistant' }],
       currentCoachRole: 'owner',
       isAddingCollaborator: true,
@@ -332,35 +411,10 @@ describe('TeamDetails page', () => {
   });
 
   it('passes assistant collaboration state through the page render path', () => {
-    ReactDOM.render(
-      <TeamDetails
-        match={{ params: { id: '9' } }}
-        dispatch={jest.fn()}
-        activeSeason={2026}
-        filters={{
-          playerSearch: '',
-          position: ''
-        }}
-        players={[]}
-        collaborators={[{ id: 2, first_name: 'Alex', last_name: 'Smith', email: 'alex@example.com', role: 'assistant' }]}
-        currentCoachRole="assistant"
-        isAddingCollaborator={false}
-        addCollaboratorSuccess={false}
-        addCollaboratorError={null}
-        isUpdatingCollaborator={false}
-        updateCollaboratorSuccess={false}
-        updateCollaboratorError={null}
-        isRemovingCollaborator={false}
-        removeCollaboratorSuccess={false}
-        removeCollaboratorError={null}
-        isSubmittingGame={false}
-        gameSubmissionSuccess={false}
-        lastCreatedGame={null}
-        gameSubmissionError={null}
-        showModal={false}
-      />,
-      div
-    );
+    renderTeamDetails({
+      collaborators: [{ id: 2, first_name: 'Alex', last_name: 'Smith', email: 'alex@example.com', role: 'assistant' }],
+      currentCoachRole: 'assistant'
+    });
 
     expect(TeamDetailsNavigation).toHaveBeenCalledWith(expect.objectContaining({
       currentCoachRole: 'assistant'
@@ -370,5 +424,79 @@ describe('TeamDetails page', () => {
       collaborators: [{ id: 2, first_name: 'Alex', last_name: 'Smith', email: 'alex@example.com', role: 'assistant' }],
       currentCoachRole: 'assistant'
     }), expect.anything());
+  });
+});
+
+describe('TeamDetails query-state helpers', () => {
+  it('normalizes missing and provided filters', () => {
+    expect(getFilterStateFromProps()).toEqual({
+      playerSearch: '',
+      position: ''
+    });
+
+    expect(getFilterStateFromProps({
+      playerSearch: 'Ace',
+      position: 'Pitcher'
+    })).toEqual({
+      playerSearch: 'Ace',
+      position: 'Pitcher'
+    });
+  });
+
+  it('detects changed filter values', () => {
+    expect(haveFilterValuesChanged({
+      playerSearch: 'Ace',
+      position: 'Pitcher'
+    }, {
+      playerSearch: 'Ace',
+      position: 'Pitcher'
+    })).toBe(false);
+
+    expect(haveFilterValuesChanged({
+      playerSearch: 'Ace',
+      position: 'Pitcher'
+    }, {
+      playerSearch: 'Slugger',
+      position: 'Pitcher'
+    })).toBe(true);
+  });
+
+  it('normalizes and resets pagination state', () => {
+    expect(getPaginationStateFromProps()).toEqual({
+      playerPage: 1,
+      playerLimit: 10
+    });
+
+    expect(getResetPagination({
+      playerPage: 5,
+      playerLimit: 25
+    })).toEqual({
+      playerPage: 1,
+      playerLimit: 25
+    });
+  });
+
+  it('builds request filters from local filter and pagination state', () => {
+    expect(getFilterRequestState({
+      showGameEntryForm: false,
+      playerSearch: 'Ace',
+      position: 'Pitcher'
+    })).toEqual({
+      playerSearch: 'Ace',
+      position: 'Pitcher'
+    });
+
+    expect(getRequestFilters({
+      playerSearch: 'Ace',
+      position: 'Pitcher'
+    }, {
+      playerPage: 2,
+      playerLimit: 25
+    })).toEqual({
+      playerSearch: 'Ace',
+      position: 'Pitcher',
+      playerPage: 2,
+      playerLimit: 25
+    });
   });
 });

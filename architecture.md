@@ -104,15 +104,18 @@ Additional flows:
 - UI structure:
   - Route-level pages in `src/pages/`
   - Shared/presentational components in `src/components/`
+  - Client pages and shared components use function components with React hooks for local state, lifecycle effects, refs, navigation, and route params
 - State management approach:
   - Central Redux store in `src/store.js`
   - Async action creators use `redux-thunk`
   - Forms use `redux-form`
+  - Connected page containers continue to use `connect` where that pattern already exists
 - Rendering strategy:
   - Client-rendered SPA
   - Production build served by Express
 - Routing approach:
   - `react-router-dom` routes are defined in `src/container/App.js`
+  - Route-dependent function components read React Router v6 params/navigation through hooks such as `useParams` and `useNavigate`
 - Client API URL contract:
   - client actions should not hardcode server origins such as `http://localhost:8080`
   - client actions should call API routes through relative URLs when the browser and API are served through the same origin

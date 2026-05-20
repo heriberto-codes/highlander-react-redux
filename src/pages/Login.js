@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { connect } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,61 +8,67 @@ import Nav from '../components/Nav';
 import LoginForm from '../components/LoginForm';
 import Footer from '../components/Footer';
 
-export class Login extends Component {
-        componentDidMount() {
-                if (this.props.hasResolvedSession && this.props.loggedIn) {
-                        setTimeout(() => {
-                                this.props.navigate('/dashboard');
-                        }, 0);
-                }
-        }
+export function Login({
+  dispatch,
+  loggedIn,
+  error,
+  hasResolvedSession,
+  shouldRedirect
+}) {
+  const navigate = useNavigate();
+  const previousAuthState = useRef(null);
 
-        componentDidUpdate(prevProps){
-                if(this.shouldNavigateToDashboard(this.props, prevProps)) {
-                        this.props.navigate('/dashboard');
-                }
-        }
+  useEffect(() => {
+    const previous = previousAuthState.current;
 
-        shouldNavigateToDashboard(props, prevProps) {
-                const isAuthenticated = props.hasResolvedSession && props.loggedIn;
-                const redirectRequested = props.hasResolvedSession && props.shouldRedirect;
-                const wasAuthenticated = prevProps.hasResolvedSession && prevProps.loggedIn;
-                const hadRedirect = prevProps.hasResolvedSession && prevProps.shouldRedirect;
+    if (!previous) {
+      if (hasResolvedSession && loggedIn) {
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 0);
+      }
+    } else {
+      const isAuthenticated = hasResolvedSession && loggedIn;
+      const redirectRequested = hasResolvedSession && shouldRedirect;
+      const wasAuthenticated = previous.hasResolvedSession && previous.loggedIn;
+      const hadRedirect = previous.hasResolvedSession && previous.shouldRedirect;
 
-                return (isAuthenticated && !wasAuthenticated) || (redirectRequested && !hadRedirect);
-        }
+      if ((isAuthenticated && !wasAuthenticated) || (redirectRequested && !hadRedirect)) {
+        navigate('/dashboard');
+      }
+    }
 
-	callLogin(email, pwd){
-		this.props.dispatch(login(email, pwd));
-	}
+    previousAuthState.current = {
+      hasResolvedSession,
+      loggedIn,
+      shouldRedirect
+    };
+  }, [hasResolvedSession, loggedIn, navigate, shouldRedirect]);
 
-	render () {
-		const {loggedIn, error, hasResolvedSession} = this.props;
-		let message;
-		if(hasResolvedSession && !loggedIn && error){
-			message = <p className="error">{error.message}</p>;
-		}
-		return (
-			<div>
-				<Nav isLoggedIn={loggedIn} />
-				{message}
-				{hasResolvedSession ? <LoginForm onSubmit={(email, pwd) => this.callLogin(email, pwd)} /> : null}
-				<Footer />
-			</div>
-		);
-	}
+  function callLogin(email, pwd) {
+    dispatch(login(email, pwd));
+  }
+
+  let message;
+  if (hasResolvedSession && !loggedIn && error) {
+    message = <p className="error">{error.message}</p>;
+  }
+
+  return (
+    <div>
+      <Nav isLoggedIn={loggedIn} />
+      {message}
+      {hasResolvedSession ? <LoginForm onSubmit={(email, pwd) => callLogin(email, pwd)} /> : null}
+      <Footer />
+    </div>
+  );
 }
 
 const mapStateToProps = state => ({
-        loggedIn: state.loginReducer.isloggedIn,
-        hasResolvedSession: state.loginReducer.hasResolvedSession,
-        error: state.loginReducer.errorMessage,
-        shouldRedirect: state.loginReducer.shouldRedirect,
+  loggedIn: state.loginReducer.isloggedIn,
+  hasResolvedSession: state.loginReducer.hasResolvedSession,
+  error: state.loginReducer.errorMessage,
+  shouldRedirect: state.loginReducer.shouldRedirect,
 });
 
-const ConnectedLogin = connect(mapStateToProps)(Login);
-
-export default function LoginWrapper(props) {
-        const navigate = useNavigate();
-        return <ConnectedLogin {...props} navigate={navigate} />;
-}
+export default connect(mapStateToProps)(Login);

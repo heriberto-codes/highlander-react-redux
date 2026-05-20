@@ -1,5 +1,6 @@
-import React, { Component } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { connect } from 'react-redux';
+import { useParams } from 'react-router-dom';
 
 import {
 	createTeam,
@@ -20,24 +21,24 @@ import TeamDetailsComponent from '../components/TeamDetailsComponent';
 // import AddPlayerModal from '../components/AddPlayerModal';
 import AddPlayer from '../components/AddPlayerModal2';
 
-function getFilterStateFromProps(filters) {
+export function getFilterStateFromProps(filters) {
 	return {
 		playerSearch: filters && filters.playerSearch ? filters.playerSearch : '',
 		position: filters && filters.position ? filters.position : ''
 	};
 }
 
-function haveFilterValuesChanged(previousFilters, nextFilters) {
+export function haveFilterValuesChanged(previousFilters, nextFilters) {
 	return previousFilters.playerSearch !== nextFilters.playerSearch ||
 		previousFilters.position !== nextFilters.position;
 }
 
-const defaultTeamDetailPagination = () => ({
+export const defaultTeamDetailPagination = () => ({
 	playerPage: 1,
 	playerLimit: 10
 });
 
-function getPaginationStateFromProps(pagination) {
+export function getPaginationStateFromProps(pagination) {
 	const defaults = defaultTeamDetailPagination();
 
 	return {
@@ -46,7 +47,7 @@ function getPaginationStateFromProps(pagination) {
 	};
 }
 
-function getResetPagination(pagination) {
+export function getResetPagination(pagination) {
 	const currentPagination = getPaginationStateFromProps(pagination);
 
 	return Object.assign({}, currentPagination, {
@@ -54,197 +55,205 @@ function getResetPagination(pagination) {
 	});
 }
 
-function getFilterRequestState(state) {
+export function getFilterRequestState(state) {
 	return {
 		playerSearch: state.playerSearch,
 		position: state.position
 	};
 }
 
-function getRequestFilters(filterState, paginationState) {
+export function getRequestFilters(filterState, paginationState) {
 	return Object.assign({}, filterState, paginationState);
 }
 
-export class TeamDetails extends Component {
-	constructor(props) {
-		super(props);
-		this.state = Object.assign({
-			showGameEntryForm: false
-		}, getFilterStateFromProps(props.filters));
-	}
+export function TeamDetails(props) {
+	const params = useParams();
+	const matchId = props.match && props.match.params ? props.match.params.id : undefined;
+	const teamId = params.id || matchId;
+	const [filterState, setFilterState] = useState(() => getFilterStateFromProps(props.filters));
+	const [showGameEntryForm, setShowGameEntryForm] = useState(false);
+	const didMountRef = useRef(false);
+	const previousIdRef = useRef(teamId);
+	const previousFiltersRef = useRef(props.filters);
+	const previousGameSubmissionSuccessRef = useRef(props.gameSubmissionSuccess);
+	const filterStateRef = useRef(filterState);
+	const teamDetailPaginationRef = useRef(props.teamDetailPagination);
 
-	fetchTeamProfile(
+	filterStateRef.current = filterState;
+	teamDetailPaginationRef.current = props.teamDetailPagination;
+
+	const fetchTeamProfile = useCallback((
 		season,
 		filters = getRequestFilters(
-			getFilterRequestState(this.state),
-			getPaginationStateFromProps(this.props.teamDetailPagination)
+			getFilterRequestState(filterStateRef.current),
+			getPaginationStateFromProps(teamDetailPaginationRef.current)
 		)
-	) {
-		const { id } = this.props.match.params;
-		this.props.dispatch(getTeamProfile(id, season, filters));
-	}
+	) => {
+		props.dispatch(getTeamProfile(teamId, season, filters));
+	}, [props.dispatch, teamId]);
 
-	componentDidMount() {
-		this.fetchTeamProfile();
-	}
-
-	componentDidUpdate(prevProps) {
-		if (prevProps.match.params.id !== this.props.match.params.id) {
-			this.fetchTeamProfile();
+	useEffect(() => {
+		if (!didMountRef.current) {
+			didMountRef.current = true;
+			previousIdRef.current = teamId;
+			fetchTeamProfile();
+			return;
 		}
 
-		if (!prevProps.gameSubmissionSuccess && this.props.gameSubmissionSuccess) {
-			this.setState({ showGameEntryForm: false });
+		if (previousIdRef.current !== teamId) {
+			fetchTeamProfile();
 		}
 
-		const previousFilterState = getFilterStateFromProps(prevProps.filters);
-		const nextFilterState = getFilterStateFromProps(this.props.filters);
+		previousIdRef.current = teamId;
+	}, [teamId, fetchTeamProfile]);
+
+	useEffect(() => {
+		if (!previousGameSubmissionSuccessRef.current && props.gameSubmissionSuccess) {
+			setShowGameEntryForm(false);
+		}
+
+		previousGameSubmissionSuccessRef.current = props.gameSubmissionSuccess;
+	}, [props.gameSubmissionSuccess]);
+
+	useEffect(() => {
+		const previousFilterState = getFilterStateFromProps(previousFiltersRef.current);
+		const nextFilterState = getFilterStateFromProps(props.filters);
+
 		if (haveFilterValuesChanged(previousFilterState, nextFilterState)) {
-			this.setState(nextFilterState);
+			setFilterState(nextFilterState);
 		}
-	}
 
-	handleSeasonChange(season) {
-		this.fetchTeamProfile(
+		previousFiltersRef.current = props.filters;
+	}, [props.filters]);
+
+	const handleSeasonChange = season => {
+		fetchTeamProfile(
 			season,
 			getRequestFilters(
-				getFilterRequestState(this.state),
-				getResetPagination(this.props.teamDetailPagination)
+				getFilterRequestState(filterState),
+				getResetPagination(props.teamDetailPagination)
 			)
 		);
-	}
+	};
 
-	handleFilterChange(field, value) {
-		this.setState({
+	const handleFilterChange = (field, value) => {
+		setFilterState(currentFilterState => Object.assign({}, currentFilterState, {
 			[field]: value
-		});
-	}
+		}));
+	};
 
-	applyFilters() {
-		this.fetchTeamProfile(
-			this.props.activeSeason,
+	const applyFilters = () => {
+		fetchTeamProfile(
+			props.activeSeason,
 			getRequestFilters(
-				getFilterRequestState(this.state),
-				getResetPagination(this.props.teamDetailPagination)
+				getFilterRequestState(filterState),
+				getResetPagination(props.teamDetailPagination)
 			)
 		);
-	}
+	};
 
-	handlePlayerPageChange(playerPage) {
+	const handlePlayerPageChange = playerPage => {
 		const pagination = Object.assign(
 			{},
-			getPaginationStateFromProps(this.props.teamDetailPagination),
+			getPaginationStateFromProps(props.teamDetailPagination),
 			{ playerPage }
 		);
 
-		this.fetchTeamProfile(
-			this.props.activeSeason,
-			getRequestFilters(getFilterRequestState(this.state), pagination)
+		fetchTeamProfile(
+			props.activeSeason,
+			getRequestFilters(getFilterRequestState(filterState), pagination)
 		);
+	};
+
+	const showModal = () => {
+		props.dispatch(createTeam());
+	};
+
+	const closeModal = () => {
+		props.dispatch(hideModal());
+	};
+
+	const addNewPlayerToTeam = (teamId, email, firstName, lastName, position) => {
+		props.dispatch(addNewPlayer(teamId, email, firstName, lastName, position));
+	};
+
+	const submitGameEntry = payload => {
+		props.dispatch(createGameEntry(teamId, payload));
+	};
+
+	const addCollaborator = (coachId, role) => {
+		props.dispatch(addTeamCollaborator(teamId, coachId, role));
+	};
+
+	const updateCollaborator = (coachId, role) => {
+		props.dispatch(updateTeamCollaborator(teamId, coachId, role));
+	};
+
+	const removeCollaborator = coachId => {
+		props.dispatch(removeTeamCollaborator(teamId, coachId));
+	};
+
+	let teamModal;
+	if(props.showModal === true){
+		teamModal = <AddPlayer
+			teamID={teamId}
+			addPlayer={(teamId, email, firstName, lastName, position) => addNewPlayerToTeam(teamId, email, firstName, lastName, position)}
+			closeModal={() => closeModal()}
+			onSubmit={ undefined }
+			/>;
 	}
 
-	showModal(){
-		this.props.dispatch(createTeam());
-	}
-
-	closeModal(){
-		this.props.dispatch(hideModal());
-	}
-
-	addNewPlayer(teamId, email, firstName, lastName, position){
-		this.props.dispatch(addNewPlayer(teamId, email, firstName, lastName, position));
-	}
-
-	showGameEntryForm() {
-		this.setState({ showGameEntryForm: true });
-	}
-
-	hideGameEntryForm() {
-		this.setState({ showGameEntryForm: false });
-	}
-
-	submitGameEntry(payload) {
-		const { id } = this.props.match.params;
-		this.props.dispatch(createGameEntry(id, payload));
-	}
-
-	addCollaborator(coachId, role) {
-		const { id } = this.props.match.params;
-		this.props.dispatch(addTeamCollaborator(id, coachId, role));
-	}
-
-	updateCollaborator(coachId, role) {
-		const { id } = this.props.match.params;
-		this.props.dispatch(updateTeamCollaborator(id, coachId, role));
-	}
-
-	removeCollaborator(coachId) {
-		const { id } = this.props.match.params;
-		this.props.dispatch(removeTeamCollaborator(id, coachId));
-	}
-
-	render() {
-		let teamModal;
-		if(this.props.showModal === true){
-			teamModal = <AddPlayer
-				teamID={this.props.match.params.id}
-				addPlayer={(teamId, email, firstName, lastName, position) => this.addNewPlayer(teamId, email, firstName, lastName, position)}
-				closeModal={() => this.closeModal()}
-				onSubmit={ this.submit }
-				/>;
-		}
-		return (
-			<div>
-				<Nav />
-				<TeamDetailsNavigation
-					name={this.props.name}
-					city={this.props.city}
-					season={this.props.season}
-					activeSeason={this.props.activeSeason}
-					availableSeasons={this.props.availableSeasons}
-					playerSearch={this.state.playerSearch}
-					position={this.state.position}
-					first_name={this.props.first_name}
-					last_name={this.props.last_name}
-					email={this.props.email}
-					currentCoachRole={this.props.currentCoachRole}
-					onSeasonChange={season => this.handleSeasonChange(season)}
-					onFilterChange={(field, value) => this.handleFilterChange(field, value)}
-					onApplyFilters={() => this.applyFilters()}
-					showModal={() => this.showModal()}
-					showGameEntryForm={() => this.showGameEntryForm()} />
-				<TeamDetailsComponent
-					teamId={this.props.match.params.id}
-					players={this.props.players}
-					filters={this.props.filters}
-					activeSeason={this.props.activeSeason}
-					collaborators={this.props.collaborators}
-					currentCoachRole={this.props.currentCoachRole}
-					showGameEntryForm={this.state.showGameEntryForm}
-					onCancelGameEntry={() => this.hideGameEntryForm()}
-					onSubmitGameEntry={payload => this.submitGameEntry(payload)}
-					onAddCollaborator={(coachId, role) => this.addCollaborator(coachId, role)}
-					onUpdateCollaborator={(coachId, role) => this.updateCollaborator(coachId, role)}
-					onRemoveCollaborator={coachId => this.removeCollaborator(coachId)}
-					pagination={this.props.playerPagination}
-					onPageChange={page => this.handlePlayerPageChange(page)}
-					isAddingCollaborator={this.props.isAddingCollaborator}
-					addCollaboratorSuccess={this.props.addCollaboratorSuccess}
-					addCollaboratorError={this.props.addCollaboratorError}
-					isUpdatingCollaborator={this.props.isUpdatingCollaborator}
-					updateCollaboratorSuccess={this.props.updateCollaboratorSuccess}
-					updateCollaboratorError={this.props.updateCollaboratorError}
-					isRemovingCollaborator={this.props.isRemovingCollaborator}
-					removeCollaboratorSuccess={this.props.removeCollaboratorSuccess}
-					removeCollaboratorError={this.props.removeCollaboratorError}
-					isSubmittingGame={this.props.isSubmittingGame}
-					gameSubmissionSuccess={this.props.gameSubmissionSuccess}
-					lastCreatedGame={this.props.lastCreatedGame}
-					gameSubmissionError={this.props.gameSubmissionError} />
-				{teamModal}
-			</div>
-		);
-	}
+	return (
+		<div>
+			<Nav />
+			<TeamDetailsNavigation
+				name={props.name}
+				city={props.city}
+				season={props.season}
+				activeSeason={props.activeSeason}
+				availableSeasons={props.availableSeasons}
+				playerSearch={filterState.playerSearch}
+				position={filterState.position}
+				first_name={props.first_name}
+				last_name={props.last_name}
+				email={props.email}
+				currentCoachRole={props.currentCoachRole}
+				onSeasonChange={season => handleSeasonChange(season)}
+				onFilterChange={(field, value) => handleFilterChange(field, value)}
+				onApplyFilters={() => applyFilters()}
+				showModal={() => showModal()}
+				showGameEntryForm={() => setShowGameEntryForm(true)} />
+			<TeamDetailsComponent
+				teamId={teamId}
+				players={props.players}
+				filters={props.filters}
+				activeSeason={props.activeSeason}
+				collaborators={props.collaborators}
+				currentCoachRole={props.currentCoachRole}
+				showGameEntryForm={showGameEntryForm}
+				onCancelGameEntry={() => setShowGameEntryForm(false)}
+				onSubmitGameEntry={payload => submitGameEntry(payload)}
+				onAddCollaborator={(coachId, role) => addCollaborator(coachId, role)}
+				onUpdateCollaborator={(coachId, role) => updateCollaborator(coachId, role)}
+				onRemoveCollaborator={coachId => removeCollaborator(coachId)}
+				pagination={props.playerPagination}
+				onPageChange={page => handlePlayerPageChange(page)}
+				isAddingCollaborator={props.isAddingCollaborator}
+				addCollaboratorSuccess={props.addCollaboratorSuccess}
+				addCollaboratorError={props.addCollaboratorError}
+				isUpdatingCollaborator={props.isUpdatingCollaborator}
+				updateCollaboratorSuccess={props.updateCollaboratorSuccess}
+				updateCollaboratorError={props.updateCollaboratorError}
+				isRemovingCollaborator={props.isRemovingCollaborator}
+				removeCollaboratorSuccess={props.removeCollaboratorSuccess}
+				removeCollaboratorError={props.removeCollaboratorError}
+				isSubmittingGame={props.isSubmittingGame}
+				gameSubmissionSuccess={props.gameSubmissionSuccess}
+				lastCreatedGame={props.lastCreatedGame}
+				gameSubmissionError={props.gameSubmissionError} />
+			{teamModal}
+		</div>
+	);
 }
 
 const mapStateToProps = state => ({

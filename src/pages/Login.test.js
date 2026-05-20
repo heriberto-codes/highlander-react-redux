@@ -1,5 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { act } from 'react-dom/test-utils';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 
 jest.mock('../actions/loginAction', () => ({
   login: jest.fn((email, pwd) => ({
@@ -30,6 +32,18 @@ import { login } from '../actions/loginAction';
 describe('Login page', () => {
   let div;
 
+  function renderLogin(props) {
+    ReactDOM.render(
+      <MemoryRouter initialEntries={['/login']}>
+        <Routes>
+          <Route path="/login" element={<Login {...props} />} />
+          <Route path="/dashboard" element={<div>Dashboard Page</div>} />
+        </Routes>
+      </MemoryRouter>,
+      div
+    );
+  }
+
   beforeEach(() => {
     div = document.createElement('div');
     document.body.appendChild(div);
@@ -43,98 +57,107 @@ describe('Login page', () => {
   });
 
   it('does not render the login form while session bootstrap is unresolved', () => {
-    ReactDOM.render(
-      <Login
-        dispatch={jest.fn()}
-        navigate={jest.fn()}
-        loggedIn={false}
-        hasResolvedSession={false}
-        shouldRedirect={false}
-        error={null}
-      />,
-      div
-    );
+    act(() => {
+      renderLogin({
+        dispatch: jest.fn(),
+        loggedIn: false,
+        hasResolvedSession: false,
+        shouldRedirect: false,
+        error: null
+      });
+    });
 
     expect(div.textContent).toContain('logged-out-nav');
     expect(div.textContent).not.toContain('Login Form');
   });
 
   it('renders the login form once session bootstrap resolves logged out', () => {
-    ReactDOM.render(
-      <Login
-        dispatch={jest.fn()}
-        navigate={jest.fn()}
-        loggedIn={false}
-        hasResolvedSession={true}
-        shouldRedirect={false}
-        error={null}
-      />,
-      div
-    );
+    act(() => {
+      renderLogin({
+        dispatch: jest.fn(),
+        loggedIn: false,
+        hasResolvedSession: true,
+        shouldRedirect: false,
+        error: null
+      });
+    });
 
     expect(div.textContent).toContain('Login Form');
   });
 
   it('renders the login form and error once bootstrap resolves logged out after a failure', () => {
-    ReactDOM.render(
-      <Login
-        dispatch={jest.fn()}
-        navigate={jest.fn()}
-        loggedIn={false}
-        hasResolvedSession={false}
-        shouldRedirect={false}
-        error={null}
-      />,
-      div
-    );
+    act(() => {
+      renderLogin({
+        dispatch: jest.fn(),
+        loggedIn: false,
+        hasResolvedSession: false,
+        shouldRedirect: false,
+        error: null
+      });
+    });
 
-    ReactDOM.render(
-      <Login
-        dispatch={jest.fn()}
-        navigate={jest.fn()}
-        loggedIn={false}
-        hasResolvedSession={true}
-        shouldRedirect={false}
-        error={{ message: 'Unauthorized' }}
-      />,
-      div
-    );
+    act(() => {
+      renderLogin({
+        dispatch: jest.fn(),
+        loggedIn: false,
+        hasResolvedSession: true,
+        shouldRedirect: false,
+        error: { message: 'Unauthorized' }
+      });
+    });
 
     expect(div.textContent).toContain('Login Form');
     expect(div.textContent).toContain('Unauthorized');
   });
 
-  it('redirects to dashboard once bootstrap resolves authenticated', done => {
-    const navigate = jest.fn();
+  it('redirects to dashboard once bootstrap resolves authenticated', async () => {
+    await act(async () => {
+      renderLogin({
+        dispatch: jest.fn(),
+        loggedIn: false,
+        hasResolvedSession: false,
+        shouldRedirect: false,
+        error: null
+      });
+    });
 
-    ReactDOM.render(
-      <Login
-        dispatch={jest.fn()}
-        navigate={navigate}
-        loggedIn={false}
-        hasResolvedSession={false}
-        shouldRedirect={false}
-        error={null}
-      />,
-      div
-    );
+    await act(async () => {
+      renderLogin({
+        dispatch: jest.fn(),
+        loggedIn: true,
+        hasResolvedSession: true,
+        shouldRedirect: false,
+        error: null
+      });
+      await Promise.resolve();
+    });
 
-    ReactDOM.render(
-      <Login
-        dispatch={jest.fn()}
-        navigate={navigate}
-        loggedIn={true}
-        hasResolvedSession={true}
-        shouldRedirect={false}
-        error={null}
-      />,
-      div
-    );
+    expect(div.textContent).toContain('Dashboard Page');
+  });
 
-    setTimeout(() => {
-      expect(navigate).toHaveBeenCalledWith('/dashboard');
-      done();
-    }, 0);
+  it('redirects to dashboard when resolved login requests a redirect', async () => {
+    await act(async () => {
+      renderLogin({
+        dispatch: jest.fn(),
+        loggedIn: false,
+        hasResolvedSession: true,
+        shouldRedirect: false,
+        error: null
+      });
+    });
+
+    await act(async () => {
+      renderLogin({
+        dispatch: jest.fn(),
+        loggedIn: false,
+        hasResolvedSession: true,
+        shouldRedirect: true,
+        error: null
+      });
+      await Promise.resolve();
+    });
+
+    expect(div.textContent).toContain('Dashboard Page');
   });
 
   it('dispatches login when the form submit handler is called', () => {
@@ -146,19 +169,19 @@ describe('Login page', () => {
     };
     login.mockReturnValueOnce(action);
 
-    ReactDOM.render(
-      <Login
-        dispatch={dispatch}
-        navigate={jest.fn()}
-        loggedIn={false}
-        hasResolvedSession={true}
-        shouldRedirect={false}
-        error={null}
-      />,
-      div
-    );
+    act(() => {
+      renderLogin({
+        dispatch,
+        loggedIn: false,
+        hasResolvedSession: true,
+        shouldRedirect: false,
+        error: null
+      });
+    });
 
-    div.querySelector('button').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    act(() => {
+      div.querySelector('button').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
 
     expect(login).toHaveBeenCalledWith('coach@example.com', 'secret');
     expect(dispatch).toHaveBeenCalledWith(action);

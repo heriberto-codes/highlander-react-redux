@@ -1,17 +1,15 @@
-import React, { Component } from 'react';
+import React from 'react';
 
 import Nav from '../components/Nav';
 import RegisterForm from '../components/RegisterForm';
 import Footer from '../components/Footer';
 
-export default class Register extends Component {
-	render() {
-		return (
-			<div>
-				<Nav />
-				<RegisterForm />
-				<Footer />
-			</div>
-		);
-	}
+export default function Register() {
+	return (
+		<div>
+			<Nav />
+			<RegisterForm />
+			<Footer />
+		</div>
+	);
 }

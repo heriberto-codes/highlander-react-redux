@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { act } from 'react-dom/test-utils';
 import { Provider } from 'react-redux';
 import { createStore } from 'redux';
 
@@ -38,7 +39,9 @@ describe('App container', () => {
   it('renders without crashing and bootstraps the session on mount', () => {
     const bootstrapSession = jest.fn();
 
-    ReactDOM.render(<App bootstrapSession={bootstrapSession} />, div);
+    act(() => {
+      ReactDOM.render(<App bootstrapSession={bootstrapSession} />, div);
+    });
 
     expect(bootstrapSession).toHaveBeenCalledTimes(1);
   });
@@ -46,8 +49,12 @@ describe('App container', () => {
   it('does not dispatch bootstrapSession again on rerender', () => {
     const bootstrapSession = jest.fn();
 
-    ReactDOM.render(<App bootstrapSession={bootstrapSession} />, div);
-    ReactDOM.render(<App bootstrapSession={bootstrapSession} />, div);
+    act(() => {
+      ReactDOM.render(<App bootstrapSession={bootstrapSession} />, div);
+    });
+    act(() => {
+      ReactDOM.render(<App bootstrapSession={bootstrapSession} />, div);
+    });
 
     expect(bootstrapSession).toHaveBeenCalledTimes(1);
   });
@@ -58,17 +65,19 @@ describe('App container', () => {
       type: 'BOOTSTRAP_SESSION_REQUEST'
     });
 
-    ReactDOM.render(
-      <Provider store={store}>
-        <ConnectedApp />
-      </Provider>,
-      div
-    );
+    act(() => {
+      ReactDOM.render(
+        <Provider store={store}>
+          <ConnectedApp />
+        </Provider>,
+        div
+      );
+    });
 
     expect(bootstrapSession).toHaveBeenCalledTimes(1);
   });
 
-  it('routes authenticated bootstrap state from /login to the dashboard in the connected app', done => {
+  it('routes authenticated bootstrap state from /login to the dashboard in the connected app', async () => {
     window.history.pushState({}, '', '/login');
     const state = {
       loginReducer: {
@@ -87,18 +96,17 @@ describe('App container', () => {
       type: 'BOOTSTRAP_SESSION_REQUEST'
     });
 
-    ReactDOM.render(
-      <Provider store={store}>
-        <ConnectedApp />
-      </Provider>,
-      div
-    );
+    await act(async () => {
+      ReactDOM.render(
+        <Provider store={store}>
+          <ConnectedApp />
+        </Provider>,
+        div
+      );
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
 
     expect(bootstrapSession).toHaveBeenCalledTimes(1);
-
-    setTimeout(() => {
-      expect(div.textContent).toContain('Dashboard Page');
-      done();
-    }, 0);
+    expect(div.textContent).toContain('Dashboard Page');
   });
 });

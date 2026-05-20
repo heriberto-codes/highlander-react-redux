@@ -1,39 +1,8 @@
-import React, { Component } from 'react';
+import React from 'react';
 import { Field, reduxForm, SubmissionError} from 'redux-form';
 import Input from './input';
 
-class AddPlayer extends Component {
-
-submit() {
-	// something goes here
-}
-
-locationInput({ input, meta: { touched, error }, ...custom}) {
-	// const hasError = touched && error !== undefined;
-	return (
-		// <div>
-		// 	{hasError &&
-		// 		<Message
-		// 			error
-		// 			header='Error'
-		// 			content={ error }
-		// 		/>}
-		// 		<Input
-		// 			error={ hasError }
-		// 			fluid
-		// 			placeholder='something goes here'
-		// 			{ ...input }
-		// 			{ ... custom }
-		// 		/>
-		// </div>
-		<div>
-			<h1>Some location input goes here</h1>
-		</div>
-	);
-}
-
-render() {
-	const { hanldeSubmit } = this.props;
+function AddPlayer(props) {
 	return (
 		<form>
 		{/* <form onSubmit = { handleSubmit(this.submit.bind(this))}> */}
@@ -117,7 +86,7 @@ render() {
 							className="button is-success"
 							type='submit'
 							disabled={
-								this.props.pristine || this.props.submitting
+								props.pristine || props.submitting
 							}>
 							Submit
 						</button>
@@ -127,7 +96,6 @@ render() {
 			</div>
 		</form>
 	);
-}
 }
 
 const validate = values => {

@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { connect } from 'react-redux';
 
 import { getProfile, profileSuccess, profileError } from '../actions/coachAction';
@@ -12,7 +12,7 @@ import TeamsList from '../components/TeamsList';
 import RosterList from '../components/RosterList';
 import StatsList from '../components/StatsList';
 
-function getFilterStateFromProps(filters) {
+export function getFilterStateFromProps(filters) {
 	return {
 		teamSearch: filters && filters.teamSearch ? filters.teamSearch : '',
 		playerSearch: filters && filters.playerSearch ? filters.playerSearch : '',
@@ -20,13 +20,13 @@ function getFilterStateFromProps(filters) {
 	};
 }
 
-function haveFilterValuesChanged(previousFilters, nextFilters) {
+export function haveFilterValuesChanged(previousFilters, nextFilters) {
 	return previousFilters.teamSearch !== nextFilters.teamSearch ||
 		previousFilters.playerSearch !== nextFilters.playerSearch ||
 		previousFilters.position !== nextFilters.position;
 }
 
-const defaultDashboardPagination = () => ({
+export const defaultDashboardPagination = () => ({
 	teamPage: 1,
 	teamLimit: 10,
 	playerPage: 1,
@@ -34,7 +34,7 @@ const defaultDashboardPagination = () => ({
 	notificationLimit: 10
 });
 
-function getPaginationStateFromProps(pagination) {
+export function getPaginationStateFromProps(pagination) {
 	const defaults = defaultDashboardPagination();
 
 	return {
@@ -49,7 +49,7 @@ function getPaginationStateFromProps(pagination) {
 	};
 }
 
-function getResetPagination(pagination) {
+export function getResetPagination(pagination) {
 	const currentPagination = getPaginationStateFromProps(pagination);
 
 	return Object.assign({}, currentPagination, {
@@ -58,147 +58,160 @@ function getResetPagination(pagination) {
 	});
 }
 
-function getRequestFilters(filterState, paginationState) {
+export function getRequestFilters(filterState, paginationState) {
 	return Object.assign({}, filterState, paginationState);
 }
 
-export class Dashboard extends Component {
-	constructor(props) {
-		super(props);
-		this.state = getFilterStateFromProps(props.filters);
-	}
+export function Dashboard(props) {
+	const [filterState, setFilterState] = useState(() => getFilterStateFromProps(props.filters));
+	const didMountRef = useRef(false);
+	const previousIdRef = useRef(props.id);
+	const previousFiltersRef = useRef(props.filters);
+	const filterStateRef = useRef(filterState);
+	const dashboardPaginationRef = useRef(props.dashboardPagination);
 
-	fetchProfile(
+	filterStateRef.current = filterState;
+	dashboardPaginationRef.current = props.dashboardPagination;
+
+	const fetchProfile = useCallback((
 		season,
 		filters = getRequestFilters(
-			this.state,
-			getPaginationStateFromProps(this.props.dashboardPagination)
+			filterStateRef.current,
+			getPaginationStateFromProps(dashboardPaginationRef.current)
 		)
-	) {
-		if (!this.props.id) {
+	) => {
+		if (!props.id) {
 			return;
 		}
 
-		this.props.dispatch(getProfile(this.props.id, season, filters));
-	}
+		props.dispatch(getProfile(props.id, season, filters));
+	}, [props.id, props.dispatch]);
 
-	componentDidMount() {
-		this.fetchProfile();
-	}
-
-	componentDidUpdate(prevProps) {
-		if (prevProps.id !== this.props.id && this.props.id) {
-			this.fetchProfile();
+	useEffect(() => {
+		if (!didMountRef.current) {
+			didMountRef.current = true;
+			previousIdRef.current = props.id;
+			fetchProfile();
+			return;
 		}
 
-		const previousFilterState = getFilterStateFromProps(prevProps.filters);
-		const nextFilterState = getFilterStateFromProps(this.props.filters);
+		if (previousIdRef.current !== props.id && props.id) {
+			fetchProfile();
+		}
+
+		previousIdRef.current = props.id;
+	}, [props.id, fetchProfile]);
+
+	useEffect(() => {
+		const previousFilterState = getFilterStateFromProps(previousFiltersRef.current);
+		const nextFilterState = getFilterStateFromProps(props.filters);
+
 		if (haveFilterValuesChanged(previousFilterState, nextFilterState)) {
-			this.setState(nextFilterState);
+			setFilterState(nextFilterState);
 		}
-	}
 
-	handleSeasonChange(season) {
-		this.fetchProfile(
+		previousFiltersRef.current = props.filters;
+	}, [props.filters]);
+
+	const handleSeasonChange = season => {
+		fetchProfile(
 			season,
 			getRequestFilters(
-				this.state,
-				getResetPagination(this.props.dashboardPagination)
+				filterState,
+				getResetPagination(props.dashboardPagination)
 			)
 		);
-	}
+	};
 
-	handleFilterChange(field, value) {
-		this.setState({
+	const handleFilterChange = (field, value) => {
+		setFilterState(currentFilterState => Object.assign({}, currentFilterState, {
 			[field]: value
-		});
-	}
+		}));
+	};
 
-	applyFilters() {
-		this.fetchProfile(
-			this.props.activeSeason,
+	const applyFilters = () => {
+		fetchProfile(
+			props.activeSeason,
 			getRequestFilters(
-				this.state,
-				getResetPagination(this.props.dashboardPagination)
+				filterState,
+				getResetPagination(props.dashboardPagination)
 			)
 		);
-	}
+	};
 
-	handleTeamPageChange(teamPage) {
+	const handleTeamPageChange = teamPage => {
 		const pagination = Object.assign(
 			{},
-			getPaginationStateFromProps(this.props.dashboardPagination),
+			getPaginationStateFromProps(props.dashboardPagination),
 			{ teamPage }
 		);
 
-		this.fetchProfile(
-			this.props.activeSeason,
-			getRequestFilters(this.state, pagination)
+		fetchProfile(
+			props.activeSeason,
+			getRequestFilters(filterState, pagination)
 		);
-	}
+	};
 
-	handlePlayerPageChange(playerPage) {
+	const handlePlayerPageChange = playerPage => {
 		const pagination = Object.assign(
 			{},
-			getPaginationStateFromProps(this.props.dashboardPagination),
+			getPaginationStateFromProps(props.dashboardPagination),
 			{ playerPage }
 		);
 
-		this.fetchProfile(
-			this.props.activeSeason,
-			getRequestFilters(this.state, pagination)
+		fetchProfile(
+			props.activeSeason,
+			getRequestFilters(filterState, pagination)
 		);
-	}
+	};
 
-	render() {
-		return (
-			<div>
-				<Nav
-					isLoggedIn={this.props.isLoggedIn}/>
-				<DashboardNavigation
-					email={this.props.email}
-					firstName={this.props.first_name}
-					lastName={this.props.last_name}
-					activeSeason={this.props.activeSeason}
-					availableSeasons={this.props.availableSeasons}
-					teamSearch={this.state.teamSearch}
-					playerSearch={this.state.playerSearch}
-					position={this.state.position}
-					onSeasonChange={season => this.handleSeasonChange(season)}
-					onFilterChange={(field, value) => this.handleFilterChange(field, value)}
-					onApplyFilters={() => this.applyFilters()}
-				/>
-				<section className='section'>
-					<div className='tile is-ancestor'>
-						<div className='tile is-4 is-vertical is-parent'>
-							<TeamsList
-								teams={this.props.teams}
-								filters={this.props.filters}
-								activeSeason={this.props.activeSeason}
-								pagination={this.props.teamPagination}
-								onPageChange={page => this.handleTeamPageChange(page)}
-							/>
-							<RosterList
-								players={this.props.players}
-								filters={this.props.filters}
-								activeSeason={this.props.activeSeason}
-								pagination={this.props.playerPagination}
-								onPageChange={page => this.handlePlayerPageChange(page)}
-							/>
-						</div>
-						<StatsList
-							stats={this.props.stats}
-							teams={this.props.teams}
-							filters={this.props.filters}
-							activeSeason={this.props.activeSeason}
-							pagination={this.props.playerPagination}
-							onPageChange={page => this.handlePlayerPageChange(page)}
+	return (
+		<div>
+			<Nav
+				isLoggedIn={props.isLoggedIn}/>
+			<DashboardNavigation
+				email={props.email}
+				firstName={props.first_name}
+				lastName={props.last_name}
+				activeSeason={props.activeSeason}
+				availableSeasons={props.availableSeasons}
+				teamSearch={filterState.teamSearch}
+				playerSearch={filterState.playerSearch}
+				position={filterState.position}
+				onSeasonChange={season => handleSeasonChange(season)}
+				onFilterChange={(field, value) => handleFilterChange(field, value)}
+				onApplyFilters={() => applyFilters()}
+			/>
+			<section className='section'>
+				<div className='tile is-ancestor'>
+					<div className='tile is-4 is-vertical is-parent'>
+						<TeamsList
+							teams={props.teams}
+							filters={props.filters}
+							activeSeason={props.activeSeason}
+							pagination={props.teamPagination}
+							onPageChange={page => handleTeamPageChange(page)}
+						/>
+						<RosterList
+							players={props.players}
+							filters={props.filters}
+							activeSeason={props.activeSeason}
+							pagination={props.playerPagination}
+							onPageChange={page => handlePlayerPageChange(page)}
 						/>
 					</div>
-				</section>
-			</div>
-		);
-	}
+					<StatsList
+						stats={props.stats}
+						teams={props.teams}
+						filters={props.filters}
+						activeSeason={props.activeSeason}
+						pagination={props.playerPagination}
+						onPageChange={page => handlePlayerPageChange(page)}
+					/>
+				</div>
+			</section>
+		</div>
+	);
 }
 
 const mapStateToProps = state => ({
