@@ -15,16 +15,26 @@ import { reducer as formReducer } from 'redux-form';
 // 	routing: routerReducer
 // });
 
-const rootReducer = combineReducers({
+export const rootReducer = combineReducers({
 	loginReducer,
 	coachReducer,
 	teamReducer,
 	form: formReducer
 });
 
-const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+const getComposeEnhancers = () => (
+	typeof window !== 'undefined' && window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__
+		? window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__
+		: compose
+);
 
-let store = createStore(rootReducer, composeEnhancers(applyMiddleware(thunk, logger)));
+export const createAppStore = preloadedState => {
+	const composeEnhancers = getComposeEnhancers();
+
+	return createStore(rootReducer, preloadedState, composeEnhancers(applyMiddleware(thunk, logger)));
+};
+
+let store = createAppStore();
 
 export default store;
 // export default routerReducer;

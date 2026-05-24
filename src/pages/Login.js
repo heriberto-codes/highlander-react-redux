@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { connect } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 
 import { login } from '../actions/loginAction';
@@ -8,13 +8,12 @@ import Nav from '../components/Nav';
 import LoginForm from '../components/LoginForm';
 import Footer from '../components/Footer';
 
-export function Login({
-  dispatch,
-  loggedIn,
-  error,
-  hasResolvedSession,
-  shouldRedirect
-}) {
+export function Login() {
+  const dispatch = useDispatch();
+  const loggedIn = useSelector(state => state.loginReducer.isloggedIn);
+  const hasResolvedSession = useSelector(state => state.loginReducer.hasResolvedSession);
+  const error = useSelector(state => state.loginReducer.errorMessage);
+  const shouldRedirect = useSelector(state => state.loginReducer.shouldRedirect);
   const navigate = useNavigate();
   const previousAuthState = useRef(null);
 
@@ -64,11 +63,4 @@ export function Login({
   );
 }
 
-const mapStateToProps = state => ({
-  loggedIn: state.loginReducer.isloggedIn,
-  hasResolvedSession: state.loginReducer.hasResolvedSession,
-  error: state.loginReducer.errorMessage,
-  shouldRedirect: state.loginReducer.shouldRedirect,
-});
-
-export default connect(mapStateToProps)(Login);
+export default Login;

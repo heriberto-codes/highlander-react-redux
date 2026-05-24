@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { connect } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import { bootstrapSession } from '../actions/loginAction';
@@ -9,10 +9,12 @@ import Register from '../pages/Register';
 import Dashboard from '../pages/Dashboard';
 import TeamDetails from '../pages/TeamDetails';
 
-export function App({ bootstrapSession }) {
+export function App() {
+	const dispatch = useDispatch();
+
 	useEffect(() => {
-		bootstrapSession();
-	}, [bootstrapSession]);
+		dispatch(bootstrapSession());
+	}, [dispatch]);
 
 	return (
 		<Router>
@@ -30,4 +32,4 @@ export function App({ bootstrapSession }) {
 	);
 }
 
-export default connect(null, { bootstrapSession })(App);
+export default App;

@@ -109,7 +109,8 @@ Additional flows:
   - Central Redux store in `src/store.js`
   - Async action creators use `redux-thunk`
   - Forms use `redux-form`
-  - Connected page containers continue to use `connect` where that pattern already exists
+  - Route-level function pages read Redux state with `useSelector` and dispatch actions with `useDispatch`
+  - `src/store.js` exports `rootReducer` and `createAppStore(preloadedState)` for Provider-backed tests while preserving the default singleton store export
 - Rendering strategy:
   - Client-rendered SPA
   - Production build served by Express

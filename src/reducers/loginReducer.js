@@ -23,7 +23,6 @@ export const loginReducer = (state = initialState, action) => {
 			isLoading: true,
 			errorMessage: null
 		});
-		break;
 	case LOGIN_SUCCESS:
 		return Object.assign({}, state, {
 			isLoading: false,
@@ -32,7 +31,6 @@ export const loginReducer = (state = initialState, action) => {
 			errorMessage: null,
 			shouldRedirect: true
 		});
-		break;
 	case LOGIN_FAIL:
 		return Object.assign({}, state, {
 			isLoading: false,
@@ -41,14 +39,12 @@ export const loginReducer = (state = initialState, action) => {
 			shouldRedirect: false,
 			errorMessage: action.err
 		});
-		break;
 	case BOOTSTRAP_SESSION_REQUEST:
 		return Object.assign({}, state, {
 			isLoading: true,
 			shouldRedirect: false,
 			errorMessage: null
 		});
-		break;
 	case BOOTSTRAP_SESSION_SUCCESS:
 		return Object.assign({}, state, {
 			isLoading: false,
@@ -57,7 +53,6 @@ export const loginReducer = (state = initialState, action) => {
 			shouldRedirect: false,
 			errorMessage: null
 		});
-		break;
 	case BOOTSTRAP_SESSION_FAIL:
 		return Object.assign({}, state, {
 			isLoading: false,
@@ -66,12 +61,10 @@ export const loginReducer = (state = initialState, action) => {
 			shouldRedirect: false,
 			errorMessage: action.err
 		});
-		break;
     case LOGOUT:
                 return Object.assign({}, initialState, {
 			hasResolvedSession: true
 		});
-                break;
         default:
 		return state;
 	}

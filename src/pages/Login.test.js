@@ -1,7 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { act } from 'react-dom/test-utils';
+import { Provider } from 'react-redux';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { createStore } from 'redux';
 
 jest.mock('../actions/loginAction', () => ({
   login: jest.fn((email, pwd) => ({
@@ -29,19 +31,53 @@ jest.mock('../components/Footer', () => () => <div>Footer</div>);
 import { Login } from './Login';
 import { login } from '../actions/loginAction';
 
+const defaultLoginState = {
+  isloggedIn: false,
+  hasResolvedSession: false,
+  errorMessage: null,
+  shouldRedirect: false
+};
+
+function createLoginStore(loginState = {}) {
+  const initialState = {
+    loginReducer: {
+      ...defaultLoginState,
+      ...loginState
+    }
+  };
+
+  return createStore((state = initialState, action) => {
+    if (action.type === 'SET_LOGIN_STATE') {
+      return {
+        ...state,
+        loginReducer: {
+          ...state.loginReducer,
+          ...action.payload
+        }
+      };
+    }
+
+    return state;
+  });
+}
+
 describe('Login page', () => {
   let div;
 
-  function renderLogin(props) {
+  function renderLogin(store = createLoginStore()) {
     ReactDOM.render(
-      <MemoryRouter initialEntries={['/login']}>
-        <Routes>
-          <Route path="/login" element={<Login {...props} />} />
-          <Route path="/dashboard" element={<div>Dashboard Page</div>} />
-        </Routes>
-      </MemoryRouter>,
+      <Provider store={store}>
+        <MemoryRouter initialEntries={['/login']}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/dashboard" element={<div>Dashboard Page</div>} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>,
       div
     );
+
+    return store;
   }
 
   beforeEach(() => {
@@ -58,13 +94,7 @@ describe('Login page', () => {
 
   it('does not render the login form while session bootstrap is unresolved', () => {
     act(() => {
-      renderLogin({
-        dispatch: jest.fn(),
-        loggedIn: false,
-        hasResolvedSession: false,
-        shouldRedirect: false,
-        error: null
-      });
+      renderLogin();
     });
 
     expect(div.textContent).toContain('logged-out-nav');
@@ -72,37 +102,29 @@ describe('Login page', () => {
   });
 
   it('renders the login form once session bootstrap resolves logged out', () => {
+    const store = createLoginStore({ hasResolvedSession: true });
+
     act(() => {
-      renderLogin({
-        dispatch: jest.fn(),
-        loggedIn: false,
-        hasResolvedSession: true,
-        shouldRedirect: false,
-        error: null
-      });
+      renderLogin(store);
     });
 
     expect(div.textContent).toContain('Login Form');
   });
 
   it('renders the login form and error once bootstrap resolves logged out after a failure', () => {
+    const store = createLoginStore();
+
     act(() => {
-      renderLogin({
-        dispatch: jest.fn(),
-        loggedIn: false,
-        hasResolvedSession: false,
-        shouldRedirect: false,
-        error: null
-      });
+      renderLogin(store);
     });
 
     act(() => {
-      renderLogin({
-        dispatch: jest.fn(),
-        loggedIn: false,
-        hasResolvedSession: true,
-        shouldRedirect: false,
-        error: { message: 'Unauthorized' }
+      store.dispatch({
+        type: 'SET_LOGIN_STATE',
+        payload: {
+          hasResolvedSession: true,
+          errorMessage: { message: 'Unauthorized' }
+        }
       });
     });
 
@@ -111,23 +133,19 @@ describe('Login page', () => {
   });
 
   it('redirects to dashboard once bootstrap resolves authenticated', async () => {
+    const store = createLoginStore();
+
     await act(async () => {
-      renderLogin({
-        dispatch: jest.fn(),
-        loggedIn: false,
-        hasResolvedSession: false,
-        shouldRedirect: false,
-        error: null
-      });
+      renderLogin(store);
     });
 
     await act(async () => {
-      renderLogin({
-        dispatch: jest.fn(),
-        loggedIn: true,
-        hasResolvedSession: true,
-        shouldRedirect: false,
-        error: null
+      store.dispatch({
+        type: 'SET_LOGIN_STATE',
+        payload: {
+          isloggedIn: true,
+          hasResolvedSession: true
+        }
       });
       await Promise.resolve();
     });
@@ -136,23 +154,18 @@ describe('Login page', () => {
   });
 
   it('redirects to dashboard when resolved login requests a redirect', async () => {
+    const store = createLoginStore({ hasResolvedSession: true });
+
     await act(async () => {
-      renderLogin({
-        dispatch: jest.fn(),
-        loggedIn: false,
-        hasResolvedSession: true,
-        shouldRedirect: false,
-        error: null
-      });
+      renderLogin(store);
     });
 
     await act(async () => {
-      renderLogin({
-        dispatch: jest.fn(),
-        loggedIn: false,
-        hasResolvedSession: true,
-        shouldRedirect: true,
-        error: null
+      store.dispatch({
+        type: 'SET_LOGIN_STATE',
+        payload: {
+          shouldRedirect: true
+        }
       });
       await Promise.resolve();
     });
@@ -161,7 +174,8 @@ describe('Login page', () => {
   });
 
   it('dispatches login when the form submit handler is called', () => {
-    const dispatch = jest.fn();
+    const store = createLoginStore({ hasResolvedSession: true });
+    const dispatch = jest.spyOn(store, 'dispatch');
     const action = {
       type: 'LOGIN_REQUEST',
       email: 'coach@example.com',
@@ -170,13 +184,7 @@ describe('Login page', () => {
     login.mockReturnValueOnce(action);
 
     act(() => {
-      renderLogin({
-        dispatch,
-        loggedIn: false,
-        hasResolvedSession: true,
-        shouldRedirect: false,
-        error: null
-      });
+      renderLogin(store);
     });
 
     act(() => {

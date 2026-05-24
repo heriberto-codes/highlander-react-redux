@@ -2,8 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { act } from 'react-dom/test-utils';
 import { Provider } from 'react-redux';
-import { applyMiddleware, createStore } from 'redux';
-import thunk from 'redux-thunk';
+import { createStore } from 'redux';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 jest.mock('../actions/teamAction', () => ({
@@ -17,10 +16,6 @@ jest.mock('../actions/teamAction', () => ({
   removeTeamCollaborator: jest.fn(() => ({ type: 'REMOVE_TEAM_COLLABORATOR_REQUEST' }))
 }));
 
-jest.mock('../reducers/teamReducer', () => ({
-  teamReducer: jest.fn()
-}));
-
 jest.mock('../components/Nav', () => () => null);
 jest.mock('../components/TeamDetailsNavigation', () => jest.fn(() => null));
 jest.mock('../components/TeamDetailsComponent', () => ({
@@ -29,7 +24,7 @@ jest.mock('../components/TeamDetailsComponent', () => ({
 }));
 jest.mock('../components/AddPlayerModal2', () => jest.fn(() => null));
 
-import ConnectedTeamDetails, {
+import {
   TeamDetails,
   getFilterStateFromProps,
   haveFilterValuesChanged,
@@ -65,8 +60,7 @@ const defaultPlayerPagination = {
   hasNextPage: false
 };
 
-const defaultProps = {
-  dispatch: jest.fn(),
+const defaultTeamState = {
   name: 'Highlanders',
   city: 'Bronx',
   season: 2026,
@@ -76,9 +70,11 @@ const defaultProps = {
     playerSearch: 'Ace',
     position: 'Pitcher'
   },
-  first_name: 'Casey',
-  last_name: 'Jones',
-  email: 'coach@example.com',
+  coach: {
+    first_name: 'Casey',
+    last_name: 'Jones',
+    email: 'coach@example.com'
+  },
   players: [{ id: 1, first_name: 'Pat' }],
   teamDetailPagination: defaultTeamDetailPagination,
   playerPagination: defaultPlayerPagination,
@@ -98,6 +94,49 @@ const defaultProps = {
   lastCreatedGame: null,
   gameSubmissionError: null,
   showModal: false
+};
+
+function createTeamDetailsStore({ teamState = {} } = {}) {
+  const initialState = {
+    teamReducer: {
+      ...defaultTeamState,
+      ...teamState
+    }
+  };
+
+  const store = createStore((state = initialState, action) => {
+    if (action.type === 'SET_TEAM_DETAILS_STATE') {
+      return {
+        ...state,
+        teamReducer: {
+          ...state.teamReducer,
+          ...(action.payload.teamReducer || {})
+        }
+      };
+    }
+
+    return state;
+  });
+  const baseDispatch = store.dispatch;
+
+  store.dispatch = jest.fn(action => {
+    if (action && action.type === 'SET_TEAM_DETAILS_STATE') {
+      return baseDispatch(action);
+    }
+
+    return action;
+  });
+
+  return store;
+}
+
+const setTeamDetailsState = (store, payload) => {
+  act(() => {
+    store.dispatch({
+      type: 'SET_TEAM_DETAILS_STATE',
+      payload
+    });
+  });
 };
 
 describe('TeamDetails page', () => {
@@ -127,21 +166,26 @@ describe('TeamDetails page', () => {
     div = null;
   });
 
-  const renderTeamDetails = (props = {}, route = '/teamdetails/9') => {
-    const mergedProps = Object.assign({}, defaultProps, props);
+  const renderTeamDetails = ({
+    teamState = {},
+    route = '/teamdetails/9',
+    store = createTeamDetailsStore({ teamState })
+  } = {}) => {
 
     act(() => {
       ReactDOM.render(
-        <MemoryRouter initialEntries={[route]}>
-          <Routes>
-            <Route path="/teamdetails/:id" element={<TeamDetails {...mergedProps} />} />
-          </Routes>
-        </MemoryRouter>,
+        <Provider store={store}>
+          <MemoryRouter initialEntries={[route]}>
+            <Routes>
+              <Route path="/teamdetails/:id" element={<TeamDetails />} />
+            </Routes>
+          </MemoryRouter>
+        </Provider>,
         div
       );
     });
 
-    return mergedProps;
+    return store;
   };
 
   const latestNavigationProps = () => (
@@ -153,9 +197,7 @@ describe('TeamDetails page', () => {
   );
 
   it('fetches team profile on mount with the route id and current query state', () => {
-    const dispatch = jest.fn();
-
-    renderTeamDetails({ dispatch });
+    const store = renderTeamDetails();
 
     expect(getTeamProfile).toHaveBeenCalledWith('9', undefined, {
       playerSearch: 'Ace',
@@ -163,14 +205,13 @@ describe('TeamDetails page', () => {
       playerPage: 2,
       playerLimit: 25
     });
-    expect(dispatch).toHaveBeenCalled();
+    expect(store.dispatch).toHaveBeenCalled();
   });
 
   it('passes current team detail filters when the season changes', () => {
-    const dispatch = jest.fn();
-
-    renderTeamDetails({ dispatch });
+    const store = renderTeamDetails();
     getTeamProfile.mockClear();
+    store.dispatch.mockClear();
 
     act(() => {
       latestNavigationProps().onFilterChange('playerSearch', 'Slugger');
@@ -186,21 +227,20 @@ describe('TeamDetails page', () => {
       playerPage: 1,
       playerLimit: 25
     });
-    expect(dispatch).toHaveBeenCalled();
+    expect(store.dispatch).toHaveBeenCalled();
   });
 
   it('applies filters with the active season and reset pagination', () => {
-    const dispatch = jest.fn();
-
     renderTeamDetails({
-      dispatch,
-      filters: {
-        playerSearch: '',
-        position: ''
-      },
-      teamDetailPagination: {
-        playerPage: 3,
-        playerLimit: 25
+      teamState: {
+        filters: {
+          playerSearch: '',
+          position: ''
+        },
+        teamDetailPagination: {
+          playerPage: 3,
+          playerLimit: 25
+        }
       }
     });
     getTeamProfile.mockClear();
@@ -219,14 +259,12 @@ describe('TeamDetails page', () => {
       playerPage: 1,
       playerLimit: 25
     });
-    expect(dispatch).toHaveBeenCalled();
   });
 
   it('dispatches player page changes with current team detail query state', () => {
-    const dispatch = jest.fn();
-
-    renderTeamDetails({ dispatch });
+    const store = renderTeamDetails();
     getTeamProfile.mockClear();
+    store.dispatch.mockClear();
 
     act(() => {
       latestNavigationProps().onFilterChange('playerSearch', 'Slugger');
@@ -242,18 +280,23 @@ describe('TeamDetails page', () => {
       playerPage: 4,
       playerLimit: 25
     });
-    expect(dispatch).toHaveBeenCalled();
+    expect(store.dispatch).toHaveBeenCalled();
   });
 
   it('preserves unsaved local filters when filter props do not change', () => {
-    const dispatch = jest.fn();
-
-    renderTeamDetails({ dispatch });
+    const store = renderTeamDetails();
     act(() => {
       latestNavigationProps().onFilterChange('playerSearch', 'Unsaved');
     });
 
-    renderTeamDetails({ dispatch });
+    setTeamDetailsState(store, {
+      teamReducer: {
+        filters: {
+          playerSearch: 'Ace',
+          position: 'Pitcher'
+        }
+      }
+    });
 
     expect(latestNavigationProps()).toEqual(expect.objectContaining({
       playerSearch: 'Unsaved',
@@ -262,18 +305,17 @@ describe('TeamDetails page', () => {
   });
 
   it('syncs local filters when filter prop values change', () => {
-    const dispatch = jest.fn();
-
-    renderTeamDetails({ dispatch });
+    const store = renderTeamDetails();
     act(() => {
       latestNavigationProps().onFilterChange('playerSearch', 'Unsaved');
     });
 
-    renderTeamDetails({
-      dispatch,
-      filters: {
-        playerSearch: 'Redux',
-        position: 'Shortstop'
+    setTeamDetailsState(store, {
+      teamReducer: {
+        filters: {
+          playerSearch: 'Redux',
+          position: 'Shortstop'
+        }
       }
     });
 
@@ -284,9 +326,7 @@ describe('TeamDetails page', () => {
   });
 
   it('closes game entry form after successful submission', () => {
-    const dispatch = jest.fn();
-
-    renderTeamDetails({ dispatch });
+    const store = renderTeamDetails();
     act(() => {
       latestNavigationProps().showGameEntryForm();
     });
@@ -295,7 +335,11 @@ describe('TeamDetails page', () => {
       showGameEntryForm: true
     }));
 
-    renderTeamDetails({ dispatch, gameSubmissionSuccess: true });
+    setTeamDetailsState(store, {
+      teamReducer: {
+        gameSubmissionSuccess: true
+      }
+    });
 
     expect(latestComponentProps()).toEqual(expect.objectContaining({
       showGameEntryForm: false
@@ -303,9 +347,9 @@ describe('TeamDetails page', () => {
   });
 
   it('dispatches game entry and collaboration actions with the route id', () => {
-    const dispatch = jest.fn();
+    const store = renderTeamDetails();
+    store.dispatch.mockClear();
 
-    renderTeamDetails({ dispatch });
     act(() => {
       latestComponentProps().onSubmitGameEntry({ opponent: 'Rivals' });
       latestComponentProps().onAddCollaborator(7, 'assistant');
@@ -317,13 +361,16 @@ describe('TeamDetails page', () => {
     expect(addTeamCollaborator).toHaveBeenCalledWith('9', 7, 'assistant');
     expect(updateTeamCollaborator).toHaveBeenCalledWith('9', 7, 'owner');
     expect(removeTeamCollaborator).toHaveBeenCalledWith('9', 7);
-    expect(dispatch).toHaveBeenCalledTimes(5);
+    expect(store.dispatch).toHaveBeenCalledTimes(4);
   });
 
   it('renders modal and dispatches player add through AddPlayer props', () => {
-    const dispatch = jest.fn();
-
-    renderTeamDetails({ dispatch, showModal: true });
+    const store = renderTeamDetails({
+      teamState: {
+        showModal: true
+      }
+    });
+    store.dispatch.mockClear();
 
     expect(AddPlayer).toHaveBeenCalledWith(expect.objectContaining({
       teamID: '9',
@@ -338,7 +385,7 @@ describe('TeamDetails page', () => {
     });
 
     expect(addNewPlayer).toHaveBeenCalledWith('9', 'player@example.com', 'Pat', 'Lee', 'Pitcher');
-    expect(dispatch).toHaveBeenCalled();
+    expect(store.dispatch).toHaveBeenCalled();
   });
 
   it('passes collaboration state through the connected store using route params', () => {
@@ -346,50 +393,20 @@ describe('TeamDetails page', () => {
       type: 'GET_TEAM_PROFILE_REQUEST'
     });
 
-    const store = createStore(() => ({
-      teamReducer: {
-        name: 'Highlanders',
-        city: 'Bronx',
-        season: 2026,
-        activeSeason: 2026,
-        availableSeasons: [2026, 2025],
-        filters: {
-          playerSearch: 'Ace',
-          position: 'Pitcher'
-        },
-        coach: {
-          first_name: 'Casey',
-          last_name: 'Jones',
-          email: 'coach@example.com'
-        },
-        players: [{ id: 1, first_name: 'Pat' }],
-        teamDetailPagination: defaultTeamDetailPagination,
-        playerPagination: defaultPlayerPagination,
+    const store = createTeamDetailsStore({
+      teamState: {
         collaborators: [{ id: 2, first_name: 'Alex', last_name: 'Smith', email: 'alex@example.com', role: 'assistant' }],
-        currentCoachRole: 'owner',
         isAddingCollaborator: true,
-        addCollaboratorSuccess: false,
-        addCollaboratorError: null,
-        isUpdatingCollaborator: false,
-        updateCollaboratorSuccess: true,
-        updateCollaboratorError: null,
-        isRemovingCollaborator: false,
-        removeCollaboratorSuccess: false,
-        removeCollaboratorError: null,
-        isSubmittingGame: false,
-        gameSubmissionSuccess: false,
-        lastCreatedGame: null,
-        gameSubmissionError: null,
-        showModal: false
+        updateCollaboratorSuccess: true
       }
-    }), applyMiddleware(thunk));
+    });
 
     act(() => {
       ReactDOM.render(
         <Provider store={store}>
           <MemoryRouter initialEntries={['/teamdetails/9']}>
             <Routes>
-              <Route path="/teamdetails/:id" element={<ConnectedTeamDetails />} />
+              <Route path="/teamdetails/:id" element={<TeamDetails />} />
             </Routes>
           </MemoryRouter>
         </Provider>,
@@ -412,8 +429,10 @@ describe('TeamDetails page', () => {
 
   it('passes assistant collaboration state through the page render path', () => {
     renderTeamDetails({
-      collaborators: [{ id: 2, first_name: 'Alex', last_name: 'Smith', email: 'alex@example.com', role: 'assistant' }],
-      currentCoachRole: 'assistant'
+      teamState: {
+        collaborators: [{ id: 2, first_name: 'Alex', last_name: 'Smith', email: 'alex@example.com', role: 'assistant' }],
+        currentCoachRole: 'assistant'
+      }
     });
 
     expect(TeamDetailsNavigation).toHaveBeenCalledWith(expect.objectContaining({

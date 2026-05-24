@@ -1,19 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { act } from 'react-dom/test-utils';
+import { Provider } from 'react-redux';
+import { createStore } from 'redux';
 
 jest.mock('../actions/coachAction', () => ({
-  getProfile: jest.fn(() => ({ type: 'GET_PROFILE_REQUEST' })),
-  profileSuccess: jest.fn(),
-  profileError: jest.fn()
-}));
-
-jest.mock('../reducers/coachReducer', () => ({
-  coachReducer: jest.fn()
-}));
-
-jest.mock('../reducers/loginReducer', () => ({
-  loginReducer: jest.fn()
+  getProfile: jest.fn(() => ({ type: 'GET_PROFILE_REQUEST' }))
 }));
 
 jest.mock('../components/Nav', () => () => null);
@@ -50,7 +42,6 @@ import StatsList from '../components/StatsList';
 
 describe('Dashboard page', () => {
   let div;
-  let dispatch;
 
   const defaultFilters = {
     teamSearch: '',
@@ -66,7 +57,7 @@ describe('Dashboard page', () => {
     notificationLimit: 5
   };
 
-  const defaultProps = {
+  const defaultCoachState = {
     id: 12,
     activeSeason: 2026,
     filters: defaultFilters,
@@ -97,17 +88,72 @@ describe('Dashboard page', () => {
     }
   };
 
-  const renderDashboard = props => {
+  const defaultLoginState = {
+    isloggedIn: true
+  };
+
+  function createDashboardStore({ coachState = {}, loginState = {} } = {}) {
+    const initialState = {
+      coachReducer: {
+        ...defaultCoachState,
+        ...coachState
+      },
+      loginReducer: {
+        ...defaultLoginState,
+        ...loginState
+      }
+    };
+
+    const store = createStore((state = initialState, action) => {
+      if (action.type === 'SET_DASHBOARD_STATE') {
+        return {
+          ...state,
+          coachReducer: {
+            ...state.coachReducer,
+            ...(action.payload.coachReducer || {})
+          },
+          loginReducer: {
+            ...state.loginReducer,
+            ...(action.payload.loginReducer || {})
+          }
+        };
+      }
+
+      return state;
+    });
+    const baseDispatch = store.dispatch;
+
+    store.dispatch = jest.fn(action => {
+      if (action && action.type === 'SET_DASHBOARD_STATE') {
+        return baseDispatch(action);
+      }
+
+      return action;
+    });
+
+    return store;
+  }
+
+  const setDashboardState = (store, payload) => {
+    act(() => {
+      store.dispatch({
+        type: 'SET_DASHBOARD_STATE',
+        payload
+      });
+    });
+  };
+
+  const renderDashboard = (store = createDashboardStore()) => {
     act(() => {
       ReactDOM.render(
-        <Dashboard
-          {...defaultProps}
-          {...props}
-          dispatch={dispatch}
-        />,
+        <Provider store={store}>
+          <Dashboard />
+        </Provider>,
         div
       );
     });
+
+    return store;
   };
 
   const latestDashboardNavigationProps = () =>
@@ -116,7 +162,6 @@ describe('Dashboard page', () => {
   beforeEach(() => {
     div = document.createElement('div');
     document.body.appendChild(div);
-    dispatch = jest.fn();
     getProfile.mockClear();
     DashboardNavigation.mockClear();
     TeamsList.mockClear();
@@ -135,13 +180,18 @@ describe('Dashboard page', () => {
   });
 
   it('fetches the dashboard profile on mount with current filters and pagination', () => {
-    renderDashboard({
-      filters: {
-        teamSearch: 'War',
-        playerSearch: 'Ace',
-        position: 'Pitcher'
+    const store = createDashboardStore({
+      coachState: {
+        filters: {
+          teamSearch: 'War',
+          playerSearch: 'Ace',
+          position: 'Pitcher'
+        }
       }
     });
+    const dispatch = store.dispatch;
+
+    renderDashboard(store);
 
     expect(getProfile).toHaveBeenCalledTimes(1);
     expect(getProfile).toHaveBeenCalledWith(12, undefined, {
@@ -158,24 +208,26 @@ describe('Dashboard page', () => {
   });
 
   it('does not fetch on mount without an id, then fetches when the id appears', () => {
-    renderDashboard({
-      id: null,
-      filters: {
-        teamSearch: 'War',
-        playerSearch: 'Ace',
-        position: 'Pitcher'
+    const store = createDashboardStore({
+      coachState: {
+        id: null,
+        filters: {
+          teamSearch: 'War',
+          playerSearch: 'Ace',
+          position: 'Pitcher'
+        }
       }
     });
+    const dispatch = store.dispatch;
+
+    renderDashboard(store);
 
     expect(getProfile).not.toHaveBeenCalled();
     expect(dispatch).not.toHaveBeenCalled();
 
-    renderDashboard({
-      id: 12,
-      filters: {
-        teamSearch: 'War',
-        playerSearch: 'Ace',
-        position: 'Pitcher'
+    setDashboardState(store, {
+      coachReducer: {
+        id: 12
       }
     });
 
@@ -193,7 +245,9 @@ describe('Dashboard page', () => {
   });
 
   it('applies dashboard filters with the active season and reset pagination', () => {
-    renderDashboard();
+    const store = createDashboardStore();
+    const dispatch = store.dispatch;
+    renderDashboard(store);
     getProfile.mockClear();
     dispatch.mockClear();
 
@@ -224,7 +278,9 @@ describe('Dashboard page', () => {
   });
 
   it('passes current dashboard filters when the season changes', () => {
-    renderDashboard();
+    const store = createDashboardStore();
+    const dispatch = store.dispatch;
+    renderDashboard(store);
     getProfile.mockClear();
     dispatch.mockClear();
 
@@ -255,13 +311,18 @@ describe('Dashboard page', () => {
   });
 
   it('dispatches team page changes with current dashboard query state', () => {
-    renderDashboard({
-      filters: {
-        teamSearch: 'War',
-        playerSearch: 'Ace',
-        position: 'Pitcher'
+    const store = createDashboardStore({
+      coachState: {
+        filters: {
+          teamSearch: 'War',
+          playerSearch: 'Ace',
+          position: 'Pitcher'
+        }
       }
     });
+    const dispatch = store.dispatch;
+
+    renderDashboard(store);
     getProfile.mockClear();
     dispatch.mockClear();
 
@@ -283,13 +344,18 @@ describe('Dashboard page', () => {
   });
 
   it('dispatches player page changes with current dashboard query state', () => {
-    renderDashboard({
-      filters: {
-        teamSearch: 'War',
-        playerSearch: 'Ace',
-        position: 'Pitcher'
+    const store = createDashboardStore({
+      coachState: {
+        filters: {
+          teamSearch: 'War',
+          playerSearch: 'Ace',
+          position: 'Pitcher'
+        }
       }
     });
+    const dispatch = store.dispatch;
+
+    renderDashboard(store);
     getProfile.mockClear();
     dispatch.mockClear();
 
@@ -311,7 +377,7 @@ describe('Dashboard page', () => {
   });
 
   it('does not overwrite unsaved local filter edits when filter values are unchanged', () => {
-    renderDashboard();
+    const store = renderDashboard();
 
     act(() => {
       latestDashboardNavigationProps().onFilterChange('teamSearch', 'War');
@@ -323,11 +389,13 @@ describe('Dashboard page', () => {
       latestDashboardNavigationProps().onFilterChange('position', 'Pitcher');
     });
 
-    renderDashboard({
-      filters: {
-        teamSearch: '',
-        playerSearch: '',
-        position: ''
+    setDashboardState(store, {
+      coachReducer: {
+        filters: {
+          teamSearch: '',
+          playerSearch: '',
+          position: ''
+        }
       }
     });
 
@@ -339,17 +407,19 @@ describe('Dashboard page', () => {
   });
 
   it('syncs local filter state when filter values change in props', () => {
-    renderDashboard();
+    const store = renderDashboard();
 
     act(() => {
       latestDashboardNavigationProps().onFilterChange('teamSearch', 'War');
     });
 
-    renderDashboard({
-      filters: {
-        teamSearch: 'Tigers',
-        playerSearch: 'Slugger',
-        position: 'Catcher'
+    setDashboardState(store, {
+      coachReducer: {
+        filters: {
+          teamSearch: 'Tigers',
+          playerSearch: 'Slugger',
+          position: 'Catcher'
+        }
       }
     });
 
@@ -361,13 +431,17 @@ describe('Dashboard page', () => {
   });
 
   it('passes filters and activeSeason to teams, roster, and stats components', () => {
-    renderDashboard({
-      filters: {
-        teamSearch: 'War',
-        playerSearch: 'Ace',
-        position: 'Pitcher'
+    const store = createDashboardStore({
+      coachState: {
+        filters: {
+          teamSearch: 'War',
+          playerSearch: 'Ace',
+          position: 'Pitcher'
+        }
       }
     });
+
+    renderDashboard(store);
 
     expect(TeamsList).toHaveBeenCalledWith(expect.objectContaining({
       teams: [{ id: 1, name: 'Highlanders', season: 2026 }],

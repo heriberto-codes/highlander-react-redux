@@ -1,5 +1,5 @@
 import { LOGIN_SUCCESS } from '../actions/loginAction';
-import { GET_PROFILE, PROFILE_SUCCESS, PROFILE_ERROR } from '../actions/coachAction';
+import { GET_PROFILE, PROFILE_SUCCESS } from '../actions/coachAction';
 
 const defaultFilters = () => ({
 	teamSearch: '',
@@ -137,7 +137,6 @@ export const coachReducer = (state = initialState, action) => {
 		return Object.assign({}, state, {
 			id: action.response.data.id
 		});
-		break;
 	case GET_PROFILE:
 		return Object.assign({}, state, {
 			filters: normalizeCoachFilters(action.filters),
@@ -150,7 +149,6 @@ export const coachReducer = (state = initialState, action) => {
 		});
 
 		let stats = [];
-		let playerIds = [];
 
 		// sort by id
 		players.sort((player1, player2) => {
@@ -168,7 +166,7 @@ export const coachReducer = (state = initialState, action) => {
 		});
 
                 // push the updated stats object for each player
-                filteredPlayerIds.forEach((player, index) => {
+                filteredPlayerIds.forEach(player => {
                         stats.push(buildDashboardPlayerStat(player));
                 });
 
@@ -201,7 +199,6 @@ export const coachReducer = (state = initialState, action) => {
                         id: action.response.data.id,
                         city: city
                 });
-		break;
 	default:
 		return state;
 	}

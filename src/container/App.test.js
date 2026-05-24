@@ -17,7 +17,7 @@ jest.mock('../components/Nav', () => () => null);
 jest.mock('../components/LoginForm', () => () => null);
 jest.mock('../components/Footer', () => () => null);
 
-import ConnectedApp, { App } from './App';
+import App from './App';
 import { bootstrapSession } from '../actions/loginAction';
 
 describe('App container', () => {
@@ -27,6 +27,7 @@ describe('App container', () => {
     div = document.createElement('div');
     document.body.appendChild(div);
     bootstrapSession.mockClear();
+    bootstrapSession.mockImplementation(() => ({ type: 'BOOTSTRAP_SESSION_REQUEST' }));
     window.history.pushState({}, '', '/');
   });
 
@@ -36,48 +37,52 @@ describe('App container', () => {
     div = null;
   });
 
+  const renderApp = store => {
+    ReactDOM.render(
+      <Provider store={store}>
+        <App />
+      </Provider>,
+      div
+    );
+  };
+
   it('renders without crashing and bootstraps the session on mount', () => {
-    const bootstrapSession = jest.fn();
+    const store = createStore(() => ({}));
 
     act(() => {
-      ReactDOM.render(<App bootstrapSession={bootstrapSession} />, div);
+      renderApp(store);
     });
 
     expect(bootstrapSession).toHaveBeenCalledTimes(1);
   });
 
   it('does not dispatch bootstrapSession again on rerender', () => {
-    const bootstrapSession = jest.fn();
+    const store = createStore(() => ({}));
 
     act(() => {
-      ReactDOM.render(<App bootstrapSession={bootstrapSession} />, div);
+      renderApp(store);
     });
     act(() => {
-      ReactDOM.render(<App bootstrapSession={bootstrapSession} />, div);
+      renderApp(store);
     });
 
     expect(bootstrapSession).toHaveBeenCalledTimes(1);
   });
 
-  it('dispatches bootstrapSession when the connected App mounts inside a Provider', () => {
+  it('dispatches bootstrapSession when App mounts inside a Provider', () => {
     const store = createStore(() => ({}));
     bootstrapSession.mockReturnValueOnce({
       type: 'BOOTSTRAP_SESSION_REQUEST'
     });
 
     act(() => {
-      ReactDOM.render(
-        <Provider store={store}>
-          <ConnectedApp />
-        </Provider>,
-        div
-      );
+      renderApp(store);
     });
 
     expect(bootstrapSession).toHaveBeenCalledTimes(1);
   });
 
-  it('routes authenticated bootstrap state from /login to the dashboard in the connected app', async () => {
+  it('routes authenticated bootstrap state from /login to the dashboard in the hook-based app', async () => {
     window.history.pushState({}, '', '/login');
     const state = {
       loginReducer: {
@@ -97,12 +102,8 @@ describe('App container', () => {
     });
 
     await act(async () => {
-      ReactDOM.render(
-        <Provider store={store}>
-          <ConnectedApp />
-        </Provider>,
-        div
-      );
+      renderApp(store);
+      await new Promise(resolve => setTimeout(resolve, 0));
       await new Promise(resolve => setTimeout(resolve, 0));
     });
 
