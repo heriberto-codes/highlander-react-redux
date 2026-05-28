@@ -97,6 +97,8 @@ export function TeamDetails(props = {}) {
 	const lastCreatedGame = useSelector(state => state.teamReducer.lastCreatedGame);
 	const gameSubmissionError = useSelector(state => state.teamReducer.gameSubmissionError);
 	const isPlayerModalVisible = useSelector(state => state.teamReducer.showModal);
+	const isLoadingTeamProfile = useSelector(state => state.teamReducer.isLoadingTeamProfile);
+	const teamProfileError = useSelector(state => state.teamReducer.errorMessage);
 	const [filterState, setFilterState] = useState(() => getFilterStateFromProps(filters));
 	const [showGameEntryForm, setShowGameEntryForm] = useState(false);
 	const didMountRef = useRef(false);
@@ -250,6 +252,20 @@ export function TeamDetails(props = {}) {
 				onApplyFilters={() => applyFilters()}
 				showModal={() => openModal()}
 				showGameEntryForm={() => setShowGameEntryForm(true)} />
+			{isLoadingTeamProfile ? (
+				<section className='section'>
+					<div className='notification has-text-centered'>
+						Loading team profile...
+					</div>
+				</section>
+			) : null}
+			{teamProfileError ? (
+				<section className='section'>
+					<div className='notification is-warning has-text-centered' role='alert'>
+						Unable to load team profile. Please try again.
+					</div>
+				</section>
+			) : null}
 			<TeamDetailsComponent
 				teamId={teamId}
 				players={players}

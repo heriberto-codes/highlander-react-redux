@@ -10,7 +10,7 @@ jest.mock('../actions/coachAction', () => ({
 
 import { coachReducer } from './coachReducer';
 import { LOGIN_SUCCESS } from '../actions/loginAction';
-import { GET_PROFILE, PROFILE_SUCCESS } from '../actions/coachAction';
+import { GET_PROFILE, PROFILE_SUCCESS, PROFILE_ERROR } from '../actions/coachAction';
 
 describe('coachReducer', () => {
   it('should handle LOGIN_SUCCESS', () => {
@@ -89,6 +89,8 @@ describe('coachReducer', () => {
       era: 3.5,
       strikeoutsPerInning: 1.2
     });
+    expect(state.isLoadingProfile).toBe(false);
+    expect(state.profileError).toBe(null);
   });
 
   it('should default missing derivedStats fields to null', () => {
@@ -154,6 +156,26 @@ describe('coachReducer', () => {
       playerSearch: 'Ace',
       position: 'Pitcher'
     });
+    expect(state.isLoadingProfile).toBe(true);
+    expect(state.profileError).toBe(null);
+  });
+
+  it('should clear prior profile errors when GET_PROFILE starts', () => {
+    const previousError = { message: 'profile failed' };
+    const previousState = coachReducer(undefined, {
+      type: PROFILE_ERROR,
+      response: previousError
+    });
+
+    const state = coachReducer(previousState, {
+      type: GET_PROFILE,
+      id: 12,
+      season: 2026,
+      filters: {}
+    });
+
+    expect(state.isLoadingProfile).toBe(true);
+    expect(state.profileError).toBe(null);
   });
 
   it('should store requested dashboard pagination state on GET_PROFILE', () => {
@@ -268,6 +290,51 @@ describe('coachReducer', () => {
       playerSearch: 'Ace',
       position: 'Pitcher'
     });
+    expect(nextState.isLoadingProfile).toBe(false);
+    expect(nextState.profileError).toBe(null);
+  });
+
+  it('should handle PROFILE_ERROR without clearing existing profile data', () => {
+    const previousState = coachReducer(undefined, {
+      type: PROFILE_SUCCESS,
+      response: {
+        data: {
+          availableSeasons: [2026],
+          activeSeason: 2026,
+          teams: [
+            {
+              id: 10,
+              players: [
+                {
+                  id: 1,
+                  first_name: 'Pat',
+                  last_name: 'Summer',
+                  position: 'Pitcher',
+                  stats: []
+                }
+              ]
+            }
+          ],
+          first_name: 'Coach',
+          last_name: 'Test',
+          email: 'c@example.com',
+          id: 12
+        }
+      }
+    });
+    const error = { message: 'profile failed' };
+
+    const nextState = coachReducer(previousState, {
+      type: PROFILE_ERROR,
+      response: error
+    });
+
+    expect(nextState.isLoadingProfile).toBe(false);
+    expect(nextState.profileError).toBe(error);
+    expect(nextState.first_name).toBe('Coach');
+    expect(nextState.teams).toEqual(previousState.teams);
+    expect(nextState.players).toEqual(previousState.players);
+    expect(nextState.stats).toEqual(previousState.stats);
   });
 
   it('should store dashboard pagination metadata across PROFILE_SUCCESS', () => {

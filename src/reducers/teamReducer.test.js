@@ -7,6 +7,7 @@ import { teamReducer } from './teamReducer';
 import {
   GET_TEAM_PROFILE,
   GET_TEAM_PROFILE_SUCCESS,
+  GET_TEAM_PROFILE_ERROR,
   GET_TEAM_COLLABORATORS,
   GET_TEAM_COLLABORATORS_SUCCESS,
   GET_TEAM_COLLABORATORS_ERROR,
@@ -86,6 +87,7 @@ describe('teamReducer', () => {
         { id: 2, first_name: 'A', last_name: 'S', email: 'a', role: 'assistant' }
       ],
       currentCoachRole: 'owner',
+      isLoadingTeamProfile: false,
       isLoadingCollaborators: false,
       collaboratorLoadError: null,
       isAddingCollaborator: false,
@@ -171,6 +173,8 @@ describe('teamReducer', () => {
       playerSearch: 'Ace',
       position: 'Pitcher'
     });
+    expect(state.isLoadingTeamProfile).toBe(true);
+    expect(state.errorMessage).toBe(null);
   });
 
   it('should store requested team detail pagination state on GET_TEAM_PROFILE', () => {
@@ -194,6 +198,8 @@ describe('teamReducer', () => {
       playerPage: 2,
       playerLimit: 25
     });
+    expect(state.isLoadingTeamProfile).toBe(true);
+    expect(state.errorMessage).toBe(null);
   });
 
   it('should default invalid team detail pagination requests on GET_TEAM_PROFILE', () => {
@@ -235,6 +241,25 @@ describe('teamReducer', () => {
       playerSearch: '',
       position: ''
     });
+    expect(nextState.isLoadingTeamProfile).toBe(true);
+    expect(nextState.errorMessage).toBe(null);
+  });
+
+  it('should clear prior team profile errors when a new GET_TEAM_PROFILE request starts', () => {
+    const previousState = {
+      ...teamReducer(undefined, { type: '@@INIT' }),
+      errorMessage: { message: 'old profile error' }
+    };
+
+    const state = teamReducer(previousState, {
+      type: GET_TEAM_PROFILE,
+      id: 9,
+      season: 2026,
+      filters: {}
+    });
+
+    expect(state.isLoadingTeamProfile).toBe(true);
+    expect(state.errorMessage).toBe(null);
   });
 
   it('should preserve existing filter state across GET_TEAM_PROFILE_SUCCESS', () => {
@@ -270,6 +295,8 @@ describe('teamReducer', () => {
       playerSearch: 'Ace',
       position: 'Pitcher'
     });
+    expect(nextState.isLoadingTeamProfile).toBe(false);
+    expect(nextState.errorMessage).toBe(null);
   });
 
   it('should store team detail pagination metadata across GET_TEAM_PROFILE_SUCCESS', () => {
@@ -321,6 +348,50 @@ describe('teamReducer', () => {
       hasPreviousPage: true,
       hasNextPage: false
     });
+    expect(nextState.isLoadingTeamProfile).toBe(false);
+    expect(nextState.errorMessage).toBe(null);
+  });
+
+  it('should store team profile errors without clearing existing profile data', () => {
+    const previousState = teamReducer(undefined, {
+      type: GET_TEAM_PROFILE_SUCCESS,
+      response: {
+        data: {
+          name: 'Highlanders',
+          city: 'Bronx',
+          state: 'NY',
+          season: 2026,
+          activeSeason: 2026,
+          availableSeasons: [2026],
+          players: [
+            { id: 11, first_name: 'Pat', last_name: 'Summer', email: 'summer@example.com', position: 'P' }
+          ],
+          coach: [
+            { first_name: 'Casey', last_name: 'Jones', email: 'coach@example.com' }
+          ]
+        }
+      }
+    });
+    const loadingState = teamReducer(previousState, {
+      type: GET_TEAM_PROFILE,
+      id: 9,
+      season: 2026,
+      filters: {}
+    });
+    const error = { message: 'profile failed' };
+
+    const state = teamReducer(loadingState, {
+      type: GET_TEAM_PROFILE_ERROR,
+      response: error
+    });
+
+    expect(state.isLoadingTeamProfile).toBe(false);
+    expect(state.errorMessage).toBe(error);
+    expect(state.name).toBe('Highlanders');
+    expect(state.city).toBe('Bronx');
+    expect(state.players).toEqual([
+      { id: 11, first_name: 'Pat', last_name: 'Summer', email: 'summer@example.com', position: 'P' }
+    ]);
   });
 
   it('should replace team season state when a later GET_TEAM_PROFILE_SUCCESS switches seasons', () => {

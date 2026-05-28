@@ -8,6 +8,7 @@ import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Dashboard from '../pages/Dashboard';
 import TeamDetails from '../pages/TeamDetails';
+import ProtectedRoute from '../components/ProtectedRoute';
 
 export function App() {
 	const dispatch = useDispatch();
@@ -23,9 +24,30 @@ export function App() {
 					<Route path='/' element={<Home />} />
 					<Route path='/login' element={<Login />} />
 					<Route path='/register' element={<Register />} />
-					<Route path='/dashboard' element={<Dashboard />} />
-					<Route path='/dashboard/:id' element={<Dashboard />} />
-					<Route path='/teamdetails/:id' element={<TeamDetails />} />
+					<Route
+						path='/dashboard'
+						element={
+							<ProtectedRoute>
+								<Dashboard />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path='/dashboard/:id'
+						element={
+							<ProtectedRoute>
+								<Dashboard />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path='/teamdetails/:id'
+						element={
+							<ProtectedRoute>
+								<TeamDetails />
+							</ProtectedRoute>
+						}
+					/>
 				</Routes>
 			</div>
 		</Router>

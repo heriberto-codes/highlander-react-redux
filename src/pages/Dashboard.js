@@ -75,6 +75,8 @@ export function Dashboard() {
 	const lastName = useSelector(state => state.coachReducer.last_name);
 	const email = useSelector(state => state.coachReducer.email);
 	const stats = useSelector(state => state.coachReducer.stats);
+	const isLoadingProfile = useSelector(state => state.coachReducer.isLoadingProfile);
+	const profileError = useSelector(state => state.coachReducer.profileError);
 	const [filterState, setFilterState] = useState(() => getFilterStateFromProps(filters));
 	const didMountRef = useRef(false);
 	const previousIdRef = useRef(id);
@@ -194,6 +196,20 @@ export function Dashboard() {
 				onFilterChange={(field, value) => handleFilterChange(field, value)}
 				onApplyFilters={() => applyFilters()}
 			/>
+			{isLoadingProfile ? (
+				<section className='section'>
+					<div className='notification has-text-centered'>
+						Loading profile...
+					</div>
+				</section>
+			) : null}
+			{profileError ? (
+				<section className='section'>
+					<div className='notification is-warning has-text-centered' role='alert'>
+						Unable to load profile. Please try again.
+					</div>
+				</section>
+			) : null}
 			<section className='section'>
 				<div className='tile is-ancestor'>
 					<div className='tile is-4 is-vertical is-parent'>

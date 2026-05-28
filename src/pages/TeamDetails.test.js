@@ -93,6 +93,8 @@ const defaultTeamState = {
   gameSubmissionSuccess: false,
   lastCreatedGame: null,
   gameSubmissionError: null,
+  isLoadingTeamProfile: false,
+  errorMessage: null,
   showModal: false
 };
 
@@ -195,6 +197,36 @@ describe('TeamDetails page', () => {
   const latestComponentProps = () => (
     TeamDetailsComponent.mock.calls[TeamDetailsComponent.mock.calls.length - 1][0]
   );
+
+  it('renders a team profile loading message while profile data is loading', () => {
+    renderTeamDetails({
+      teamState: {
+        isLoadingTeamProfile: true
+      }
+    });
+
+    expect(div.textContent).toContain('Loading team profile...');
+    expect(div.textContent).not.toContain('Unable to load team profile. Please try again.');
+  });
+
+  it('renders a safe team profile error message without raw error details', () => {
+    renderTeamDetails({
+      teamState: {
+        errorMessage: {
+          message: 'Database connection failed',
+          response: {
+            data: {
+              error: 'Internal stack trace'
+            }
+          }
+        }
+      }
+    });
+
+    expect(div.textContent).toContain('Unable to load team profile. Please try again.');
+    expect(div.textContent).not.toContain('Database connection failed');
+    expect(div.textContent).not.toContain('Internal stack trace');
+  });
 
   it('fetches team profile on mount with the route id and current query state', () => {
     const store = renderTeamDetails();

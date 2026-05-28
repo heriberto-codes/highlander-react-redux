@@ -32,6 +32,7 @@ import { Login } from './Login';
 import { login } from '../actions/loginAction';
 
 const defaultLoginState = {
+  isLoading: false,
   isloggedIn: false,
   hasResolvedSession: false,
   errorMessage: null,
@@ -64,13 +65,14 @@ function createLoginStore(loginState = {}) {
 describe('Login page', () => {
   let div;
 
-  function renderLogin(store = createLoginStore()) {
+  function renderLogin(store = createLoginStore(), initialEntries = ['/login']) {
     ReactDOM.render(
       <Provider store={store}>
-        <MemoryRouter initialEntries={['/login']}>
+        <MemoryRouter initialEntries={initialEntries}>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<div>Dashboard Page</div>} />
+            <Route path="/teamdetails/:id" element={<div>Team Details Page</div>} />
           </Routes>
         </MemoryRouter>
       </Provider>,
@@ -92,12 +94,27 @@ describe('Login page', () => {
     div = null;
   });
 
-  it('does not render the login form while session bootstrap is unresolved', () => {
+  it('renders loading and does not render the login form while session bootstrap is unresolved', () => {
     act(() => {
       renderLogin();
     });
 
     expect(div.textContent).toContain('logged-out-nav');
+    expect(div.textContent).toContain('Loading...');
+    expect(div.textContent).not.toContain('Login Form');
+  });
+
+  it('renders loading and hides the login form while auth is loading', () => {
+    const store = createLoginStore({
+      hasResolvedSession: true,
+      isLoading: true
+    });
+
+    act(() => {
+      renderLogin(store);
+    });
+
+    expect(div.textContent).toContain('Loading...');
     expect(div.textContent).not.toContain('Login Form');
   });
 
@@ -109,6 +126,7 @@ describe('Login page', () => {
     });
 
     expect(div.textContent).toContain('Login Form');
+    expect(div.textContent).not.toContain('Loading...');
   });
 
   it('renders the login form and error once bootstrap resolves logged out after a failure', () => {
@@ -171,6 +189,35 @@ describe('Login page', () => {
     });
 
     expect(div.textContent).toContain('Dashboard Page');
+  });
+
+  it('redirects to a preserved protected route after authentication', async () => {
+    const store = createLoginStore({ hasResolvedSession: true });
+    const loginEntry = {
+      pathname: '/login',
+      state: {
+        from: {
+          pathname: '/teamdetails/9'
+        }
+      }
+    };
+
+    await act(async () => {
+      renderLogin(store, [loginEntry]);
+    });
+
+    await act(async () => {
+      store.dispatch({
+        type: 'SET_LOGIN_STATE',
+        payload: {
+          isloggedIn: true
+        }
+      });
+      await Promise.resolve();
+    });
+
+    expect(div.textContent).toContain('Team Details Page');
+    expect(div.textContent).not.toContain('Dashboard Page');
   });
 
   it('dispatches login when the form submit handler is called', () => {

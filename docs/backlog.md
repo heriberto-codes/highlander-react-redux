@@ -22,5 +22,5 @@
 
 - [x] Convert the remaining class components to function components and align routing
 - [x] Simplify state management
-- [ ] Add route protection and loading/error states
+- [x] Add route protection and loading/error states
 - [ ] Create a small design system

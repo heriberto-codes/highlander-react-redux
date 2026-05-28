@@ -116,6 +116,8 @@ Additional flows:
   - Production build served by Express
 - Routing approach:
   - `react-router-dom` routes are defined in `src/container/App.js`
+  - `src/components/ProtectedRoute.js` wraps authenticated client routes such as `/dashboard`, `/dashboard/:id`, and `/teamdetails/:id` as a UX guard after session bootstrap resolves
+  - client route protection is not an authorization boundary; server-side session and resource authorization remain required for protected data
   - Route-dependent function components read React Router v6 params/navigation through hooks such as `useParams` and `useNavigate`
 - Client API URL contract:
   - client actions should not hardcode server origins such as `http://localhost:8080`

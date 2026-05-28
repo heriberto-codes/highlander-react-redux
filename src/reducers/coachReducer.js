@@ -1,5 +1,5 @@
 import { LOGIN_SUCCESS } from '../actions/loginAction';
-import { GET_PROFILE, PROFILE_SUCCESS } from '../actions/coachAction';
+import { GET_PROFILE, PROFILE_SUCCESS, PROFILE_ERROR } from '../actions/coachAction';
 
 const defaultFilters = () => ({
 	teamSearch: '',
@@ -40,7 +40,9 @@ const initialState = {
 	email: '',
 	id: null,
 	city: '',
-	state: ''
+	state: '',
+	isLoadingProfile: false,
+	profileError: null
 };
 
 const defaultRawStats = () => ({
@@ -140,7 +142,9 @@ export const coachReducer = (state = initialState, action) => {
 	case GET_PROFILE:
 		return Object.assign({}, state, {
 			filters: normalizeCoachFilters(action.filters),
-			dashboardPagination: normalizeDashboardPagination(action.filters)
+			dashboardPagination: normalizeDashboardPagination(action.filters),
+			isLoadingProfile: true,
+			profileError: null
 		});
 	case PROFILE_SUCCESS:
 		let players = [];
@@ -197,8 +201,15 @@ export const coachReducer = (state = initialState, action) => {
                         last_name: action.response.data.last_name,
                         email: action.response.data.email,
                         id: action.response.data.id,
-                        city: city
+                        city: city,
+                        isLoadingProfile: false,
+                        profileError: null
                 });
+	case PROFILE_ERROR:
+		return Object.assign({}, state, {
+			isLoadingProfile: false,
+			profileError: action.response
+		});
 	default:
 		return state;
 	}

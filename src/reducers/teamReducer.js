@@ -61,6 +61,7 @@ const initialState = {
 	},
 	collaborators: [],
 	currentCoachRole: null,
+	isLoadingTeamProfile: false,
 	isLoadingCollaborators: false,
 	collaboratorLoadError: null,
 	isAddingCollaborator: false,
@@ -202,7 +203,9 @@ export const teamReducer = (state = initialState, action) => {
 	case GET_TEAM_PROFILE:
 		return Object.assign({}, state, {
 			filters: normalizeTeamFilters(action.filters),
-			teamDetailPagination: normalizeTeamDetailPagination(action.filters)
+			teamDetailPagination: normalizeTeamDetailPagination(action.filters),
+			isLoadingTeamProfile: true,
+			errorMessage: null
 		}, resetCollaboratorMutationState);
 	case GET_TEAM_PROFILE_SUCCESS:
 		return Object.assign({}, state, {
@@ -227,10 +230,13 @@ export const teamReducer = (state = initialState, action) => {
 			currentCoachRole:
 				action.response.data.currentCoachRole !== undefined
 					? action.response.data.currentCoachRole
-					: null
+					: null,
+			isLoadingTeamProfile: false,
+			errorMessage: null
 		}, resetCollaboratorMutationState);
 	case GET_TEAM_PROFILE_ERROR:
 		return Object.assign({}, state, {
+			isLoadingTeamProfile: false,
 			errorMessage: action.response
 		}, resetCollaboratorMutationState);
 	case GET_TEAM_COLLABORATORS:

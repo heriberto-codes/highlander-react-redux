@@ -70,6 +70,8 @@ describe('Dashboard page', () => {
     first_name: 'Casey',
     last_name: 'Jones',
     availableSeasons: [2026],
+    isLoadingProfile: false,
+    profileError: null,
     teamPagination: {
       page: 2,
       limit: 25,
@@ -177,6 +179,40 @@ describe('Dashboard page', () => {
     ReactDOM.unmountComponentAtNode(div);
     div.remove();
     div = null;
+  });
+
+  it('renders a profile loading message while profile data is loading', () => {
+    const store = createDashboardStore({
+      coachState: {
+        isLoadingProfile: true
+      }
+    });
+
+    renderDashboard(store);
+
+    expect(div.textContent).toContain('Loading profile...');
+    expect(div.textContent).not.toContain('Unable to load profile. Please try again.');
+  });
+
+  it('renders a safe profile error message without raw error details', () => {
+    const store = createDashboardStore({
+      coachState: {
+        profileError: {
+          message: 'Database connection failed',
+          response: {
+            data: {
+              error: 'Internal stack trace'
+            }
+          }
+        }
+      }
+    });
+
+    renderDashboard(store);
+
+    expect(div.textContent).toContain('Unable to load profile. Please try again.');
+    expect(div.textContent).not.toContain('Database connection failed');
+    expect(div.textContent).not.toContain('Internal stack trace');
   });
 
   it('fetches the dashboard profile on mount with current filters and pagination', () => {

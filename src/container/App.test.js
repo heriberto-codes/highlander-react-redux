@@ -12,9 +12,9 @@ jest.mock('../actions/loginAction', () => ({
 jest.mock('../pages/Home', () => () => null);
 jest.mock('../pages/Register', () => () => null);
 jest.mock('../pages/Dashboard', () => () => <div>Dashboard Page</div>);
-jest.mock('../pages/TeamDetails', () => () => null);
+jest.mock('../pages/TeamDetails', () => () => <div>Team Details Page</div>);
 jest.mock('../components/Nav', () => () => null);
-jest.mock('../components/LoginForm', () => () => null);
+jest.mock('../components/LoginForm', () => () => <div>Login Form</div>);
 jest.mock('../components/Footer', () => () => null);
 
 import App from './App';
@@ -44,6 +44,24 @@ describe('App container', () => {
       </Provider>,
       div
     );
+  };
+
+  const createStoreWithLoginState = loginState => {
+    const state = {
+      loginReducer: {
+        isLoading: false,
+        isloggedIn: false,
+        hasResolvedSession: false,
+        shouldRedirect: false,
+        errorMessage: null,
+        ...loginState
+      },
+      coachReducer: {},
+      teamReducer: {},
+      form: {}
+    };
+
+    return createStore((currentState = state) => currentState);
   };
 
   it('renders without crashing and bootstraps the session on mount', () => {
@@ -84,19 +102,13 @@ describe('App container', () => {
 
   it('routes authenticated bootstrap state from /login to the dashboard in the hook-based app', async () => {
     window.history.pushState({}, '', '/login');
-    const state = {
-      loginReducer: {
-        isLoading: false,
-        isloggedIn: true,
-        hasResolvedSession: true,
-        shouldRedirect: false,
-        errorMessage: null
-      },
-      coachReducer: {},
-      teamReducer: {},
-      form: {}
-    };
-    const store = createStore((currentState = state) => currentState);
+    const store = createStoreWithLoginState({
+      isLoading: false,
+      isloggedIn: true,
+      hasResolvedSession: true,
+      shouldRedirect: false,
+      errorMessage: null
+    });
     bootstrapSession.mockReturnValueOnce({
       type: 'BOOTSTRAP_SESSION_REQUEST'
     });
@@ -109,5 +121,88 @@ describe('App container', () => {
 
     expect(bootstrapSession).toHaveBeenCalledTimes(1);
     expect(div.textContent).toContain('Dashboard Page');
+  });
+
+  it('renders protected app routes for resolved logged-in users', () => {
+    const store = createStoreWithLoginState({
+      isLoading: false,
+      isloggedIn: true,
+      hasResolvedSession: true
+    });
+
+    window.history.pushState({}, '', '/dashboard');
+    act(() => {
+      renderApp(store);
+    });
+
+    expect(div.textContent).toContain('Dashboard Page');
+    expect(div.textContent).not.toContain('Loading...');
+  });
+
+  it('renders parameterized protected app routes for resolved logged-in users', () => {
+    const store = createStoreWithLoginState({
+      isLoading: false,
+      isloggedIn: true,
+      hasResolvedSession: true
+    });
+
+    window.history.pushState({}, '', '/dashboard/7');
+    act(() => {
+      renderApp(store);
+    });
+
+    expect(div.textContent).toContain('Dashboard Page');
+    expect(div.textContent).not.toContain('Loading...');
+  });
+
+  it('renders protected team detail routes for resolved logged-in users', () => {
+    const store = createStoreWithLoginState({
+      isLoading: false,
+      isloggedIn: true,
+      hasResolvedSession: true
+    });
+
+    window.history.pushState({}, '', '/teamdetails/9');
+    act(() => {
+      renderApp(store);
+    });
+
+    expect(div.textContent).toContain('Team Details Page');
+    expect(div.textContent).not.toContain('Loading...');
+  });
+
+  it('shows loading for protected app routes while session bootstrap is unresolved', () => {
+    const store = createStoreWithLoginState({
+      isLoading: false,
+      isloggedIn: false,
+      hasResolvedSession: false
+    });
+
+    window.history.pushState({}, '', '/dashboard');
+    act(() => {
+      renderApp(store);
+    });
+
+    expect(div.textContent).toContain('Loading...');
+    expect(div.textContent).not.toContain('Dashboard Page');
+    expect(div.textContent).not.toContain('Login Form');
+  });
+
+  it('redirects resolved logged-out users from protected app routes to login', async () => {
+    const store = createStoreWithLoginState({
+      isLoading: false,
+      isloggedIn: false,
+      hasResolvedSession: true
+    });
+
+    window.history.pushState({}, '', '/teamdetails/9');
+    await act(async () => {
+      renderApp(store);
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+
+    expect(window.location.pathname).toBe('/login');
+    expect(div.textContent).toContain('Login Form');
+    expect(div.textContent).not.toContain('Team Details Page');
   });
 });

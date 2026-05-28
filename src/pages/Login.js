@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { login } from '../actions/loginAction';
 
@@ -8,14 +8,30 @@ import Nav from '../components/Nav';
 import LoginForm from '../components/LoginForm';
 import Footer from '../components/Footer';
 
+function getInternalRedirectPath(fromLocation) {
+  if (
+    !fromLocation ||
+    typeof fromLocation.pathname !== 'string' ||
+    !fromLocation.pathname.startsWith('/') ||
+    fromLocation.pathname.startsWith('//')
+  ) {
+    return '/dashboard';
+  }
+
+  return `${fromLocation.pathname}${fromLocation.search || ''}${fromLocation.hash || ''}`;
+}
+
 export function Login() {
   const dispatch = useDispatch();
   const loggedIn = useSelector(state => state.loginReducer.isloggedIn);
+  const isLoading = useSelector(state => state.loginReducer.isLoading);
   const hasResolvedSession = useSelector(state => state.loginReducer.hasResolvedSession);
   const error = useSelector(state => state.loginReducer.errorMessage);
   const shouldRedirect = useSelector(state => state.loginReducer.shouldRedirect);
+  const location = useLocation();
   const navigate = useNavigate();
   const previousAuthState = useRef(null);
+  const redirectPath = getInternalRedirectPath(location.state && location.state.from);
 
   useEffect(() => {
     const previous = previousAuthState.current;
@@ -23,7 +39,7 @@ export function Login() {
     if (!previous) {
       if (hasResolvedSession && loggedIn) {
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate(redirectPath, { replace: true });
         }, 0);
       }
     } else {
@@ -33,7 +49,7 @@ export function Login() {
       const hadRedirect = previous.hasResolvedSession && previous.shouldRedirect;
 
       if ((isAuthenticated && !wasAuthenticated) || (redirectRequested && !hadRedirect)) {
-        navigate('/dashboard');
+        navigate(redirectPath, { replace: true });
       }
     }
 
@@ -42,13 +58,17 @@ export function Login() {
       loggedIn,
       shouldRedirect
     };
-  }, [hasResolvedSession, loggedIn, navigate, shouldRedirect]);
+  }, [hasResolvedSession, loggedIn, navigate, redirectPath, shouldRedirect]);
 
   function callLogin(email, pwd) {
     dispatch(login(email, pwd));
   }
 
   let message;
+  if (!hasResolvedSession || isLoading) {
+    message = <p>Loading...</p>;
+  }
+
   if (hasResolvedSession && !loggedIn && error) {
     message = <p className="error">{error.message}</p>;
   }
@@ -57,7 +77,7 @@ export function Login() {
     <div>
       <Nav isLoggedIn={loggedIn} />
       {message}
-      {hasResolvedSession ? <LoginForm onSubmit={(email, pwd) => callLogin(email, pwd)} /> : null}
+      {hasResolvedSession && !isLoading ? <LoginForm onSubmit={(email, pwd) => callLogin(email, pwd)} /> : null}
       <Footer />
     </div>
   );
