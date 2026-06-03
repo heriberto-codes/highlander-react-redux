@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 
 import 'bulma/css/bulma.css';
 import '../css/style.css';
+
+import Button from './ui/Button';
+import EmptyState from './ui/EmptyState';
+import PaginationControls from './ui/PaginationControls';
+import StatusMessage from './ui/StatusMessage';
 
 const statCatalogs = [
 	{ id: 1, label: 'Hits' },
@@ -12,43 +16,6 @@ const statCatalogs = [
 	{ id: 5, label: 'Innings Pitched' },
 	{ id: 6, label: 'Strikeouts' }
 ];
-
-function renderPaginationControls(pagination, onPageChange) {
-	if (!pagination || pagination.totalPages <= 1) {
-		return null;
-	}
-
-	const previousPage = pagination.page - 1;
-	const nextPage = pagination.page + 1;
-	const canGoPrevious = pagination.hasPreviousPage && typeof onPageChange === 'function';
-	const canGoNext = pagination.hasNextPage && typeof onPageChange === 'function';
-
-	return (
-		<nav className="pagination is-small" role="navigation" aria-label="team details player pagination">
-			<button
-				type="button"
-				className="pagination-previous"
-				disabled={!canGoPrevious}
-				onClick={() => canGoPrevious && onPageChange(previousPage)}>
-				Previous
-			</button>
-			<button
-				type="button"
-				className="pagination-next"
-				disabled={!canGoNext}
-				onClick={() => canGoNext && onPageChange(nextPage)}>
-				Next
-			</button>
-			<ul className="pagination-list">
-				<li>
-					<span className="pagination-link is-current">
-						Page {pagination.page} of {pagination.totalPages}
-					</span>
-				</li>
-			</ul>
-		</nav>
-	);
-}
 
 function isEmptyPaginatedPage(items, pagination) {
 	return items.length === 0 && pagination && pagination.totalItems > 0;
@@ -170,15 +137,15 @@ export default function TeamDetailsComponent(props) {
 
 	const renderCollaboratorStatus = () => (
 		<div className="content">
-			{props.isAddingCollaborator ? <p>Adding collaborator...</p> : null}
-			{props.addCollaboratorSuccess ? <p className="has-text-success">Collaborator added.</p> : null}
-			{props.addCollaboratorError ? <p className="has-text-danger">Unable to add collaborator.</p> : null}
-			{props.isUpdatingCollaborator ? <p>Updating collaborator...</p> : null}
-			{props.updateCollaboratorSuccess ? <p className="has-text-success">Collaborator updated.</p> : null}
-			{props.updateCollaboratorError ? <p className="has-text-danger">Unable to update collaborator.</p> : null}
-			{props.isRemovingCollaborator ? <p>Removing collaborator...</p> : null}
-			{props.removeCollaboratorSuccess ? <p className="has-text-success">Collaborator removed.</p> : null}
-			{props.removeCollaboratorError ? <p className="has-text-danger">Unable to remove collaborator.</p> : null}
+			{props.isAddingCollaborator ? <StatusMessage message="Adding collaborator..." /> : null}
+			{props.addCollaboratorSuccess ? <StatusMessage message="Collaborator added." variant="success" /> : null}
+			{props.addCollaboratorError ? <StatusMessage message="Unable to add collaborator." variant="error" /> : null}
+			{props.isUpdatingCollaborator ? <StatusMessage message="Updating collaborator..." /> : null}
+			{props.updateCollaboratorSuccess ? <StatusMessage message="Collaborator updated." variant="success" /> : null}
+			{props.updateCollaboratorError ? <StatusMessage message="Unable to update collaborator." variant="error" /> : null}
+			{props.isRemovingCollaborator ? <StatusMessage message="Removing collaborator..." /> : null}
+			{props.removeCollaboratorSuccess ? <StatusMessage message="Collaborator removed." variant="success" /> : null}
+			{props.removeCollaboratorError ? <StatusMessage message="Unable to remove collaborator." variant="error" /> : null}
 		</div>
 	);
 
@@ -213,25 +180,27 @@ export default function TeamDetailsComponent(props) {
 												</div>
 											</div>
 											<div className="control">
-											<button
+											<Button
 												type="submit"
-												className="button is-primary is-outlined"
+												isOutlined
+												variant="primary"
 												data-collaborator-update-id={collaborator.id}
 												disabled={props.isUpdatingCollaborator}
 											>
 													Update Role
-												</button>
+												</Button>
 											</div>
 											<div className="control">
-											<button
+											<Button
 												type="button"
-												className="button is-danger is-outlined"
+												isOutlined
+												variant="danger"
 												data-collaborator-remove-id={collaborator.id}
 												onClick={() => removeCollaborator(collaborator.id)}
 												disabled={props.isRemovingCollaborator}
 											>
 													Remove
-												</button>
+												</Button>
 											</div>
 										</div>
 									</form>
@@ -240,7 +209,7 @@ export default function TeamDetailsComponent(props) {
 						))}
 					</div>
 				) : (
-					<p className="content">No collaborators yet.</p>
+					<EmptyState className="content" message="No collaborators yet." />
 				)}
 				{renderCollaboratorStatus()}
 				{isOwner ? (
@@ -275,13 +244,13 @@ export default function TeamDetailsComponent(props) {
 								</div>
 							</div>
 							<div className="control">
-								<button
+								<Button
 									type="submit"
-									className="button is-primary"
+									variant="primary"
 									disabled={isCollaboratorMutationPending}
 								>
 									Add Collaborator
-								</button>
+								</Button>
 							</div>
 						</div>
 					</form>
@@ -351,30 +320,30 @@ export default function TeamDetailsComponent(props) {
 							</table>
 						</div>
 						<div className="buttons">
-							<button
+							<Button
 								type="submit"
-								className="button is-primary"
+								variant="primary"
 								disabled={!canSubmitGameEntry}
 							>
 								{props.isSubmittingGame ? 'Saving...' : 'Save Game Stats'}
-							</button>
-							<button
+							</Button>
+							<Button
 								type="button"
-								className="button is-light"
+								isLight
 								onClick={props.onCancelGameEntry}
 							>
 								Cancel
-							</button>
+							</Button>
 						</div>
 						{props.gameSubmissionSuccess && props.lastCreatedGame ? (
-							<p className="has-text-success">
+							<StatusMessage variant="success">
 								Saved game entry with {props.lastCreatedGame.insertedStatRows} stat rows.
-							</p>
+							</StatusMessage>
 						) : null}
 						{props.gameSubmissionError ? (
-							<p className="has-text-danger">
+							<StatusMessage variant="error">
 								Unable to save game entry.
-							</p>
+							</StatusMessage>
 						) : null}
 					</form>
 				</div>
@@ -408,11 +377,13 @@ export default function TeamDetailsComponent(props) {
 					</div>
 				</div>;
 			}) : (
-				<div className="notification has-text-centered roster-dashboard-message">
-					{emptyMessage}
-				</div>
+				<EmptyState className="roster-dashboard-message" message={emptyMessage} />
 			)}
-			{renderPaginationControls(props.pagination, props.onPageChange)}
+			<PaginationControls
+				ariaLabel="team details player pagination"
+				onPageChange={props.onPageChange}
+				pagination={props.pagination}
+			/>
 		</section>
 	);
 }

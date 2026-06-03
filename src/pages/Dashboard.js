@@ -8,6 +8,7 @@ import DashboardNavigation from '../components/DashboardNavigation';
 import TeamsList from '../components/TeamsList';
 import RosterList from '../components/RosterList';
 import StatsList from '../components/StatsList';
+import StatusMessage from '../components/ui/StatusMessage';
 
 export function getFilterStateFromProps(filters) {
 	return {
@@ -198,16 +199,16 @@ export function Dashboard() {
 			/>
 			{isLoadingProfile ? (
 				<section className='section'>
-					<div className='notification has-text-centered'>
-						Loading profile...
-					</div>
+					<StatusMessage className='has-text-centered' message='Loading profile...' />
 				</section>
 			) : null}
 			{profileError ? (
 				<section className='section'>
-					<div className='notification is-warning has-text-centered' role='alert'>
-						Unable to load profile. Please try again.
-					</div>
+					<StatusMessage
+						className='has-text-centered'
+						message='Unable to load profile. Please try again.'
+						variant='warning'
+					/>
 				</section>
 			) : null}
 			<section className='section'>

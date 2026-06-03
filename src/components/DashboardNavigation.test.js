@@ -34,6 +34,7 @@ describe('DashboardNavigation', () => {
     const select = div.querySelector('#dashboard-season-select');
     expect(select).not.toBeNull();
     expect(select.value).toBe('2026');
+    expect(select.className).toContain('hl-focusable');
     expect(Array.from(select.options).map(option => option.value)).toEqual(['2026', '2025']);
   });
 
@@ -87,6 +88,9 @@ describe('DashboardNavigation', () => {
     expect(teamSearchInput.value).toBe('War');
     expect(playerSearchInput.value).toBe('Ace');
     expect(positionInput.value).toBe('Pitcher');
+    expect(teamSearchInput.className).toContain('hl-focusable');
+    expect(playerSearchInput.className).toContain('hl-focusable');
+    expect(positionInput.className).toContain('hl-focusable');
 
     Simulate.change(teamSearchInput, { target: { name: 'teamSearch', value: 'Warriors' } });
 
@@ -95,5 +99,25 @@ describe('DashboardNavigation', () => {
     Simulate.submit(form);
 
     expect(onApplyFilters).toHaveBeenCalled();
+  });
+
+  it('preserves dashboard action link targets and labels', () => {
+    ReactDOM.render(
+      <DashboardNavigation
+        email="coach@example.com"
+        firstName="Casey"
+        lastName="Jones"
+      />,
+      div
+    );
+
+    const linksByText = Array.from(div.querySelectorAll('a')).reduce((links, link) => {
+      links[link.textContent.trim()] = link;
+      return links;
+    }, {});
+
+    expect(linksByText['Add a New Team'].getAttribute('href')).toBe('add-team.html');
+    expect(linksByText['Add a New Player'].getAttribute('href')).toBe('add-player.html');
+    expect(linksByText['Add New Stats'].getAttribute('href')).toBe('add-stats.html');
   });
 });

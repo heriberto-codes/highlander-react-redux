@@ -1,5 +1,6 @@
 import React from 'react';
 
+import Button from './ui/Button';
 import 'bulma/css/bulma.css';
 import '../css/style.css';
 
@@ -53,7 +54,7 @@ export default function DashboardNavigation(props) {
 										<input
 											id="dashboard-team-search"
 											name="teamSearch"
-											className="input"
+											className="input hl-focusable"
 											type="search"
 											placeholder="Search teams"
 											value={props.teamSearch || ''}
@@ -64,7 +65,7 @@ export default function DashboardNavigation(props) {
 										<input
 											id="dashboard-player-search"
 											name="playerSearch"
-											className="input"
+											className="input hl-focusable"
 											type="search"
 											placeholder="Search players"
 											value={props.playerSearch || ''}
@@ -75,7 +76,7 @@ export default function DashboardNavigation(props) {
 										<input
 											id="dashboard-position-filter"
 											name="position"
-											className="input"
+											className="input hl-focusable"
 											type="search"
 											placeholder="Filter by position"
 											value={props.position || ''}
@@ -90,6 +91,7 @@ export default function DashboardNavigation(props) {
 										<div className="select is-primary is-outlined">
 											<select
 												id="dashboard-season-select"
+												className="hl-focusable"
 												value={activeSeason !== null && activeSeason !== undefined ? activeSeason : ''}
 												onChange={handleSeasonChange}
 											>
@@ -101,24 +103,24 @@ export default function DashboardNavigation(props) {
 									</span>
 								) : null}
 									<span className="level-item">
-										<button className="button is-primary" type="submit">
+										<Button type="submit" variant="primary">
                     Apply Filters
-										</button>
+										</Button>
 									</span>
 								<span className="level-item">
-									<a className="button is-primary is-outlined" href="add-team.html">
+									<Button href="add-team.html" isOutlined variant="primary">
                     Add a New Team
-									</a>
+									</Button>
 								</span>
 								<span className="level-item">
-									<a className="button is-primary is-outlined" href="add-player.html">
+									<Button href="add-player.html" isOutlined variant="primary">
                     Add a New Player
-									</a>
+									</Button>
 								</span>
 								<span className="level-item">
-									<a className="button is-primary is-outlined" href="add-stats.html">
+									<Button href="add-stats.html" isOutlined variant="primary">
                     Add New Stats
-									</a>
+									</Button>
 								</span>
 								</form>
 							</div>

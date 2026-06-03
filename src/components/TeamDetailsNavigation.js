@@ -1,6 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 
+import Button from './ui/Button';
 import 'bulma/css/bulma.css';
 import '../css/style.css';
 
@@ -92,7 +92,7 @@ export default function TeamDetailsNavigation(props) {
 										<input
 											id="team-details-player-search"
 											name="playerSearch"
-											className="input"
+											className="input hl-focusable"
 											type="search"
 											placeholder="Search players"
 											value={playerSearch || ''}
@@ -103,7 +103,7 @@ export default function TeamDetailsNavigation(props) {
 										<input
 											id="team-details-position-filter"
 											name="position"
-											className="input"
+											className="input hl-focusable"
 											type="search"
 											placeholder="Filter by position"
 											value={position || ''}
@@ -118,6 +118,7 @@ export default function TeamDetailsNavigation(props) {
 											<div className="select is-primary is-outlined">
 												<select
 													id="team-details-season-select"
+													className="hl-focusable"
 													value={activeSeason !== null && activeSeason !== undefined ? activeSeason : ''}
 													onChange={handleSeasonChange}
 												>
@@ -129,30 +130,32 @@ export default function TeamDetailsNavigation(props) {
 										</span>
 									) : null}
 									<span className="level-item">
-										<button className="button is-primary" type="submit">
+										<Button type="submit" variant="primary">
                     Apply Filters
-										</button>
+										</Button>
 									</span>
 								<span className="level-item">
-									<button
+									<Button
 										onClick={onClick}
 										type="button"
-										className="button is-primary is-outlined"
+										isOutlined
+										variant="primary"
 									>
                     Add New Player
-									</button>
+									</Button>
 								</span>
 								<span className="level-item">
-									<button
+									<Button
 										onClick={onShowGameEntry}
 										type="button"
-										className="button is-primary is-outlined"
+										isOutlined
+										variant="primary"
 									>
                     Add Game Stats
-									</button>
+									</Button>
 								</span>
 								<span className="level-item">
-									<Link className="button is-primary is-outlined" to='/editteam'>Edit Team</Link>
+									<Button isOutlined to="/editteam" variant="primary">Edit Team</Button>
 								</span>
 								</form>
 							</div>

@@ -1,0 +1,55 @@
+/* ======================================
+  Highlander Design System Tokens
+========================================= */
+:root {
+  --highlander-color-primary: #FFA500;
+  --highlander-color-primary-hover: #E69500;
+  --highlander-color-text: #4A4A4A;
+  --highlander-color-muted: #7A7A7A;
+  --highlander-color-border: #E7E7E7;
+  --highlander-color-surface: #FFFFFF;
+  --highlander-color-surface-muted: #F7F8FA;
+  --highlander-color-success: #23D160;
+  --highlander-color-warning: #FFDD57;
+  --highlander-color-danger: #FA5544;
+  --highlander-color-focus: rgba(255, 165, 0, 0.35);
+
+  --highlander-space-1: 0.25rem;
+  --highlander-space-2: 0.5rem;
+  --highlander-space-3: 0.75rem;
+  --highlander-space-4: 1rem;
+  --highlander-space-5: 1.5rem;
+  --highlander-space-6: 2rem;
+
+  --highlander-radius-sm: 4px;
+  --highlander-radius-md: 6px;
+  --highlander-panel-radius: var(--highlander-radius-md);
+  --highlander-focus-shadow: 0 0 0 0.125em var(--highlander-color-focus);
+}
+
+.hl-text-primary {
+  color: var(--highlander-color-primary);
+}
+
+.hl-text-muted {
+  color: var(--highlander-color-muted);
+}
+
+.hl-panel {
+  border-radius: var(--highlander-panel-radius);
+}
+
+.hl-status-message {
+  margin-bottom: var(--highlander-space-4);
+}
+
+.hl-status-message.is-compact {
+  margin-bottom: var(--highlander-space-2);
+}
+
+.hl-focusable:focus,
+.hl-focusable:focus-visible {
+  border-color: var(--highlander-color-primary);
+  box-shadow: var(--highlander-focus-shadow);
+  outline: none;
+}

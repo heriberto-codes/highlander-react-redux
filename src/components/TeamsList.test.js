@@ -33,6 +33,9 @@ describe('TeamsList', () => {
     expect(div.textContent).toContain('Showing season 2026');
     expect(div.textContent).toContain('Highlanders (2026)');
     expect(div.textContent).toContain('Warriors (2026)');
+    expect(div.querySelector('a[href="/teamdetails/1"]')).not.toBeNull();
+    expect(div.querySelector('a[href="/teamdetails/2"]')).not.toBeNull();
+    expect(div.querySelector('a[href="add-team.html"]')).not.toBeNull();
   });
 
   it('keeps the empty state when there are no teams', () => {

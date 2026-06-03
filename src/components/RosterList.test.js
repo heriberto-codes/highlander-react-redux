@@ -31,6 +31,8 @@ describe('RosterList', () => {
     expect(div.textContent).toContain('Showing season 2026');
     expect(div.textContent).toContain('Pat');
     expect(div.textContent).toContain('Sam');
+    expect(div.querySelector('a[href="add-player.html"]')).not.toBeNull();
+    expect(div.querySelector('a[href="#"]')).not.toBeNull();
   });
 
   it('renders the no-data empty state when there are no players', () => {
@@ -186,5 +188,29 @@ describe('RosterList', () => {
 
     expect(onPageChange).toHaveBeenCalledTimes(2);
     expect(onPageChange).toHaveBeenLastCalledWith(2);
+  });
+
+  it('does not render roster pagination controls for a single page', () => {
+    ReactDOM.render(
+      <RosterList
+        activeSeason={2026}
+        players={[
+          { first_name: 'Pat', email: 'pat@example.com' }
+        ]}
+        pagination={{
+          page: 1,
+          limit: 10,
+          totalItems: 1,
+          totalPages: 1,
+          hasPreviousPage: false,
+          hasNextPage: false
+        }}
+        onPageChange={jest.fn()}
+      />,
+      div
+    );
+
+    expect(div.querySelector('.pagination')).toBeNull();
+    expect(div.textContent).not.toContain('Page 1 of 1');
   });
 });

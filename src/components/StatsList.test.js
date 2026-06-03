@@ -63,6 +63,7 @@ describe('StatsList', () => {
     expect(div.textContent).toContain('4.500');
     expect(div.textContent).toContain('1.500');
     expect(div.textContent).toContain('Showing season 2026');
+    expect(div.querySelector('a[href="add-stats.html"]')).not.toBeNull();
   });
 
   it('renders fallback placeholders for null derived stats', () => {
@@ -268,5 +269,43 @@ describe('StatsList', () => {
     previousButton.click();
 
     expect(onPageChange).toHaveBeenCalledWith(4);
+  });
+
+  it('does not render stats pagination controls for a single page', () => {
+    ReactDOM.render(
+      <StatsList
+        activeSeason={2026}
+        teams={[]}
+        stats={[
+          {
+            first_name: 'Pat',
+            last_name: 'Lee',
+            position: 'Pitcher',
+            stats: {
+              Hits: 5,
+              'At Bats': 10,
+              'Home Runs': 2,
+              'Earned Runs': 3,
+              'Innings Pitched': 6,
+              Strikeouts: 9
+            },
+            derivedStats: {}
+          }
+        ]}
+        pagination={{
+          page: 1,
+          limit: 10,
+          totalItems: 1,
+          totalPages: 1,
+          hasPreviousPage: false,
+          hasNextPage: false
+        }}
+        onPageChange={jest.fn()}
+      />,
+      div
+    );
+
+    expect(div.querySelector('.pagination')).toBeNull();
+    expect(div.textContent).not.toContain('Page 1 of 1');
   });
 });

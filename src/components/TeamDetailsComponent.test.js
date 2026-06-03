@@ -149,7 +149,31 @@ describe('TeamDetailsComponent', () => {
     );
 
     expect(div.textContent).toContain('Showing season 2026');
+    expect(div.textContent).toContain('No collaborators yet.');
     expect(div.textContent).toContain('You dont have a Roster.');
+  });
+
+  it('renders game submission feedback messages', () => {
+    ReactDOM.render(
+      <TeamDetailsComponent
+        players={[
+          { id: 1, first_name: 'Pat', last_name: 'Lee', email: 'pat@example.com', position: 'P' }
+        ]}
+        showGameEntryForm={true}
+        onSubmitGameEntry={() => {}}
+        onCancelGameEntry={() => {}}
+        isSubmittingGame={false}
+        gameSubmissionSuccess={true}
+        lastCreatedGame={{
+          insertedStatRows: 6
+        }}
+        gameSubmissionError={{ message: 'save failed' }}
+      />,
+      div
+    );
+
+    expect(div.textContent).toContain('Saved game entry with 6 stat rows.');
+    expect(div.textContent).toContain('Unable to save game entry.');
   });
 
   it('renders the filtered empty state when filters remove all players', () => {

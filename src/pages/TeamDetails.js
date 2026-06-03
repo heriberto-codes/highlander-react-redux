@@ -16,6 +16,7 @@ import {
 import Nav from '../components/Nav';
 import TeamDetailsNavigation from '../components/TeamDetailsNavigation';
 import TeamDetailsComponent from '../components/TeamDetailsComponent';
+import StatusMessage from '../components/ui/StatusMessage';
 // import AddPlayerModal from '../components/AddPlayerModal';
 import AddPlayer from '../components/AddPlayerModal2';
 
@@ -254,16 +255,16 @@ export function TeamDetails(props = {}) {
 				showGameEntryForm={() => setShowGameEntryForm(true)} />
 			{isLoadingTeamProfile ? (
 				<section className='section'>
-					<div className='notification has-text-centered'>
-						Loading team profile...
-					</div>
+					<StatusMessage className='has-text-centered' message='Loading team profile...' />
 				</section>
 			) : null}
 			{teamProfileError ? (
 				<section className='section'>
-					<div className='notification is-warning has-text-centered' role='alert'>
-						Unable to load team profile. Please try again.
-					</div>
+					<StatusMessage
+						className='has-text-centered'
+						message='Unable to load team profile. Please try again.'
+						variant='warning'
+					/>
 				</section>
 			) : null}
 			<TeamDetailsComponent
