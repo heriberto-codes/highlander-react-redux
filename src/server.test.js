@@ -13,6 +13,7 @@ const mockFetch = jest.fn();
 const mockPlayerFetchAll = jest.fn();
 const mockTeamFetch = jest.fn();
 const mockTeamForge = jest.fn();
+const mockCoachForge = jest.fn();
 const mockStatCatalogFetch = jest.fn();
 const mockGameForge = jest.fn();
 const mockPlayerStatForge = jest.fn();
@@ -25,6 +26,7 @@ const mockTeamCoachDetach = jest.fn();
 
 jest.mock('../api/models/Coach', () => ({
   where: jest.fn(),
+  forge: jest.fn(),
   hashPassword: jest.fn(),
   validatePassword: jest.fn()
 }));
@@ -93,6 +95,7 @@ describe('server routes', () => {
     mockPlayerFetchAll.mockReset();
     mockTeamFetch.mockReset();
     mockTeamForge.mockReset();
+    mockCoachForge.mockReset();
     mockStatCatalogFetch.mockReset();
     mockGameForge.mockReset();
     mockPlayerStatForge.mockReset();
@@ -103,6 +106,7 @@ describe('server routes', () => {
     mockTeamCoachUpdatePivot.mockReset();
     mockTeamCoachDetach.mockReset();
     Coach.where.mockReset();
+    Coach.forge.mockReset();
     Coach.hashPassword.mockReset();
     Coach.validatePassword.mockReset();
     Team.where.mockReset();
@@ -127,6 +131,7 @@ describe('server routes', () => {
     Player.where.mockReturnValue({
       fetch: mockFetch
     });
+    Coach.forge.mockImplementation(mockCoachForge);
     Team.forge.mockImplementation(mockTeamForge);
     Stat_Catalog.where.mockReturnValue({
       fetch: mockStatCatalogFetch
@@ -497,7 +502,114 @@ describe('server routes', () => {
     expect(response.body).toEqual({
       error: 'Sorry your missing password please try again'
     });
+    expect(ensureAuthenticated).not.toHaveBeenCalled();
     expect(Coach.hashPassword).not.toHaveBeenCalled();
+  });
+
+  it('POST /api/v1/coaches returns a sanitized registration response for saved coach models', async () => {
+    const mockSave = jest.fn().mockResolvedValue({
+      toJSON: () => ({
+        id: 7,
+        email: 'coach@example.com',
+        first_name: 'Test',
+        last_name: 'Coach',
+        password: 'hashed-password'
+      })
+    });
+    mockCoachForge.mockReturnValue({
+      save: mockSave
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .post('/api/v1/coaches'))
+      .send({
+        email: 'coach@example.com',
+        first_name: 'Test',
+        last_name: 'Coach',
+        password: 'highlander'
+      })
+      .expect(200);
+
+    expect(Coach.hashPassword).toHaveBeenCalledWith('highlander');
+    expect(mockCoachForge).toHaveBeenCalledWith({
+      email: 'coach@example.com',
+      first_name: 'Test',
+      last_name: 'Coach',
+      password: 'hashed-password'
+    });
+    expect(mockSave).toHaveBeenCalled();
+    expect(response.body).toEqual({
+      id: 7,
+      email: 'coach@example.com',
+      first_name: 'Test',
+      last_name: 'Coach'
+    });
+    expect(response.body).not.toHaveProperty('password');
+    expect(ensureAuthenticated).not.toHaveBeenCalled();
+  });
+
+  it('POST /api/v1/coaches returns a sanitized registration response for plain saved coach objects', async () => {
+    const mockSave = jest.fn().mockResolvedValue({
+      id: 8,
+      email: 'plain@example.com',
+      first_name: 'Plain',
+      last_name: 'Coach',
+      password: 'hashed-password'
+    });
+    mockCoachForge.mockReturnValue({
+      save: mockSave
+    });
+
+    const response = await withTrustedOrigin(request(app)
+      .post('/api/v1/coaches'))
+      .send({
+        email: 'plain@example.com',
+        first_name: 'Plain',
+        last_name: 'Coach',
+        password: 'highlander'
+      })
+      .expect(200);
+
+    expect(response.body).toEqual({
+      id: 8,
+      email: 'plain@example.com',
+      first_name: 'Plain',
+      last_name: 'Coach'
+    });
+    expect(response.body).not.toHaveProperty('password');
+  });
+
+  it('POST /api/v1/coaches rejects untrusted registration requests without requiring a session', async () => {
+    const response = await request(app)
+      .post('/api/v1/coaches')
+      .set('Origin', 'http://malicious.example')
+      .send({
+        email: 'coach@example.com',
+        first_name: 'Test',
+        last_name: 'Coach',
+        password: 'highlander'
+      })
+      .expect(403);
+
+    expect(response.body).toEqual({
+      error: 'Invalid request origin'
+    });
+    expect(ensureAuthenticated).not.toHaveBeenCalled();
+    expect(Coach.hashPassword).not.toHaveBeenCalled();
+  });
+
+  it('GET /api/v1/coaches still rejects unauthenticated access', async () => {
+    ensureAuthenticated.mockImplementationOnce(sendNoSessionError);
+
+    const response = await request(app)
+      .get('/api/v1/coaches')
+      .expect(403);
+
+    expect(response.body).toEqual({
+      error: 'No session available'
+    });
+    expect(ensureAuthenticated).toHaveBeenCalled();
+    expect(Coach.where).not.toHaveBeenCalled();
   });
 
   it('PUT /api/v1/coaches/:id rejects missing required fields with a validation error payload', async () => {

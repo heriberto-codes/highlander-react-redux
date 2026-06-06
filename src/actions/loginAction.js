@@ -2,6 +2,7 @@ import axios from 'axios';
 
 const loginUrl = '/api/v1/sessions/login';
 const bootstrapUrl = '/api/v1/sessions';
+const registrationUrl = '/api/v1/coaches';
 export const LOGIN_REQUEST = 'LOGIN_REQUEST';
 export const login = (email, pwd) => dispatch => {
 	dispatch({
@@ -68,3 +69,9 @@ export const bootstrapSession = () => dispatch => {
 			dispatch(bootstrapSessionFail(err));
 		});
 };
+
+export const registerCoach = coach => axios.post(
+	registrationUrl,
+	coach,
+	{ withCredentials: true }
+);

@@ -11,6 +11,7 @@
 
 ## Architecture Improvements
 
+- [x] Fix local auth and registration dev flow
 - [x] Add an auth/session bootstrap endpoint
 - [x] Remove hardcoded API origins
 - [x] Introduce an `/api` namespace and versioning

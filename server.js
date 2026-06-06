@@ -46,8 +46,8 @@ app.use(helmet());
 app.use(morgan('common'));
 app.use(session(sess));
 app.use(bodyParser.json());
-app.use(express.static('public'));
 app.use(express.static('build'));
+app.use(express.static('public'));
 app.use(cors({ origin: CLIENT_ORIGIN, credentials: true }));
 
 app.use('/api/v1/players', playerRouter);

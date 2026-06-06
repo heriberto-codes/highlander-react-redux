@@ -58,10 +58,23 @@ npm run migrate
 npm run seed   # optional, populate sample data
 ```
 
+`npm run migrate` creates the application tables and the `session` table required by `connect-pg-simple` for local/non-test login sessions. Run migrations before starting the server if login appears to succeed but session persistence fails.
+
+The development coach seed creates bcrypt-compatible passwords for these sample accounts:
+
+- `romanh99@gmail.com` / `highlander`
+- `hroman@theknowledgehouse.org` / `highlander`
+
 ### Start the app
 ```bash
 npm start
 ```
+
+### Local registration and login behavior
+- `/register` submits coach registration to `POST /api/v1/coaches`.
+- Registration does not require an existing authenticated session, but it must come from the trusted `CLIENT_ORIGIN`.
+- Successful registration returns only `id`, `email`, `first_name`, and `last_name`; password hashes are not returned.
+- Successful registration redirects to `/login`. New coaches sign in through `POST /api/v1/sessions/login`.
 
 ### Troubleshooting
 - **Heroku or similar platforms:**

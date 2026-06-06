@@ -21,7 +21,8 @@ import {
   bootstrapSessionSuccess,
   BOOTSTRAP_SESSION_FAIL,
   bootstrapSessionFail,
-  bootstrapSession
+  bootstrapSession,
+  registerCoach
 } from './loginAction';
 
 describe('login actions', () => {
@@ -183,5 +184,32 @@ describe('login actions', () => {
       type: BOOTSTRAP_SESSION_FAIL,
       err: error
     });
+  });
+
+  it('should post registration details to the relative coaches path', async () => {
+    const coach = {
+      email: 'new-coach@example.com',
+      first_name: 'New',
+      last_name: 'Coach',
+      password: 'highlander'
+    };
+    const response = {
+      status: 200,
+      data: {
+        id: 11,
+        email: 'new-coach@example.com',
+        first_name: 'New',
+        last_name: 'Coach'
+      }
+    };
+    axios.post.mockResolvedValueOnce(response);
+
+    await expect(registerCoach(coach)).resolves.toBe(response);
+
+    expect(axios.post).toHaveBeenCalledWith(
+      '/api/v1/coaches',
+      coach,
+      { withCredentials: true }
+    );
   });
 });

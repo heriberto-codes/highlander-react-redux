@@ -50,6 +50,7 @@
 - Session store:
   - `MemoryStore` in test environments
   - `connect-pg-simple` in non-test environments
+  - non-test environments require the migrated `session` table with `sid`, `sess`, `expire`, primary key `sid`, and the `IDX_session_expire` index
 
 ## Request Flow
 1. Browser requests a page or API route.
@@ -77,7 +78,9 @@ Additional flows:
   - Bookshelf models on top of Knex
 - Migrations approach:
   - Schema changes live in `data/migrations/`
+  - The local/non-test session store depends on `data/migrations/20260603000000_create_session_table.js`; run migrations before relying on login/session persistence.
   - Seed data lives in `data/seeds/` and `data/prod_seeds/`
+  - Development coach seeds use bcrypt-compatible hashes for the shared local seed password.
 - Transactional boundaries:
   - `POST /api/v1/teams/:id/games` uses a Bookshelf/Knex transaction to create one game and its stat rows together
   - Most other writes are single-model saves without explicit transactions
@@ -191,6 +194,11 @@ Additional flows:
   - Session-based auth with `express-session`
   - Session data stored in Postgres outside tests
 - Login endpoint is `POST /api/v1/sessions/login`
+- Registration endpoint is `POST /api/v1/coaches`
+  - Registration creates a coach account without requiring an existing session.
+  - Registration still requires `requireTrustedOrigin`, so requests must come from the configured `CLIENT_ORIGIN` through `Origin` or `Referer`.
+  - Successful registration returns sanitized coach identity fields only: `id`, `email`, `first_name`, and `last_name`.
+  - Successful registration does not establish a session; the client redirects to `/login` so the new coach can sign in.
 - Auth bootstrap endpoint is `GET /api/v1/sessions`
   - `GET /api/v1/sessions` reads only `req.session.coachId`
   - `GET /api/v1/sessions` is read-only and returns minimal coach identity data for client rehydration
@@ -351,6 +359,7 @@ Required variables (see `.env.example`):
 Local vs production differences:
 - Production cookies are marked `secure`
 - Tests use in-memory session storage instead of Postgres-backed sessions
+- Local and production non-test sessions require the migrated Postgres `session` table used by `connect-pg-simple`
 - Production build is served from `build/`
 
 ## Deployment
@@ -405,7 +414,6 @@ Local vs production differences:
 - `src/pages/TeamDetails.js` expects `this.props.match.params`, but routing is configured with React Router v6 elements; this may indicate an incomplete migration.
 - Client actions hard-code `http://localhost:8080`, which is brittle outside local development.
 - `highlander-react-redux-db.sql` appears older than current migrations and should not be treated as the current schema source of truth.
-- Seed passwords are plain text even though runtime authentication uses bcrypt.
 - Validation is route-local and duplicated rather than centralized.
 - Login throttling is per-process memory only.
 - Season-scoped stat attribution still depends on `game_date` and legacy rows may not have `game_id`.

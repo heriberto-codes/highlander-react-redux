@@ -26,6 +26,19 @@ function sendMissingFieldError(res, field) {
 	return sendValidationError(res, `Sorry your missing ${field} please try again`);
 }
 
+function buildCoachRegistrationPayload(coach) {
+	const coachData = coach && typeof coach.toJSON === 'function'
+		? coach.toJSON()
+		: coach;
+
+	return {
+		id: coachData && coachData.id,
+		email: coachData && coachData.email,
+		first_name: coachData && coachData.first_name,
+		last_name: coachData && coachData.last_name
+	};
+}
+
 function parseDashboardFilters(query) {
 	const requestedSeason = parseRequestedSeason(query.season);
 	if (requestedSeason.error) {
@@ -346,7 +359,7 @@ function createCoach(req, res, next) {
 				.save();
 		})
 		.then(function(coach){
-			return res.status(200).json(coach);
+			return res.status(200).json(buildCoachRegistrationPayload(coach));
 		})
 		.catch(function(err){
 			return next(err);

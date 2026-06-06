@@ -14,7 +14,7 @@ router.use(jsonParser);
 
 router.get('/', ensureAuthenticated, coachHandlers.listCoaches);
 router.get('/:id', ensureAuthenticated, coachHandlers.getCoachProfile);
-router.post('/', ensureAuthenticated, requireTrustedOrigin, coachHandlers.createCoach);
+router.post('/', requireTrustedOrigin, coachHandlers.createCoach);
 router.put('/:id', ensureAuthenticated, requireTrustedOrigin, coachHandlers.updateCoach);
 
 module.exports = router;
