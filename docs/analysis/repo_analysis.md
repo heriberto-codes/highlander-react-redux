@@ -1,4 +1,4 @@
-# Repository Analysis
+## Repository Analysis
 
 ## Project Architecture
 
@@ -61,6 +61,8 @@ Important relationships:
   - `GET /api/v1/coaches/:id`
   - `POST /api/v1/coaches`
   - `PUT /api/v1/coaches/:id`
+- `POST /api/v1/coaches` is the public registration boundary: it does not require an existing session, but it does require a trusted `Origin` or `Referer`, hashes the password, and returns only safe coach identity fields.
+- Successful registration does not authenticate the new coach; the client redirects to `/login`.
 - Team endpoints include detail reads, team writes, player creation, game entry, and collaborator CRUD.
 - Most mutating routes require both `ensureAuthenticated` and `requireTrustedOrigin`.
 - Server authorization is the real boundary; `ProtectedRoute` only protects client UX.
@@ -91,9 +93,11 @@ Important relationships:
 
 ## Risk Areas & Complexity
 
-- Local dev auth/register flow is currently fragile: the register UI is not wired to submit, `POST /api/v1/coaches` is authenticated, dev seed passwords are plain text while login uses bcrypt, and the `connect-pg-simple` session table is not represented in app migrations.
-- Session behavior depends on a PostgreSQL session table outside test mode; missing local setup causes runtime auth failures.
+- Session bootstrap and credential failures share `loginReducer.errorMessage`. An expected logged-out bootstrap rejection is stored as a raw Axios error and rendered by `Login`, which can expose a generic `Request failed with status code 403` message before the user attempts login.
+- `architecture.md` documents unauthenticated `GET /api/v1/sessions` as `401`, but the route currently passes through `ensureAuthenticated`, which returns `403` with `No session available`.
+- Session behavior depends on the migrated PostgreSQL `session` table outside test mode; missing migrations cause runtime auth failures.
 - `CLIENT_ORIGIN` must match browser origin for trusted mutating requests.
+- Login currently responds with the fetched Bookshelf coach model, while registration and bootstrap explicitly sanitize identity payloads; the login response contract requires security review because the model includes the stored password field.
 - Route validation is mostly manual and can drift across handlers.
 - Dashboard/team payload shaping combines authorization, season filtering, pagination, derived stats, and notification enrichment, making regressions easy without focused tests.
 - Client routing uses React Router v6 while some legacy component/form patterns remain.
@@ -104,5 +108,6 @@ Important relationships:
 
 - `architecture.md` is treated as the source of truth where it matches current code.
 - Local development is expected to run against PostgreSQL at `DATABASE_URL`, not an embedded database.
+- Registration intentionally redirects to `/login`; automatic login or dashboard navigation after account creation is not part of the current contract.
 - The production deployment path is documented but not validated in this analysis.
 - It is unknown whether the reference SQL file is still used operationally outside the migration/seed workflow.
