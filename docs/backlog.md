@@ -21,6 +21,7 @@
 
 ## Client Improvements
 
+- [x] Hide expected logged-out session bootstrap errors
 - [x] Convert the remaining class components to function components and align routing
 - [x] Simplify state management
 - [x] Add route protection and loading/error states

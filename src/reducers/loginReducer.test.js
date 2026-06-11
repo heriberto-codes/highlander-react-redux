@@ -5,7 +5,8 @@ jest.mock('../actions/loginAction', () => ({
   LOGOUT: 'LOGOUT',
   BOOTSTRAP_SESSION_REQUEST: 'BOOTSTRAP_SESSION_REQUEST',
   BOOTSTRAP_SESSION_SUCCESS: 'BOOTSTRAP_SESSION_SUCCESS',
-  BOOTSTRAP_SESSION_FAIL: 'BOOTSTRAP_SESSION_FAIL'
+  BOOTSTRAP_SESSION_FAIL: 'BOOTSTRAP_SESSION_FAIL',
+  BOOTSTRAP_SESSION_LOGGED_OUT: 'BOOTSTRAP_SESSION_LOGGED_OUT'
 }));
 
 import { loginReducer } from './loginReducer';
@@ -16,7 +17,8 @@ import {
   LOGOUT,
   BOOTSTRAP_SESSION_REQUEST,
   BOOTSTRAP_SESSION_SUCCESS,
-  BOOTSTRAP_SESSION_FAIL
+  BOOTSTRAP_SESSION_FAIL,
+  BOOTSTRAP_SESSION_LOGGED_OUT
 } from '../actions/loginAction';
 
 describe('loginReducer', () => {
@@ -82,6 +84,26 @@ describe('loginReducer', () => {
       hasResolvedSession: true,
       shouldRedirect: false,
       errorMessage: err
+    });
+  });
+
+  it('should handle BOOTSTRAP_SESSION_LOGGED_OUT', () => {
+    const prevState = {
+      isLoading: true,
+      isloggedIn: true,
+      hasResolvedSession: false,
+      shouldRedirect: true,
+      errorMessage: 'stale error'
+    };
+    const state = loginReducer(prevState, {
+      type: BOOTSTRAP_SESSION_LOGGED_OUT
+    });
+    expect(state).toEqual({
+      isLoading: false,
+      isloggedIn: false,
+      hasResolvedSession: true,
+      shouldRedirect: false,
+      errorMessage: null
     });
   });
 

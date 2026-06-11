@@ -57,6 +57,11 @@ export const bootstrapSessionFail = (err) => ({
 	err
 });
 
+export const BOOTSTRAP_SESSION_LOGGED_OUT = 'BOOTSTRAP_SESSION_LOGGED_OUT';
+export const bootstrapSessionLoggedOut = () => ({
+	type: BOOTSTRAP_SESSION_LOGGED_OUT
+});
+
 export const bootstrapSession = () => dispatch => {
 	dispatch(bootstrapSessionRequest());
 	axios.get(bootstrapUrl, { withCredentials: true })
@@ -66,6 +71,13 @@ export const bootstrapSession = () => dispatch => {
 			}
 		})
 		.catch(err => {
+			const status = err.response && err.response.status;
+
+			if (status === 401 || status === 403) {
+				dispatch(bootstrapSessionLoggedOut());
+				return;
+			}
+
 			dispatch(bootstrapSessionFail(err));
 		});
 };

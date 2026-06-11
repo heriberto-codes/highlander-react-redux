@@ -21,6 +21,8 @@ import {
   bootstrapSessionSuccess,
   BOOTSTRAP_SESSION_FAIL,
   bootstrapSessionFail,
+  BOOTSTRAP_SESSION_LOGGED_OUT,
+  bootstrapSessionLoggedOut,
   bootstrapSession,
   registerCoach
 } from './loginAction';
@@ -81,6 +83,12 @@ describe('login actions', () => {
     expect(bootstrapSessionFail(err)).toEqual({
       type: BOOTSTRAP_SESSION_FAIL,
       err
+    });
+  });
+
+  it('should create a bootstrapSessionLoggedOut action', () => {
+    expect(bootstrapSessionLoggedOut()).toEqual({
+      type: BOOTSTRAP_SESSION_LOGGED_OUT
     });
   });
 
@@ -166,9 +174,29 @@ describe('login actions', () => {
     });
   });
 
-  it('should dispatch bootstrapSessionFail when bootstrap request fails', async () => {
+  it.each([401, 403])(
+    'should dispatch bootstrapSessionLoggedOut when bootstrap returns %s',
+    async status => {
+      const dispatch = jest.fn();
+      axios.get.mockRejectedValueOnce({
+        response: { status }
+      });
+
+      bootstrapSession()(dispatch);
+      await flushPromises();
+
+      expect(dispatch).toHaveBeenNthCalledWith(1, {
+        type: BOOTSTRAP_SESSION_REQUEST
+      });
+      expect(dispatch).toHaveBeenNthCalledWith(2, {
+        type: BOOTSTRAP_SESSION_LOGGED_OUT
+      });
+    }
+  );
+
+  it('should dispatch bootstrapSessionFail when bootstrap request has no response', async () => {
     const dispatch = jest.fn();
-    const error = new Error('unauthorized');
+    const error = new Error('network unavailable');
     axios.get.mockRejectedValueOnce(error);
 
     bootstrapSession()(dispatch);
@@ -179,6 +207,25 @@ describe('login actions', () => {
     });
     expect(axios.get).toHaveBeenCalledWith('/api/v1/sessions', {
       withCredentials: true
+    });
+    expect(dispatch).toHaveBeenNthCalledWith(2, {
+      type: BOOTSTRAP_SESSION_FAIL,
+      err: error
+    });
+  });
+
+  it('should dispatch bootstrapSessionFail for an unexpected bootstrap status', async () => {
+    const dispatch = jest.fn();
+    const error = {
+      response: { status: 500 }
+    };
+    axios.get.mockRejectedValueOnce(error);
+
+    bootstrapSession()(dispatch);
+    await flushPromises();
+
+    expect(dispatch).toHaveBeenNthCalledWith(1, {
+      type: BOOTSTRAP_SESSION_REQUEST
     });
     expect(dispatch).toHaveBeenNthCalledWith(2, {
       type: BOOTSTRAP_SESSION_FAIL,

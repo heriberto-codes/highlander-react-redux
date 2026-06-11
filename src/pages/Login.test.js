@@ -127,6 +127,7 @@ describe('Login page', () => {
 
     expect(div.textContent).toContain('Login Form');
     expect(div.textContent).not.toContain('Loading...');
+    expect(div.querySelector('.error')).toBeNull();
   });
 
   it('renders the login form and error once bootstrap resolves logged out after a failure', () => {
@@ -148,6 +149,26 @@ describe('Login page', () => {
 
     expect(div.textContent).toContain('Login Form');
     expect(div.textContent).toContain('Unauthorized');
+  });
+
+  it('keeps a failed login error visible', () => {
+    const store = createLoginStore({ hasResolvedSession: true });
+
+    act(() => {
+      renderLogin(store);
+    });
+
+    act(() => {
+      store.dispatch({
+        type: 'SET_LOGIN_STATE',
+        payload: {
+          errorMessage: { message: 'Invalid credentials' }
+        }
+      });
+    });
+
+    expect(div.textContent).toContain('Login Form');
+    expect(div.textContent).toContain('Invalid credentials');
   });
 
   it('redirects to dashboard once bootstrap resolves authenticated', async () => {

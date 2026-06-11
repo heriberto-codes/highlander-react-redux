@@ -5,7 +5,8 @@ import {
 	LOGOUT,
 	BOOTSTRAP_SESSION_REQUEST,
 	BOOTSTRAP_SESSION_SUCCESS,
-	BOOTSTRAP_SESSION_FAIL
+	BOOTSTRAP_SESSION_FAIL,
+	BOOTSTRAP_SESSION_LOGGED_OUT
 } from '../actions/loginAction';
 
 const initialState = {
@@ -60,6 +61,14 @@ export const loginReducer = (state = initialState, action) => {
 			hasResolvedSession: true,
 			shouldRedirect: false,
 			errorMessage: action.err
+		});
+	case BOOTSTRAP_SESSION_LOGGED_OUT:
+		return Object.assign({}, state, {
+			isLoading: false,
+			isloggedIn: false,
+			hasResolvedSession: true,
+			shouldRedirect: false,
+			errorMessage: null
 		});
     case LOGOUT:
                 return Object.assign({}, initialState, {
