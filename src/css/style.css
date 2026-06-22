@@ -126,6 +126,26 @@ div.panel-block.panel-heading.panel-heading-center {
   color: #FFA500;
 }
 
+.demo-account-notice {
+  padding: 0 1.5rem 1rem;
+  text-align: center;
+  color: #363636;
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
+.demo-account-credential {
+  margin: 0.15rem 0;
+}
+
+.demo-account-login-link {
+  margin-top: 0.65rem;
+}
+
+.demo-account-login-link a {
+  color: #FFA500;
+}
+
 /* ======================================
   Global Dashboard
 ========================================= */
@@ -206,6 +226,12 @@ h1.title.coach-title.coach-heading-dashboard {
 
 .dashboard-filter-actions .button {
   margin: 0;
+}
+
+#teams,
+#roster,
+#stats {
+  scroll-margin-top: 1rem;
 }
 
 .team-details-filter-form {

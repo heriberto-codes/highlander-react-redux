@@ -5,14 +5,6 @@ import 'bulma/css/bulma.css';
 import '../css/style.css';
 
 export default function TeamDetailsNavigation(props) {
-	const formatRole = role => {
-		if (!role) {
-			return '';
-		}
-
-		return role.charAt(0).toUpperCase() + role.slice(1);
-	};
-
 	const {
 		name,
 		city: location,
@@ -21,14 +13,14 @@ export default function TeamDetailsNavigation(props) {
 		email,
 		activeSeason,
 		availableSeasons,
-		currentCoachRole,
 		playerSearch,
 		position,
 		onSeasonChange,
 		onFilterChange,
 		onApplyFilters,
 		showModal: onClick,
-		showGameEntryForm: onShowGameEntry
+		showGameEntryForm: onShowGameEntry,
+		onEditTeam
 	} = props;
 
 	const showSeasonSelector = (availableSeasons || []).length > 0;
@@ -78,11 +70,6 @@ export default function TeamDetailsNavigation(props) {
 								{activeSeason !== null && activeSeason !== undefined ? (
 									<p className="profile-metadata">
                   Active Season: {activeSeason}
-									</p>
-								) : null}
-								{currentCoachRole ? (
-									<p className="profile-metadata">
-                  Collaboration Role: {formatRole(currentCoachRole)}
 									</p>
 								) : null}
 							</div>
@@ -158,7 +145,7 @@ export default function TeamDetailsNavigation(props) {
 									</Button>
 								</span>
 								<span>
-									<Button isOutlined to="/editteam" variant="primary">Edit Team</Button>
+									<Button isOutlined type="button" onClick={onEditTeam} variant="primary">Edit Team</Button>
 								</span>
 								</div>
 								</form>

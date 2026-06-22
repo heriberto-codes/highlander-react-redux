@@ -1329,6 +1329,47 @@ describe('server routes', () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
+  it('POST /api/v1/sessions/login returns a sanitized coach payload', async () => {
+    mockFetch.mockResolvedValue({
+      id: 10,
+      get: jest.fn(field => field === 'password' ? 'hashed-password' : undefined),
+      toJSON: () => ({
+        id: 10,
+        email: 'coach@example.com',
+        first_name: 'Test',
+        last_name: 'Coach',
+        password: 'should-not-be-returned'
+      })
+    });
+    Coach.validatePassword.mockResolvedValue(true);
+
+    const response = await withTrustedOrigin(request(app)
+      .post('/api/v1/sessions/login'))
+      .send({
+        email: 'coach@example.com',
+        pwd: 'secret'
+      })
+      .expect(200);
+
+    expect(response.body).toEqual({
+      id: 10,
+      email: 'coach@example.com',
+      first_name: 'Test',
+      last_name: 'Coach'
+    });
+    expect(response.body.password).toBeUndefined();
+  });
+
+  it('GET /health reports that the application is available', async () => {
+    const response = await request(app)
+      .get('/health')
+      .expect(200);
+
+    expect(response.body).toEqual({
+      status: 'ok'
+    });
+  });
+
   it('GET /api/v1/sessions returns the current authenticated coach bootstrap payload', async () => {
     mockFetch.mockResolvedValue({
       id: 10,

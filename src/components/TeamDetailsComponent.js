@@ -7,6 +7,7 @@ import Button from './ui/Button';
 import EmptyState from './ui/EmptyState';
 import PaginationControls from './ui/PaginationControls';
 import StatusMessage from './ui/StatusMessage';
+import PlayerDetailsModal from './PlayerDetailsModal';
 
 const statCatalogs = [
 	{ id: 1, label: 'Hits' },
@@ -25,6 +26,7 @@ export default function TeamDetailsComponent(props) {
 	const [opponent, setOpponent] = useState('');
 	const [gameDate, setGameDate] = useState('');
 	const [statEntries, setStatEntries] = useState({});
+	const [selectedPlayerId, setSelectedPlayerId] = useState(null);
 	const [newCollaboratorCoachId, setNewCollaboratorCoachId] = useState('');
 	const [newCollaboratorRole, setNewCollaboratorRole] = useState('assistant');
 	const [roleDrafts, setRoleDrafts] = useState({});
@@ -33,6 +35,7 @@ export default function TeamDetailsComponent(props) {
 			? props.activeSeason
 			: null;
 	const collaborators = props.collaborators || [];
+	const showCollaborators = props.showCollaborators === true;
 	const isOwner = props.currentCoachRole === 'owner';
 	const isCollaboratorMutationPending =
 		props.isAddingCollaborator ||
@@ -151,6 +154,7 @@ export default function TeamDetailsComponent(props) {
 
 	return (
 		<section>
+			{showCollaborators ? (
 			<div className="box blockElement">
 				<h2 className="title is-4">Team Collaborators</h2>
 				{collaborators.length > 0 ? (
@@ -256,6 +260,7 @@ export default function TeamDetailsComponent(props) {
 					</form>
 				) : null}
 			</div>
+			) : null}
 			{props.showGameEntryForm ? (
 				<div className="box blockElement">
 					<form onSubmit={submitGameEntry}>
@@ -348,9 +353,6 @@ export default function TeamDetailsComponent(props) {
 					</form>
 				</div>
 			) : null}
-			{activeSeason !== null ? (
-				<p className="tagline profile-metadata">Showing season {activeSeason}</p>
-			) : null}
 			{props.players.length > 0 ? props.players.map(player => {
 				return <div key={player.id} className='columns is-gapless team-details-page blockElement'>
 					<div className='card-list'>
@@ -370,7 +372,13 @@ export default function TeamDetailsComponent(props) {
 						<footer className='card-footer panel-heading dashboard-team-list-footer'>
 							<p className='card-footer-item'>
 								<span>
-									<a href="#">View Player Details</a>
+									<button
+										className="button is-text"
+										type="button"
+										onClick={() => setSelectedPlayerId(player.id)}
+									>
+										View Player Details
+									</button>
 								</span>
 							</p>
 						</footer>
@@ -384,6 +392,12 @@ export default function TeamDetailsComponent(props) {
 				onPageChange={props.onPageChange}
 				pagination={props.pagination}
 			/>
+			{selectedPlayerId ? (
+				<PlayerDetailsModal
+					playerId={selectedPlayerId}
+					onClose={() => setSelectedPlayerId(null)}
+				/>
+			) : null}
 		</section>
 	);
 }

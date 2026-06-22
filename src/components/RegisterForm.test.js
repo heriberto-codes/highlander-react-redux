@@ -126,4 +126,13 @@ describe('RegisterForm', () => {
     expect(div.textContent).toContain('Email already registered');
     expect(div.querySelector('button[type="submit"]').disabled).toBe(false);
   });
+
+  it('shows the demo account credentials and login link', () => {
+    renderRegisterForm();
+
+    expect(div.textContent).toContain('No account? No problem.');
+    expect(div.textContent).toContain('Username: test@gmail.com');
+    expect(div.textContent).toContain('Password: 1234');
+    expect(div.querySelector('.demo-account-login-link a').getAttribute('href')).toBe('/login');
+  });
 });

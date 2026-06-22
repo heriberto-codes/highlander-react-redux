@@ -2,6 +2,7 @@ import React from 'react';
 
 import 'bulma/css/bulma.css';
 import '../css/style.css';
+import DemoAccountNotice from './DemoAccountNotice';
 
 export default function LoginForm(props){
 	let email, pwd;
@@ -58,6 +59,7 @@ export default function LoginForm(props){
 											</p>
 										</div>
 									</div>
+									<DemoAccountNotice />
 									<div className="has-text-centered">
 										<p>
 											<a href="login.html" className="loginCookies">Login</a> |

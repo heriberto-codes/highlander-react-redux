@@ -10,6 +10,10 @@ const path = require('path');
 
 const app = express();
 
+if (process.env.NODE_ENV === 'production') {
+        app.set('trust proxy', 1);
+}
+
 let store;
 if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID) {
         store = new session.MemoryStore();
@@ -55,6 +59,10 @@ app.use('/api/v1/coaches', coachRouter);
 app.use('/api/v1/teams', teamRouter);
 app.use('/api/v1/stats', statRouter);
 app.use('/api/v1/sessions', sessionRouter);
+
+app.get('/health', (req, res) => {
+        res.status(200).json({ status: 'ok' });
+});
 
 // Fallback to index.html so React Router can handle routing in the client
 app.get('*', (req, res) => {

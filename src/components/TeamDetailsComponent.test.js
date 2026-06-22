@@ -1,6 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import TestUtils from 'react-dom/test-utils';
+
+jest.mock('./PlayerDetailsModal', () => props => (
+  <div data-testid="player-details-modal">
+    Player {props.playerId}
+    <button onClick={props.onClose}>Close details</button>
+  </div>
+));
+
 import TeamDetailsComponent from './TeamDetailsComponent';
 
 describe('TeamDetailsComponent', () => {
@@ -148,8 +156,8 @@ describe('TeamDetailsComponent', () => {
       div
     );
 
-    expect(div.textContent).toContain('Showing season 2026');
-    expect(div.textContent).toContain('No collaborators yet.');
+    expect(div.textContent).not.toContain('Showing season');
+    expect(div.textContent).not.toContain('Team Collaborators');
     expect(div.textContent).toContain('You dont have a Roster.');
   });
 
@@ -176,6 +184,25 @@ describe('TeamDetailsComponent', () => {
     expect(div.textContent).toContain('Unable to save game entry.');
   });
 
+  it('opens details for the selected player', () => {
+    ReactDOM.render(
+      <TeamDetailsComponent
+        players={[
+          { id: 7, first_name: 'Pat', last_name: 'Lee', email: 'pat@example.com', position: 'P' }
+        ]}
+        showGameEntryForm={false}
+      />,
+      div
+    );
+
+    const detailsButton = Array.from(div.querySelectorAll('button')).find(
+      button => button.textContent.trim() === 'View Player Details'
+    );
+    TestUtils.Simulate.click(detailsButton);
+
+    expect(div.querySelector('[data-testid="player-details-modal"]').textContent).toContain('Player 7');
+  });
+
   it('renders the filtered empty state when filters remove all players', () => {
     ReactDOM.render(
       <TeamDetailsComponent
@@ -196,7 +223,7 @@ describe('TeamDetailsComponent', () => {
       div
     );
 
-    expect(div.textContent).toContain('Showing season 2026');
+    expect(div.textContent).not.toContain('Showing season');
     expect(div.textContent).toContain('No players match the current filters for season 2026.');
   });
 
@@ -356,6 +383,7 @@ describe('TeamDetailsComponent', () => {
           { id: 2, first_name: 'Alex', last_name: 'Smith', email: 'alex@example.com', role: 'assistant' }
         ]}
         currentCoachRole="owner"
+        showCollaborators
         onAddCollaborator={onAddCollaborator}
         onUpdateCollaborator={onUpdateCollaborator}
         onRemoveCollaborator={onRemoveCollaborator}
@@ -415,6 +443,7 @@ describe('TeamDetailsComponent', () => {
           { id: 2, first_name: 'Alex', last_name: 'Smith', email: 'alex@example.com', role: 'assistant' }
         ]}
         currentCoachRole="assistant"
+        showCollaborators
         showGameEntryForm={false}
         onSubmitGameEntry={() => {}}
         onCancelGameEntry={() => {}}
@@ -452,6 +481,7 @@ describe('TeamDetailsComponent', () => {
           { id: 2, first_name: 'Alex', last_name: 'Smith', email: 'alex@example.com', role: 'assistant' }
         ]}
         currentCoachRole="owner"
+        showCollaborators
         showGameEntryForm={false}
         onSubmitGameEntry={() => {}}
         onCancelGameEntry={() => {}}
@@ -489,6 +519,7 @@ describe('TeamDetailsComponent', () => {
           { id: 1, first_name: 'Casey', last_name: 'Jones', email: 'coach@example.com', role: 'owner' }
         ]}
         currentCoachRole="owner"
+        showCollaborators
         showGameEntryForm={false}
         onSubmitGameEntry={() => {}}
         onCancelGameEntry={() => {}}
@@ -526,6 +557,7 @@ describe('TeamDetailsComponent', () => {
         players={[]}
         collaborators={[]}
         currentCoachRole="owner"
+        showCollaborators
         onAddCollaborator={onAddCollaborator}
         showGameEntryForm={false}
         onSubmitGameEntry={() => {}}
@@ -568,6 +600,7 @@ describe('TeamDetailsComponent', () => {
         players={[]}
         collaborators={[]}
         currentCoachRole="owner"
+        showCollaborators
         onAddCollaborator={onAddCollaborator}
         showGameEntryForm={false}
         onSubmitGameEntry={() => {}}

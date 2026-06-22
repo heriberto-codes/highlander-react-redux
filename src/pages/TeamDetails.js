@@ -10,7 +10,8 @@ import {
 	addNewPlayer,
 	addTeamCollaborator,
 	updateTeamCollaborator,
-	removeTeamCollaborator
+	removeTeamCollaborator,
+	updateTeamDetails
 } from '../actions/teamAction';
 
 import Nav from '../components/Nav';
@@ -19,6 +20,7 @@ import TeamDetailsComponent from '../components/TeamDetailsComponent';
 import StatusMessage from '../components/ui/StatusMessage';
 // import AddPlayerModal from '../components/AddPlayerModal';
 import AddPlayer from '../components/AddPlayerModal2';
+import EditTeamModal from '../components/EditTeamModal';
 
 export function getFilterStateFromProps(filters) {
 	return {
@@ -73,6 +75,7 @@ export function TeamDetails(props = {}) {
 	const teamId = params.id || matchId;
 	const name = useSelector(state => state.teamReducer.name);
 	const city = useSelector(state => state.teamReducer.city);
+	const teamState = useSelector(state => state.teamReducer.state);
 	const season = useSelector(state => state.teamReducer.season);
 	const activeSeason = useSelector(state => state.teamReducer.activeSeason);
 	const availableSeasons = useSelector(state => state.teamReducer.availableSeasons);
@@ -103,6 +106,9 @@ export function TeamDetails(props = {}) {
 	const teamProfileError = useSelector(state => state.teamReducer.errorMessage);
 	const [filterState, setFilterState] = useState(() => getFilterStateFromProps(filters));
 	const [showGameEntryForm, setShowGameEntryForm] = useState(false);
+	const [showEditTeamModal, setShowEditTeamModal] = useState(false);
+	const [isUpdatingTeam, setIsUpdatingTeam] = useState(false);
+	const [updateTeamError, setUpdateTeamError] = useState(null);
 	const didMountRef = useRef(false);
 	const previousIdRef = useRef(teamId);
 	const previousFiltersRef = useRef(filters);
@@ -229,6 +235,22 @@ export function TeamDetails(props = {}) {
 		dispatch(createGameEntry(teamId, payload));
 	};
 
+	const submitTeamUpdate = team => {
+		setIsUpdatingTeam(true);
+		setUpdateTeamError(null);
+
+		dispatch(updateTeamDetails(teamId, team))
+			.then(() => {
+				setIsUpdatingTeam(false);
+				setShowEditTeamModal(false);
+				fetchTeamProfile(team.season);
+			})
+			.catch(error => {
+				setIsUpdatingTeam(false);
+				setUpdateTeamError(error);
+			});
+	};
+
 	const addCollaborator = (coachId, role) => {
 		dispatch(addTeamCollaborator(teamId, coachId, role));
 	};
@@ -265,12 +287,12 @@ export function TeamDetails(props = {}) {
 				first_name={first_name}
 				last_name={last_name}
 				email={email}
-				currentCoachRole={currentCoachRole}
 				onSeasonChange={season => handleSeasonChange(season)}
 				onFilterChange={(field, value) => handleFilterChange(field, value)}
 				onApplyFilters={() => applyFilters()}
 				showModal={() => openModal()}
-				showGameEntryForm={() => setShowGameEntryForm(true)} />
+				showGameEntryForm={() => setShowGameEntryForm(true)}
+				onEditTeam={() => setShowEditTeamModal(true)} />
 			{isLoadingTeamProfile ? (
 				<section className='section'>
 					<StatusMessage className='has-text-centered' message='Loading team profile...' />
@@ -314,6 +336,20 @@ export function TeamDetails(props = {}) {
 				lastCreatedGame={lastCreatedGame}
 				gameSubmissionError={gameSubmissionError} />
 			{teamModal}
+			{showEditTeamModal ? (
+				<EditTeamModal
+					error={updateTeamError}
+					isSubmitting={isUpdatingTeam}
+					onClose={() => setShowEditTeamModal(false)}
+					onSubmit={team => submitTeamUpdate(team)}
+					team={{
+						name,
+						city,
+						state: teamState,
+						season
+					}}
+				/>
+			) : null}
 		</div>
 	);
 }

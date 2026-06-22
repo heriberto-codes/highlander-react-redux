@@ -70,6 +70,54 @@ The development coach seed creates bcrypt-compatible passwords for these sample 
 npm start
 ```
 
+## Fly.io deployment
+
+The repository includes a production Dockerfile and `fly.toml`. Fly runs database migrations through the configured release command before each deployment.
+
+1. Authenticate and create the Fly app:
+   ```bash
+   flyctl auth login
+   flyctl apps create highlander-react-redux-demo
+   ```
+2. Create a small unmanaged Postgres cluster in the same region, then attach it:
+   ```bash
+   flyctl postgres create \
+     --name highlander-react-redux-demo-db \
+     --org hroman_codes-372 \
+     --region ewr \
+     --initial-cluster-size 1 \
+     --vm-cpu-kind shared \
+     --vm-cpus 1 \
+     --vm-memory 256 \
+     --volume-size 1 \
+     --autostart
+   flyctl postgres attach highlander-react-redux-demo-db \
+     --app highlander-react-redux-demo \
+     --database-name highlander_demo \
+     --database-user highlander_demo \
+     --yes
+   ```
+   Unmanaged Fly Postgres is self-managed and does not include Fly.io support or automatic disaster recovery.
+3. Set the session secret:
+   ```bash
+   flyctl secrets set SECRET="$(openssl rand -hex 32)" -a highlander-react-redux-demo
+   ```
+4. Deploy:
+   ```bash
+   flyctl deploy --ha=false --strategy immediate --wait-timeout 30m
+   ```
+5. Seed the production demo account once:
+   ```bash
+   flyctl ssh console -a highlander-react-redux-demo -C "npm run seed:demo"
+   ```
+
+Demo login:
+
+- Email: `test@gmail.com`
+- Password: `1234`
+
+The demo seed is idempotent for this account. It recreates only the demo coach and its three teams for seasons 2024–2026, with three fully populated players and game stats per team. It does not delete unrelated production users.
+
 ### Local registration and login behavior
 - `/register` submits coach registration to `POST /api/v1/coaches`.
 - Registration does not require an existing authenticated session, but it must come from the trusted `CLIENT_ORIGIN`.

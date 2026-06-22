@@ -54,7 +54,8 @@ import {
   getTeamProfileSuccess,
   GET_TEAM_PROFILE_ERROR,
   getTeamProfileError,
-  getTeamProfile
+  getTeamProfile,
+  updateTeamDetails
 } from './teamAction';
 
 describe('team actions', () => {
@@ -211,6 +212,24 @@ describe('team actions', () => {
         last_name: 'Slugger',
         position: 'Pitcher'
       },
+      { withCredentials: true }
+    );
+  });
+
+  it('updates team details through the team endpoint', async () => {
+    const dispatch = jest.fn();
+    const team = {
+      name: 'Highlanders',
+      city: 'Bronx',
+      state: 'NY',
+      season: 2026
+    };
+
+    await updateTeamDetails(9, team)(dispatch);
+
+    expect(axios.put).toHaveBeenCalledWith(
+      '/api/v1/teams/9',
+      team,
       { withCredentials: true }
     );
   });

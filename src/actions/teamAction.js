@@ -67,6 +67,12 @@ export const addNewPlayer = (id, emailInput, firstName, lastName, position) => d
 		});
 };
 
+export const updateTeamDetails = (id, team) => () => axios.put(
+	`${teamsUrl}${id}`,
+	team,
+	{ withCredentials: true }
+);
+
 export const CREATE_GAME_ENTRY = 'CREATE_GAME_ENTRY';
 export const createGameEntry = (id, payload) => dispatch => {
 	dispatch({

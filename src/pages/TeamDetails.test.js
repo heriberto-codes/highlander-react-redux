@@ -13,7 +13,8 @@ jest.mock('../actions/teamAction', () => ({
   addNewPlayer: jest.fn(() => ({ type: 'ADD_NEW_PLAYER_REQUEST' })),
   addTeamCollaborator: jest.fn(() => ({ type: 'ADD_TEAM_COLLABORATOR_REQUEST' })),
   updateTeamCollaborator: jest.fn(() => ({ type: 'UPDATE_TEAM_COLLABORATOR_REQUEST' })),
-  removeTeamCollaborator: jest.fn(() => ({ type: 'REMOVE_TEAM_COLLABORATOR_REQUEST' }))
+  removeTeamCollaborator: jest.fn(() => ({ type: 'REMOVE_TEAM_COLLABORATOR_REQUEST' })),
+  updateTeamDetails: jest.fn(() => () => Promise.resolve({ status: 200 }))
 }));
 
 jest.mock('../components/Nav', () => () => null);
@@ -23,6 +24,7 @@ jest.mock('../components/TeamDetailsComponent', () => ({
   default: jest.fn(() => null)
 }));
 jest.mock('../components/AddPlayerModal2', () => jest.fn(() => null));
+jest.mock('../components/EditTeamModal', () => jest.fn(() => null));
 
 import {
   TeamDetails,
@@ -446,10 +448,6 @@ describe('TeamDetails page', () => {
       );
     });
 
-    expect(TeamDetailsNavigation).toHaveBeenCalledWith(expect.objectContaining({
-      currentCoachRole: 'owner'
-    }), expect.anything());
-
     expect(TeamDetailsComponent).toHaveBeenCalledWith(expect.objectContaining({
       teamId: '9',
       collaborators: [{ id: 2, first_name: 'Alex', last_name: 'Smith', email: 'alex@example.com', role: 'assistant' }],
@@ -466,10 +464,6 @@ describe('TeamDetails page', () => {
         currentCoachRole: 'assistant'
       }
     });
-
-    expect(TeamDetailsNavigation).toHaveBeenCalledWith(expect.objectContaining({
-      currentCoachRole: 'assistant'
-    }), expect.anything());
 
     expect(TeamDetailsComponent).toHaveBeenCalledWith(expect.objectContaining({
       collaborators: [{ id: 2, first_name: 'Alex', last_name: 'Smith', email: 'alex@example.com', role: 'assistant' }],

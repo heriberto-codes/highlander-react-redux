@@ -39,7 +39,7 @@ describe('TeamDetailsNavigation', () => {
     );
 
     expect(div.textContent).toContain('Active Season: 2026');
-    expect(div.textContent).toContain('Collaboration Role: Owner');
+    expect(div.textContent).not.toContain('Collaboration Role');
     const select = div.querySelector('#team-details-season-select');
     expect(select).not.toBeNull();
     expect(select.value).toBe('2026');
@@ -138,9 +138,10 @@ describe('TeamDetailsNavigation', () => {
     expect(onSeasonChange).toHaveBeenCalledWith(2025);
   });
 
-  it('preserves action callbacks and edit team route', () => {
+  it('preserves action callbacks', () => {
     const showModal = jest.fn();
     const showGameEntryForm = jest.fn();
+    const onEditTeam = jest.fn();
 
     ReactDOM.render(
       <MemoryRouter>
@@ -154,6 +155,7 @@ describe('TeamDetailsNavigation', () => {
           availableSeasons={[2026, 2025]}
           showModal={showModal}
           showGameEntryForm={showGameEntryForm}
+          onEditTeam={onEditTeam}
         />
       </MemoryRouter>,
       div
@@ -163,18 +165,16 @@ describe('TeamDetailsNavigation', () => {
       buttons[button.textContent.trim()] = button;
       return buttons;
     }, {});
-    const editTeamLink = Array.from(div.querySelectorAll('a')).find(link => (
-      link.textContent.trim() === 'Edit Team'
-    ));
-
     expect(buttonsByText['Add New Player'].type).toBe('button');
     expect(buttonsByText['Add Game Stats'].type).toBe('button');
+    expect(buttonsByText['Edit Team'].type).toBe('button');
 
     Simulate.click(buttonsByText['Add New Player']);
     Simulate.click(buttonsByText['Add Game Stats']);
+    Simulate.click(buttonsByText['Edit Team']);
 
     expect(showModal).toHaveBeenCalled();
     expect(showGameEntryForm).toHaveBeenCalled();
-    expect(editTeamLink.getAttribute('href')).toBe('/editteam');
+    expect(onEditTeam).toHaveBeenCalled();
   });
 });

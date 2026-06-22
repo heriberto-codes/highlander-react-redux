@@ -203,10 +203,16 @@ export function Dashboard() {
 		setCreateTeamError(null);
 
 		dispatch(createCoachTeam(id, team))
-			.then(response => {
+			.then(() => {
 				setIsCreatingTeam(false);
 				setShowAddTeamModal(false);
-				navigate(`/teamdetails/${response.data.id}`);
+				fetchProfile(
+					activeSeason,
+					getRequestFilters(
+						filterState,
+						getResetPagination(dashboardPagination)
+					)
+				);
 			})
 			.catch(error => {
 				setIsCreatingTeam(false);

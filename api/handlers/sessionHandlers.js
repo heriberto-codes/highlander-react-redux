@@ -119,7 +119,7 @@ function login(req, res, next) {
                         if (validPassword) {
                                 clearFailedAttempts(attemptKey);
                                 req.session.coachId = coachData.id;
-                                res.status(200).json(coachData);
+                                res.status(200).json(buildSessionBootstrapPayload(coachData));
                         } else {
                                 recordFailedAttempt(attemptKey, now);
                                 return sendAuthenticationError(res, 'Invalid credentials');

@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { act } from 'react-dom/test-utils';
 import { Provider } from 'react-redux';
 import { createStore } from 'redux';
+import { MemoryRouter } from 'react-router-dom';
 
 jest.mock('../actions/loginAction', () => ({
   bootstrapSession: jest.fn(() => ({ type: 'BOOTSTRAP_SESSION_REQUEST' })),
@@ -17,7 +18,7 @@ jest.mock('../components/Nav', () => () => null);
 jest.mock('../components/LoginForm', () => () => <div>Login Form</div>);
 jest.mock('../components/Footer', () => () => null);
 
-import App from './App';
+import App, { ScrollToHash } from './App';
 import { bootstrapSession } from '../actions/loginAction';
 
 describe('App container', () => {
@@ -204,5 +205,27 @@ describe('App container', () => {
     expect(window.location.pathname).toBe('/login');
     expect(div.textContent).toContain('Login Form');
     expect(div.textContent).not.toContain('Team Details Page');
+  });
+
+  it('scrolls to a dashboard section from the URL hash', async () => {
+    const section = document.createElement('div');
+    section.id = 'roster';
+    section.scrollIntoView = jest.fn();
+    div.appendChild(section);
+
+    await act(async () => {
+      ReactDOM.render(
+        <MemoryRouter initialEntries={['/dashboard#roster']}>
+          <ScrollToHash />
+        </MemoryRouter>,
+        section
+      );
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+
+    expect(section.scrollIntoView).toHaveBeenCalledWith({
+      behavior: 'smooth',
+      block: 'start'
+    });
   });
 });

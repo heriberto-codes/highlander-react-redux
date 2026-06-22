@@ -20,18 +20,6 @@ export default function Nav() {
 				<i className="fa fa-home icon the-shit" aria-hidden="true"></i>
           Dashboard
 			</Link>
-			<Link className="nav-item nav-color is-tab" to='/dashboard#teams'>
-				<i className="fa fa-futbol-o icon the-shit" aria-hidden="true"></i>
-          Team
-			</Link>
-			<Link className="nav-item nav-color is-tab" to='/dashboard#roster'>
-				<i className="fa fa-users icon the-shit" aria-hidden="true"></i>
-          Roster
-			</Link>
-			<Link className="nav-item nav-color is-tab" to='/dashboard#stats'>
-				<i className="fa fa-list-ol icon the-shit" aria-hidden="true"></i>
-          Stats
-			</Link>
 			<button
 				className="nav-item is-tab nav-color logout-session nav-logout-button"
 				type="button"

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import 'bulma/css/bulma.css';
 
 import { registerCoach } from '../actions/loginAction';
+import DemoAccountNotice from './DemoAccountNotice';
 
 const initialFormState = {
   first_name: '',
@@ -166,6 +167,7 @@ export default function RegisterForm({ onRegister = registerCoach }) {
                       </p>
                   </div>
                 </form>
+                <DemoAccountNotice showLoginLink />
                 <div className="has-text-centered">
                   <p>
                     <a href="login.html" className="loginCookies">Login</a> |

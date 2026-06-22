@@ -51,12 +51,10 @@ describe('Nav', () => {
     renderNav(true);
 
     expect(div.textContent).toContain('Dashboard');
-    expect(div.textContent).toContain('Team');
-    expect(div.textContent).toContain('Roster');
-    expect(div.textContent).toContain('Stats');
     expect(div.textContent).toContain('Log out');
+    expect(div.textContent).not.toContain('Roster');
+    expect(div.textContent).not.toContain('Stats');
     expect(div.textContent).not.toContain('Sign Up');
-    expect(div.querySelector('a[href="/dashboard#teams"]')).not.toBeNull();
   });
 
   it('shows public navigation while logged out', () => {
