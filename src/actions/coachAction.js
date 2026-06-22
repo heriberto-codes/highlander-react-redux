@@ -2,6 +2,7 @@ import axios from 'axios';
 import { buildRequestUrl } from './queryParams';
 
 const url = '/api/v1/coaches/';
+const teamsUrl = '/api/v1/teams/';
 
 function buildCoachProfileRequestUrl(id, season, filters) {
 	return buildRequestUrl(`${url}${id}`, {
@@ -38,6 +39,12 @@ export const getProfile = (id, season, filters = {}) => dispatch => {
 			dispatch(profileError(err));
 		});
 };
+
+export const createCoachTeam = (coachId, team) => () => axios.post(
+	teamsUrl,
+	Object.assign({}, team, { coachId }),
+	{ withCredentials: true }
+);
 
 export const PROFILE_SUCCESS = 'PROFILE_SUCCESS';
 export const profileSuccess = response => ({

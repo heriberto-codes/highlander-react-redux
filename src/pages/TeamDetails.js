@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 
 import {
 	createTeam,
@@ -68,6 +68,7 @@ export function getRequestFilters(filterState, paginationState) {
 export function TeamDetails(props = {}) {
 	const dispatch = useDispatch();
 	const params = useParams();
+	const location = useLocation();
 	const matchId = props.match && props.match.params ? props.match.params.id : undefined;
 	const teamId = params.id || matchId;
 	const name = useSelector(state => state.teamReducer.name);
@@ -106,6 +107,7 @@ export function TeamDetails(props = {}) {
 	const previousIdRef = useRef(teamId);
 	const previousFiltersRef = useRef(filters);
 	const previousGameSubmissionSuccessRef = useRef(gameSubmissionSuccess);
+	const dashboardActionHandledRef = useRef(false);
 	const filterStateRef = useRef(filterState);
 	const teamDetailPaginationRef = useRef(teamDetailPagination);
 
@@ -136,6 +138,22 @@ export function TeamDetails(props = {}) {
 
 		previousIdRef.current = teamId;
 	}, [teamId, fetchTeamProfile]);
+
+	useEffect(() => {
+		if (dashboardActionHandledRef.current) {
+			return;
+		}
+
+		const dashboardAction = location.state && location.state.dashboardAction;
+		if (dashboardAction === 'add-player') {
+			dashboardActionHandledRef.current = true;
+			dispatch(createTeam());
+		}
+		if (dashboardAction === 'add-stats') {
+			dashboardActionHandledRef.current = true;
+			setShowGameEntryForm(true);
+		}
+	}, [dispatch, location.state]);
 
 	useEffect(() => {
 		if (!previousGameSubmissionSuccessRef.current && gameSubmissionSuccess) {
@@ -204,7 +222,7 @@ export function TeamDetails(props = {}) {
 	};
 
 	const addNewPlayerToTeam = (teamId, email, firstName, lastName, position) => {
-		dispatch(addNewPlayer(teamId, email, firstName, lastName, position));
+		return dispatch(addNewPlayer(teamId, email, firstName, lastName, position));
 	};
 
 	const submitGameEntry = payload => {

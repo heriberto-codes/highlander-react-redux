@@ -60,3 +60,16 @@ Link.nav-item.is-tab.nav-color:hover {
 .nav-icon {
   margin-right: 0.3em;
 }
+
+.nav-logout-button {
+  background: transparent;
+  border: 0;
+  color: #7a7a7a;
+  cursor: pointer;
+  font: inherit;
+}
+
+.nav-logout-button:hover {
+  border-bottom: 1px solid #FFA500;
+  color: #FFA500;
+}

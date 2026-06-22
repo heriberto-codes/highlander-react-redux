@@ -90,6 +90,26 @@ describe('TeamDetailsNavigation', () => {
     expect(onApplyFilters).toHaveBeenCalled();
   });
 
+  it('renders search fields above season and action buttons', () => {
+    ReactDOM.render(
+      <MemoryRouter>
+        <TeamDetailsNavigation
+          name="Highlander"
+          activeSeason={2026}
+          availableSeasons={[2026]}
+          showModal={() => {}}
+          showGameEntryForm={() => {}}
+        />
+      </MemoryRouter>,
+      div
+    );
+
+    const form = div.querySelector('.team-details-filter-form');
+    expect(form.children[0].className).toBe('team-details-filter-fields');
+    expect(form.children[1].className).toBe('team-details-filter-actions');
+    expect(form.children[1].querySelector('#team-details-season-select')).not.toBeNull();
+  });
+
   it('calls onSeasonChange with the selected numeric season', () => {
     const onSeasonChange = jest.fn();
 

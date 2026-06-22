@@ -1,6 +1,7 @@
 jest.mock('axios', () => ({
   get: jest.fn(() => Promise.resolve({ status: 200, data: {} })),
-  post: jest.fn(() => Promise.resolve({ status: 200, data: {} }))
+  post: jest.fn(() => Promise.resolve({ status: 200, data: {} })),
+  delete: jest.fn(() => Promise.resolve({ status: 204 }))
 }));
 
 const flushPromises = () => new Promise(resolve => setTimeout(resolve, 0));
@@ -31,8 +32,10 @@ describe('login actions', () => {
   beforeEach(() => {
     axios.get.mockReset();
     axios.post.mockReset();
+    axios.delete.mockReset();
     axios.get.mockResolvedValue({ status: 200, data: {} });
     axios.post.mockResolvedValue({ status: 200, data: {} });
+    axios.delete.mockResolvedValue({ status: 204 });
   });
 
   it('should create an action for loginSuccess', () => {
@@ -53,15 +56,15 @@ describe('login actions', () => {
     expect(loginFail(err)).toEqual(expectedAction);
   });
 
-  it('should create an action for logout', () => {
-    const email = 'test@example.com';
-    const pwd = 'pwd';
-    const expectedAction = {
-      type: LOGOUT,
-      email,
-      pwd
-    };
-    expect(logout(email, pwd)).toEqual(expectedAction);
+  it('destroys the server session and dispatches logout', async () => {
+    const dispatch = jest.fn();
+
+    await logout()(dispatch);
+
+    expect(axios.delete).toHaveBeenCalledWith('/api/v1/sessions', {
+      withCredentials: true
+    });
+    expect(dispatch).toHaveBeenCalledWith({ type: LOGOUT });
   });
 
   it('should create a bootstrapSessionRequest action', () => {

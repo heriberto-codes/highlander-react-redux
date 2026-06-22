@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import 'bulma/css/bulma.css';
 import '../css/style.css';
@@ -7,12 +7,14 @@ import Button from './ui/Button';
 import EmptyState from './ui/EmptyState';
 import PaginationControls from './ui/PaginationControls';
 import SectionPanel from './ui/SectionPanel';
+import PlayerDetailsModal from './PlayerDetailsModal';
 
 function isEmptyPaginatedPage(items, pagination) {
 	return items.length === 0 && pagination && pagination.totalItems > 0;
 }
 
 export default function RosterList(props) {
+	const [selectedPlayerId, setSelectedPlayerId] = useState(null);
 
 	const players = props.players;
 	const activeSeason =
@@ -33,7 +35,7 @@ export default function RosterList(props) {
 		: 'You dont have a Roster.';
 	// const playersFirstName = props.players.first_name;
 	let listOfPlayers = players.map((player, index) => {
-		return <div key={index} className='card has-text-centered'>
+		return <div key={player.id || index} className='card has-text-centered'>
 			<div className='card-content' id='theTeamBg'>
 				<p className='title player-name'>{player.first_name}</p>
 				<p className='subtitle player-email'>{player.email}</p>
@@ -41,7 +43,14 @@ export default function RosterList(props) {
 			<footer className='card-footer panel-heading dashboard-roster-footer'>
 				<p className='card-footer-item'>
 					<span>
-						<a href='#'>View Player Details</a>
+						<button
+							className="button is-text"
+							type="button"
+							onClick={() => setSelectedPlayerId(player.id)}
+							disabled={!player.id}
+						>
+							View Player Details
+						</button>
 					</span>
 				</p>
 			</footer>
@@ -55,7 +64,7 @@ export default function RosterList(props) {
 	return (
 		<SectionPanel
 			actions={(
-				<Button href="add-player.html" isOutlined variant="primary">
+				<Button onClick={props.onAddPlayer} isOutlined variant="primary">
 					Add a New Player
 				</Button>
 			)}
@@ -78,6 +87,12 @@ export default function RosterList(props) {
 				onPageChange={props.onPageChange}
 				pagination={props.pagination}
 			/>
+			{selectedPlayerId ? (
+				<PlayerDetailsModal
+					playerId={selectedPlayerId}
+					onClose={() => setSelectedPlayerId(null)}
+				/>
+			) : null}
 		</SectionPanel>
 	);
 }

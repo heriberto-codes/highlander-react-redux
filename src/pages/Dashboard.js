@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 
-import { getProfile } from '../actions/coachAction';
+import { createCoachTeam, getProfile } from '../actions/coachAction';
 
 import Nav from '../components/Nav';
 import DashboardNavigation from '../components/DashboardNavigation';
@@ -9,6 +10,7 @@ import TeamsList from '../components/TeamsList';
 import RosterList from '../components/RosterList';
 import StatsList from '../components/StatsList';
 import StatusMessage from '../components/ui/StatusMessage';
+import AddTeamModal from '../components/AddTeamModal';
 
 export function getFilterStateFromProps(filters) {
 	return {
@@ -62,6 +64,7 @@ export function getRequestFilters(filterState, paginationState) {
 
 export function Dashboard() {
 	const dispatch = useDispatch();
+	const navigate = useNavigate();
 	const id = useSelector(state => state.coachReducer.id);
 	const teams = useSelector(state => state.coachReducer.teams);
 	const players = useSelector(state => state.coachReducer.players);
@@ -79,6 +82,9 @@ export function Dashboard() {
 	const isLoadingProfile = useSelector(state => state.coachReducer.isLoadingProfile);
 	const profileError = useSelector(state => state.coachReducer.profileError);
 	const [filterState, setFilterState] = useState(() => getFilterStateFromProps(filters));
+	const [showAddTeamModal, setShowAddTeamModal] = useState(false);
+	const [isCreatingTeam, setIsCreatingTeam] = useState(false);
+	const [createTeamError, setCreateTeamError] = useState(null);
 	const didMountRef = useRef(false);
 	const previousIdRef = useRef(id);
 	const previousFiltersRef = useRef(filters);
@@ -180,6 +186,34 @@ export function Dashboard() {
 		);
 	};
 
+	const openTeamAction = action => {
+		if (!teams || teams.length === 0) {
+			setCreateTeamError(null);
+			setShowAddTeamModal(true);
+			return;
+		}
+
+		navigate(`/teamdetails/${teams[0].id}`, {
+			state: { dashboardAction: action }
+		});
+	};
+
+	const createTeam = team => {
+		setIsCreatingTeam(true);
+		setCreateTeamError(null);
+
+		dispatch(createCoachTeam(id, team))
+			.then(response => {
+				setIsCreatingTeam(false);
+				setShowAddTeamModal(false);
+				navigate(`/teamdetails/${response.data.id}`);
+			})
+			.catch(error => {
+				setIsCreatingTeam(false);
+				setCreateTeamError(error);
+			});
+	};
+
 	return (
 		<div>
 			<Nav
@@ -196,6 +230,9 @@ export function Dashboard() {
 				onSeasonChange={season => handleSeasonChange(season)}
 				onFilterChange={(field, value) => handleFilterChange(field, value)}
 				onApplyFilters={() => applyFilters()}
+				onAddTeam={() => setShowAddTeamModal(true)}
+				onAddPlayer={() => openTeamAction('add-player')}
+				onAddStats={() => openTeamAction('add-stats')}
 			/>
 			{isLoadingProfile ? (
 				<section className='section'>
@@ -214,31 +251,48 @@ export function Dashboard() {
 			<section className='section'>
 				<div className='tile is-ancestor'>
 					<div className='tile is-4 is-vertical is-parent'>
-						<TeamsList
+						<div id="teams">
+							<TeamsList
+								teams={teams}
+								filters={filters}
+								activeSeason={activeSeason}
+								pagination={teamPagination}
+								onPageChange={page => handleTeamPageChange(page)}
+								onAddTeam={() => setShowAddTeamModal(true)}
+							/>
+						</div>
+						<div id="roster">
+							<RosterList
+								players={players}
+								filters={filters}
+								activeSeason={activeSeason}
+								pagination={playerPagination}
+								onPageChange={page => handlePlayerPageChange(page)}
+								onAddPlayer={() => openTeamAction('add-player')}
+							/>
+						</div>
+					</div>
+					<div id="stats" className="tile is-parent">
+						<StatsList
+							stats={stats}
 							teams={teams}
-							filters={filters}
-							activeSeason={activeSeason}
-							pagination={teamPagination}
-							onPageChange={page => handleTeamPageChange(page)}
-						/>
-						<RosterList
-							players={players}
 							filters={filters}
 							activeSeason={activeSeason}
 							pagination={playerPagination}
 							onPageChange={page => handlePlayerPageChange(page)}
+							onAddStats={() => openTeamAction('add-stats')}
 						/>
 					</div>
-					<StatsList
-						stats={stats}
-						teams={teams}
-						filters={filters}
-						activeSeason={activeSeason}
-						pagination={playerPagination}
-						onPageChange={page => handlePlayerPageChange(page)}
-					/>
 				</div>
 			</section>
+			{showAddTeamModal ? (
+				<AddTeamModal
+					error={createTeamError}
+					isSubmitting={isCreatingTeam}
+					onClose={() => setShowAddTeamModal(false)}
+					onSubmit={team => createTeam(team)}
+				/>
+			) : null}
 		</div>
 	);
 }

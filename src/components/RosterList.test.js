@@ -1,5 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { Simulate } from 'react-dom/test-utils';
+
+jest.mock('./PlayerDetailsModal', () => props => (
+  <div data-testid="player-details-modal">
+    Player {props.playerId}
+    <button onClick={props.onClose}>Close details</button>
+  </div>
+));
+
 import RosterList from './RosterList';
 
 describe('RosterList', () => {
@@ -21,8 +30,8 @@ describe('RosterList', () => {
       <RosterList
         activeSeason={2026}
         players={[
-          { first_name: 'Pat', email: 'pat@example.com' },
-          { first_name: 'Sam', email: 'sam@example.com' }
+          { id: 1, first_name: 'Pat', email: 'pat@example.com' },
+          { id: 2, first_name: 'Sam', email: 'sam@example.com' }
         ]}
       />,
       div
@@ -31,8 +40,26 @@ describe('RosterList', () => {
     expect(div.textContent).toContain('Showing season 2026');
     expect(div.textContent).toContain('Pat');
     expect(div.textContent).toContain('Sam');
-    expect(div.querySelector('a[href="add-player.html"]')).not.toBeNull();
-    expect(div.querySelector('a[href="#"]')).not.toBeNull();
+    expect(div.textContent).toContain('Add a New Player');
+    expect(div.textContent).toContain('View Player Details');
+  });
+
+  it('opens player details for the selected player', () => {
+    ReactDOM.render(
+      <RosterList
+        players={[
+          { id: 7, first_name: 'Pat', email: 'pat@example.com' }
+        ]}
+      />,
+      div
+    );
+
+    const detailsButton = Array.from(div.querySelectorAll('button')).find(
+      button => button.textContent.trim() === 'View Player Details'
+    );
+    Simulate.click(detailsButton);
+
+    expect(div.querySelector('[data-testid="player-details-modal"]').textContent).toContain('Player 7');
   });
 
   it('renders the no-data empty state when there are no players', () => {

@@ -33,8 +33,8 @@ export default function DashboardNavigation(props) {
 			<div className="hero-body hero-bg-image">
 				<div className="container profile">
 					<div className="profile-heading">
-						<div className="columns level">
-							<div className="column is-4 level-left">
+						<div className="dashboard-profile-layout">
+							<div className="dashboard-coach-summary">
 								<h1 className="title coach-title coach-heading-dashboard">Coach:</h1>
 								<p>
 									<span className="title is-bold profile-title coach-fullname">{props.firstName} {props.lastName}</span>
@@ -48,9 +48,9 @@ export default function DashboardNavigation(props) {
 									</p>
 								) : null}
 							</div>
-							<div className="column">
-								<form className="level-right" onSubmit={handleSubmit}>
-									<span className="level-item">
+							<form className="dashboard-filter-form" onSubmit={handleSubmit}>
+								<div className="dashboard-filter-fields">
+									<span className="dashboard-filter-control">
 										<input
 											id="dashboard-team-search"
 											name="teamSearch"
@@ -61,7 +61,7 @@ export default function DashboardNavigation(props) {
 											onChange={handleFilterChange}
 										/>
 									</span>
-									<span className="level-item">
+									<span className="dashboard-filter-control">
 										<input
 											id="dashboard-player-search"
 											name="playerSearch"
@@ -72,7 +72,7 @@ export default function DashboardNavigation(props) {
 											onChange={handleFilterChange}
 										/>
 									</span>
-									<span className="level-item">
+									<span className="dashboard-filter-control">
 										<input
 											id="dashboard-position-filter"
 											name="position"
@@ -84,7 +84,7 @@ export default function DashboardNavigation(props) {
 										/>
 									</span>
 								{showSeasonSelector ? (
-									<span className="level-item">
+									<span className="dashboard-season-control">
 										<label className="tagline profile-metadata coach-email" htmlFor="dashboard-season-select">
                     Season
 										</label>
@@ -102,28 +102,30 @@ export default function DashboardNavigation(props) {
 										</div>
 									</span>
 								) : null}
-									<span className="level-item">
+								</div>
+								<div className="dashboard-filter-actions">
+									<span>
 										<Button type="submit" variant="primary">
                     Apply Filters
 										</Button>
 									</span>
-								<span className="level-item">
-									<Button href="add-team.html" isOutlined variant="primary">
+								<span>
+									<Button onClick={props.onAddTeam} isOutlined variant="primary">
                     Add a New Team
 									</Button>
 								</span>
-								<span className="level-item">
-									<Button href="add-player.html" isOutlined variant="primary">
+								<span>
+									<Button onClick={props.onAddPlayer} isOutlined variant="primary">
                     Add a New Player
 									</Button>
 								</span>
-								<span className="level-item">
-									<Button href="add-stats.html" isOutlined variant="primary">
+								<span>
+									<Button onClick={props.onAddStats} isOutlined variant="primary">
                     Add New Stats
 									</Button>
 								</span>
-								</form>
-							</div>
+								</div>
+							</form>
 						</div>
 					</div>
 				</div>

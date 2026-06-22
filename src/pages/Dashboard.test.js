@@ -3,9 +3,11 @@ import ReactDOM from 'react-dom';
 import { act } from 'react-dom/test-utils';
 import { Provider } from 'react-redux';
 import { createStore } from 'redux';
+import { MemoryRouter } from 'react-router-dom';
 
 jest.mock('../actions/coachAction', () => ({
-  getProfile: jest.fn(() => ({ type: 'GET_PROFILE_REQUEST' }))
+  getProfile: jest.fn(() => ({ type: 'GET_PROFILE_REQUEST' })),
+  createCoachTeam: jest.fn(() => () => Promise.resolve({ data: { id: 99 } }))
 }));
 
 jest.mock('../components/Nav', () => () => null);
@@ -149,7 +151,9 @@ describe('Dashboard page', () => {
     act(() => {
       ReactDOM.render(
         <Provider store={store}>
-          <Dashboard />
+          <MemoryRouter>
+            <Dashboard />
+          </MemoryRouter>
         </Provider>,
         div
       );

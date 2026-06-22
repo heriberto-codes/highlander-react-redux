@@ -1,5 +1,6 @@
 jest.mock('axios', () => ({
-  get: jest.fn(() => Promise.resolve({ status: 200, data: {} }))
+  get: jest.fn(() => Promise.resolve({ status: 200, data: {} })),
+  post: jest.fn(() => Promise.resolve({ status: 200, data: {} }))
 }));
 
 import axios from 'axios';
@@ -9,13 +10,16 @@ import {
   profileSuccess,
   PROFILE_ERROR,
   profileError,
-  getProfile
+  getProfile,
+  createCoachTeam
 } from './coachAction';
 
 describe('coach actions', () => {
   beforeEach(() => {
     axios.get.mockReset();
     axios.get.mockResolvedValue({ status: 200, data: {} });
+    axios.post.mockReset();
+    axios.post.mockResolvedValue({ status: 200, data: {} });
   });
 
   it('should expose GET_PROFILE action type', () => {
@@ -160,5 +164,26 @@ describe('coach actions', () => {
       response
     };
     expect(profileError(response)).toEqual(expected);
+  });
+
+  it('creates a team for the authenticated coach', async () => {
+    const dispatch = jest.fn();
+    const team = {
+      name: 'Highlanders',
+      city: 'New York',
+      state: 'NY',
+      season: 2026
+    };
+
+    await createCoachTeam(12, team)(dispatch);
+
+    expect(axios.post).toHaveBeenCalledWith(
+      '/api/v1/teams/',
+      {
+        ...team,
+        coachId: 12
+      },
+      { withCredentials: true }
+    );
   });
 });

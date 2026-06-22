@@ -35,7 +35,7 @@ describe('TeamsList', () => {
     expect(div.textContent).toContain('Warriors (2026)');
     expect(div.querySelector('a[href="/teamdetails/1"]')).not.toBeNull();
     expect(div.querySelector('a[href="/teamdetails/2"]')).not.toBeNull();
-    expect(div.querySelector('a[href="add-team.html"]')).not.toBeNull();
+    expect(div.textContent).toContain('Add a New Team');
   });
 
   it('keeps the empty state when there are no teams', () => {

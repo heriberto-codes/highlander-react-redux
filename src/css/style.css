@@ -170,6 +170,89 @@ h1.title.coach-title.coach-heading-dashboard {
   margin-bottom: 2px;
 }
 
+.dashboard-profile-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.dashboard-coach-summary {
+  max-width: 100%;
+}
+
+.dashboard-filter-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.dashboard-filter-fields,
+.dashboard-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.dashboard-filter-control {
+  flex: 1 1 14rem;
+}
+
+.dashboard-season-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dashboard-filter-actions .button {
+  margin: 0;
+}
+
+.team-details-filter-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.team-details-filter-fields,
+.team-details-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.team-details-filter-control {
+  flex: 1 1 16rem;
+}
+
+.team-details-season-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.team-details-filter-actions .button {
+  margin: 0;
+}
+
+@media screen and (max-width: 768px) {
+  .dashboard-filter-control,
+  .dashboard-filter-actions > span,
+  .dashboard-filter-actions .button,
+  .team-details-filter-control,
+  .team-details-filter-actions > span,
+  .team-details-filter-actions .button {
+    width: 100%;
+  }
+
+  .dashboard-season-control,
+  .team-details-season-control {
+    width: 100%;
+  }
+}
+
 /* ======================================
   Teams Dashboard
 ========================================= */

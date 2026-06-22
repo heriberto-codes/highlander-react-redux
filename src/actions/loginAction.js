@@ -34,10 +34,12 @@ export const loginFail = (err) => ({
 });
 
 export const LOGOUT = 'LOGOUT';
-export const logout = (email, pwd) => ({
-	type: LOGOUT,
-	email,
-	pwd
+export const logout = () => dispatch => axios.delete(
+	bootstrapUrl,
+	{ withCredentials: true }
+).then(response => {
+	dispatch({ type: LOGOUT });
+	return response;
 });
 
 export const BOOTSTRAP_SESSION_REQUEST = 'BOOTSTRAP_SESSION_REQUEST';

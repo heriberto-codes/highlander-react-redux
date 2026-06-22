@@ -12,6 +12,7 @@ import {
   GET_TEAM_COLLABORATORS_SUCCESS,
   GET_TEAM_COLLABORATORS_ERROR,
   ADD_PLAYER,
+  ADD_PLAYER_ERROR,
   ADD_TEAM_COLLABORATOR,
   ADD_TEAM_COLLABORATOR_SUCCESS,
   ADD_TEAM_COLLABORATOR_ERROR,
@@ -127,6 +128,16 @@ describe('teamReducer', () => {
     expect(opened.showModal).toBe(true);
     const closed = teamReducer(opened, { type: HIDE_MODAL });
     expect(closed.showModal).toBe(false);
+  });
+
+  it('keeps the player modal open when adding a player fails', () => {
+    const initial = teamReducer(undefined, { type: '@@INIT' });
+    const state = teamReducer(
+      { ...initial, showModal: true },
+      { type: ADD_PLAYER_ERROR, response: new Error('request failed') }
+    );
+
+    expect(state.showModal).toBe(true);
   });
 
   it('should default missing season metadata on GET_TEAM_PROFILE_SUCCESS', () => {

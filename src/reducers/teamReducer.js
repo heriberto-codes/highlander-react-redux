@@ -8,6 +8,7 @@ import {
 	CREATE_TEAM,
 	HIDE_MODAL,
 	ADD_PLAYER,
+	ADD_PLAYER_ERROR,
 	ADD_TEAM_COLLABORATOR,
 	ADD_TEAM_COLLABORATOR_SUCCESS,
 	ADD_TEAM_COLLABORATOR_ERROR,
@@ -267,6 +268,10 @@ export const teamReducer = (state = initialState, action) => {
 		return Object.assign({}, state, {
 			showModal: false,
 			players: players(state.players, action),
+		});
+	case ADD_PLAYER_ERROR:
+		return Object.assign({}, state, {
+			showModal: true
 		});
 	case ADD_TEAM_COLLABORATOR:
 		return Object.assign({}, state, {

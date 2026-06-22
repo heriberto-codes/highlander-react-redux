@@ -46,7 +46,7 @@ export const addNewPlayer = (id, emailInput, firstName, lastName, position) => d
 		lastName,
 		position
 	});
-       axios.post(
+       return axios.post(
                `${teamsUrl}${id}/player`,
                {
                        email: emailInput,
@@ -63,6 +63,7 @@ export const addNewPlayer = (id, emailInput, firstName, lastName, position) => d
 		})
 		.catch(err => {
 			dispatch(addPlayerError(err));
+			throw err;
 		});
 };
 

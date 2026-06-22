@@ -63,7 +63,7 @@ describe('StatsList', () => {
     expect(div.textContent).toContain('4.500');
     expect(div.textContent).toContain('1.500');
     expect(div.textContent).toContain('Showing season 2026');
-    expect(div.querySelector('a[href="add-stats.html"]')).not.toBeNull();
+    expect(div.textContent).toContain('Add New Stats');
   });
 
   it('renders fallback placeholders for null derived stats', () => {

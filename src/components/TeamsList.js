@@ -49,7 +49,7 @@ export default function TeamsList(props) {
 	return (
 		<SectionPanel
 			actions={(
-				<Button href="add-team.html" isOutlined variant="primary">
+				<Button onClick={props.onAddTeam} isOutlined variant="primary">
 					Add a New Team
 				</Button>
 			)}

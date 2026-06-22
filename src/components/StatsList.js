@@ -61,7 +61,7 @@ export default function StatsList(props) {
 	return (
 		<SectionPanel
 			actions={(
-				<Button href="add-stats.html" isOutlined variant="primary">
+				<Button onClick={props.onAddStats} isOutlined variant="primary">
 					Add New Stats
 				</Button>
 			)}

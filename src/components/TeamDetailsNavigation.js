@@ -87,8 +87,9 @@ export default function TeamDetailsNavigation(props) {
 								) : null}
 							</div>
 							<div className="column">
-								<form className="level-right" onSubmit={handleSubmit}>
-									<span className="level-item">
+								<form className="team-details-filter-form" onSubmit={handleSubmit}>
+									<div className="team-details-filter-fields">
+									<span className="team-details-filter-control">
 										<input
 											id="team-details-player-search"
 											name="playerSearch"
@@ -99,7 +100,7 @@ export default function TeamDetailsNavigation(props) {
 											onChange={handleFilterChange}
 										/>
 									</span>
-									<span className="level-item">
+									<span className="team-details-filter-control">
 										<input
 											id="team-details-position-filter"
 											name="position"
@@ -110,8 +111,10 @@ export default function TeamDetailsNavigation(props) {
 											onChange={handleFilterChange}
 										/>
 									</span>
+									</div>
+									<div className="team-details-filter-actions">
 									{showSeasonSelector ? (
-										<span className="level-item">
+										<span className="team-details-season-control">
 											<label className="tagline profile-metadata coach-email" htmlFor="team-details-season-select">
                     Season
 											</label>
@@ -129,12 +132,12 @@ export default function TeamDetailsNavigation(props) {
 											</div>
 										</span>
 									) : null}
-									<span className="level-item">
+									<span>
 										<Button type="submit" variant="primary">
                     Apply Filters
 										</Button>
 									</span>
-								<span className="level-item">
+								<span>
 									<Button
 										onClick={onClick}
 										type="button"
@@ -144,7 +147,7 @@ export default function TeamDetailsNavigation(props) {
                     Add New Player
 									</Button>
 								</span>
-								<span className="level-item">
+								<span>
 									<Button
 										onClick={onShowGameEntry}
 										type="button"
@@ -154,9 +157,10 @@ export default function TeamDetailsNavigation(props) {
                     Add Game Stats
 									</Button>
 								</span>
-								<span className="level-item">
+								<span>
 									<Button isOutlined to="/editteam" variant="primary">Edit Team</Button>
 								</span>
+								</div>
 								</form>
 							</div>
 						</div>

@@ -101,7 +101,7 @@ describe('DashboardNavigation', () => {
     expect(onApplyFilters).toHaveBeenCalled();
   });
 
-  it('preserves dashboard action link targets and labels', () => {
+  it('renders coach details above the filter and action rows', () => {
     ReactDOM.render(
       <DashboardNavigation
         email="coach@example.com"
@@ -111,13 +111,44 @@ describe('DashboardNavigation', () => {
       div
     );
 
-    const linksByText = Array.from(div.querySelectorAll('a')).reduce((links, link) => {
-      links[link.textContent.trim()] = link;
-      return links;
+    const layout = div.querySelector('.dashboard-profile-layout');
+    const summary = div.querySelector('.dashboard-coach-summary');
+    const form = div.querySelector('.dashboard-filter-form');
+
+    expect(layout.children[0]).toBe(summary);
+    expect(layout.children[1]).toBe(form);
+    expect(form.querySelector('.dashboard-filter-fields')).not.toBeNull();
+    expect(form.querySelector('.dashboard-filter-actions')).not.toBeNull();
+  });
+
+  it('preserves dashboard action link targets and labels', () => {
+    const onAddTeam = jest.fn();
+    const onAddPlayer = jest.fn();
+    const onAddStats = jest.fn();
+
+    ReactDOM.render(
+      <DashboardNavigation
+        email="coach@example.com"
+        firstName="Casey"
+        lastName="Jones"
+        onAddTeam={onAddTeam}
+        onAddPlayer={onAddPlayer}
+        onAddStats={onAddStats}
+      />,
+      div
+    );
+
+    const buttonsByText = Array.from(div.querySelectorAll('button')).reduce((buttons, button) => {
+      buttons[button.textContent.trim()] = button;
+      return buttons;
     }, {});
 
-    expect(linksByText['Add a New Team'].getAttribute('href')).toBe('add-team.html');
-    expect(linksByText['Add a New Player'].getAttribute('href')).toBe('add-player.html');
-    expect(linksByText['Add New Stats'].getAttribute('href')).toBe('add-stats.html');
+    Simulate.click(buttonsByText['Add a New Team']);
+    Simulate.click(buttonsByText['Add a New Player']);
+    Simulate.click(buttonsByText['Add New Stats']);
+
+    expect(onAddTeam).toHaveBeenCalled();
+    expect(onAddPlayer).toHaveBeenCalled();
+    expect(onAddStats).toHaveBeenCalled();
   });
 });
