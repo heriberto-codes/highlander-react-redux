@@ -3,7 +3,7 @@
 ![Highlander](/public/assets/img/highlander_logo.png)
 
 ## Live Demo
-Currently no live demo is available.
+[View the Highlander React/Redux live demo](https://highlander-react-redux-demo.fly.dev)
 
 ## Description
 A simple app for coaches to manage their teams stats, averages, trash talk, and poach players from other teams.
